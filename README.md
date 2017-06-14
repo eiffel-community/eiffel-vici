@@ -18,15 +18,9 @@
 # Eiffel Vici
 Eiffel Vici is a dynamic visualization solution for Eiffel events.
 
-The Eiffel framework enables technology agnostic enterprise scale continuous integration and delivery with maintained scalability, flexibility and traceability. Eiffel is based on the concept of decentralized real time messaging, both to drive the continuous integration and delivery system and to document it.
-
-This repository contains a service based on the Eiffel protocol. For more information on Eiffel, its vocabulary, descriptions, guides and schemas, please see [the Eiffel repository](https://github.com/Ericsson/eiffel). For news, discussions and questions, please visit the [Eiffel Community Google group](https://groups.google.com/forum/#!forum/eiffel-community).
+This repository contains a software implementation based on the Eiffel protocol. For more information on Eiffel, its vocabulary, descriptions, guides and schemas, please see [the Eiffel repository](https://github.com/Ericsson/eiffel). For news, discussions and questions, please visit the [Eiffel Community Google group](https://groups.google.com/forum/#!forum/eiffel-community).
 
 Eiffel Vici is licensed under the [Apache License 2.0](./LICENSE).
-
-[How to Propose Changes](./introduction/how-to-propose-changes.md)
-
-[How to Contribute](./introduction/how-to-contribute.md)
 
 ## How to Propose Changes
 
