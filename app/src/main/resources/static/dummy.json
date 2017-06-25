@@ -1,0 +1,872 @@
+[
+  {
+    "data": {
+      "id": "ArtCC2",
+      "label": "ArtCC2",
+      "type": "EiffelArtifactCreatedEvent",
+      "quantity": 2460,
+      "quantities": {}
+    }
+  },
+  {
+    "data": {
+      "id": "ArtCC1",
+      "label": "ArtCC1",
+      "type": "EiffelArtifactCreatedEvent",
+      "quantity": 2545,
+      "quantities": {}
+    }
+  },
+  {
+    "data": {
+      "id": "ActT1",
+      "label": "ActT1",
+      "type": "Activity",
+      "quantity": 4424,
+      "quantities": {
+        "SUCCESSFUL": 3974,
+        "UNSUCCESSFUL": 450
+      }
+    }
+  },
+  {
+    "data": {
+      "id": "ActT4",
+      "label": "ActT4",
+      "type": "Activity",
+      "quantity": 5000,
+      "quantities": {
+        "SUCCESSFUL": 4718,
+        "UNSUCCESSFUL": 282
+      }
+    }
+  },
+  {
+    "data": {
+      "id": "ActT2",
+      "label": "ActT2",
+      "type": "Activity",
+      "quantity": 4424,
+      "quantities": {
+        "SUCCESSFUL": 3941,
+        "UNSUCCESSFUL": 483
+      }
+    }
+  },
+  {
+    "data": {
+      "id": "ActT3",
+      "label": "ActT3",
+      "type": "Activity",
+      "quantity": 4718,
+      "quantities": {
+        "SUCCESSFUL": 4424,
+        "UNSUCCESSFUL": 294
+      }
+    }
+  },
+  {
+    "data": {
+      "id": "ArtCC3",
+      "label": "ArtCC3",
+      "type": "EiffelArtifactCreatedEvent",
+      "quantity": 5001,
+      "quantities": {}
+    }
+  },
+  {
+    "data": {
+      "id": "ArtC1",
+      "label": "ArtC1",
+      "type": "EiffelArtifactCreatedEvent",
+      "quantity": 4424,
+      "quantities": {}
+    }
+  },
+  {
+    "data": {
+      "id": "TSS1",
+      "label": "TSS1",
+      "type": "TestSuit",
+      "quantity": 4718,
+      "quantities": {
+        "FAILED": 294,
+        "SUCCESSFUL": 4424
+      }
+    }
+  },
+  {
+    "data": {
+      "id": "ArtC3",
+      "label": "ArtC3",
+      "type": "EiffelArtifactCreatedEvent",
+      "quantity": 1,
+      "quantities": {}
+    }
+  },
+  {
+    "data": {
+      "id": "ArtC2",
+      "label": "ArtC2",
+      "type": "EiffelArtifactCreatedEvent",
+      "quantity": 4718,
+      "quantities": {}
+    }
+  },
+  {
+    "data": {
+      "id": "EDef1",
+      "label": "EDef1",
+      "type": "EiffelEnvironmentDefinedEvent",
+      "quantity": 1,
+      "quantities": {}
+    }
+  },
+  {
+    "data": {
+      "id": "EDef2",
+      "label": "EDef2",
+      "type": "EiffelEnvironmentDefinedEvent",
+      "quantity": 1,
+      "quantities": {}
+    }
+  },
+  {
+    "data": {
+      "id": "CDef2",
+      "label": "CDef2",
+      "type": "EiffelCompositionDefinedEvent",
+      "quantity": 5000,
+      "quantities": {}
+    }
+  },
+  {
+    "data": {
+      "id": "CDef3",
+      "label": "CDef3",
+      "type": "EiffelCompositionDefinedEvent",
+      "quantity": 5001,
+      "quantities": {}
+    }
+  },
+  {
+    "data": {
+      "id": "TCT4",
+      "label": "TCT4",
+      "type": "TestCase",
+      "quantity": 4424,
+      "quantities": {
+        "SUCCESSFUL": 4424
+      }
+    }
+  },
+  {
+    "data": {
+      "id": "SCS1",
+      "label": "SCS1",
+      "type": "EiffelSourceChangeSubmittedEvent",
+      "quantity": 5001,
+      "quantities": {}
+    }
+  },
+  {
+    "data": {
+      "id": "TCT3",
+      "label": "TCT3",
+      "type": "TestCase",
+      "quantity": 4424,
+      "quantities": {
+        "SUCCESSFUL": 4424
+      }
+    }
+  },
+  {
+    "data": {
+      "id": "TCT2",
+      "label": "TCT2",
+      "type": "TestCase",
+      "quantity": 4424,
+      "quantities": {
+        "SUCCESSFUL": 4424
+      }
+    }
+  },
+  {
+    "data": {
+      "id": "TCT1",
+      "label": "TCT1",
+      "type": "TestCase",
+      "quantity": 4424,
+      "quantities": {
+        "SUCCESSFUL": 4424
+      }
+    }
+  },
+  {
+    "data": {
+      "id": "ArtP2",
+      "label": "ArtP2",
+      "type": "EiffelArtifactPublishedEvent",
+      "quantity": 4718,
+      "quantities": {}
+    }
+  },
+  {
+    "data": {
+      "id": "ArtP1",
+      "label": "ArtP1",
+      "type": "EiffelArtifactPublishedEvent",
+      "quantity": 4424,
+      "quantities": {}
+    }
+  },
+  {
+    "data": {
+      "id": "CLM2",
+      "label": "CLM2",
+      "type": "EiffelConfidenceLevelModifiedEvent",
+      "quantity": 4718,
+      "quantities": {}
+    }
+  },
+  {
+    "data": {
+      "id": "CLM1",
+      "label": "CLM1",
+      "type": "EiffelConfidenceLevelModifiedEvent",
+      "quantity": 4424,
+      "quantities": {}
+    }
+  },
+  {
+    "data": {
+      "id": "TCT7",
+      "label": "TCT7",
+      "type": "TestCase",
+      "quantity": 4718,
+      "quantities": {
+        "SUCCESSFUL": 4718
+      }
+    }
+  },
+  {
+    "data": {
+      "id": "TCT6",
+      "label": "TCT6",
+      "type": "TestCase",
+      "quantity": 4718,
+      "quantities": {
+        "SUCCESSFUL": 4718
+      }
+    }
+  },
+  {
+    "data": {
+      "id": "TCT5",
+      "label": "TCT5",
+      "type": "TestCase",
+      "quantity": 4718,
+      "quantities": {
+        "SUCCESSFUL": 4718
+      }
+    }
+  },
+  {
+    "data": {
+      "id": "SCC1",
+      "label": "SCC1",
+      "type": "EiffelSourceChangeCreatedEvent",
+      "quantity": 5000,
+      "quantities": {}
+    }
+  },
+  {
+    "data": {
+      "id": "CDef1",
+      "label": "CDef1",
+      "type": "EiffelCompositionDefinedEvent",
+      "quantity": 4424,
+      "quantities": {}
+    }
+  },
+  {
+    "data": {
+      "id": "TCT3-ArtC1",
+      "source": "TCT3",
+      "target": "ArtC1",
+      "label": "TCT3-ArtC1",
+      "type": "IUT",
+      "quantity": 4423
+    }
+  },
+  {
+    "data": {
+      "id": "CDef3-SCS1",
+      "source": "CDef3",
+      "target": "SCS1",
+      "label": "CDef3-SCS1",
+      "type": "ELEMENT",
+      "quantity": 5000
+    }
+  },
+  {
+    "data": {
+      "id": "CDef1-ArtC3",
+      "source": "CDef1",
+      "target": "ArtC3",
+      "label": "CDef1-ArtC3",
+      "type": "ELEMENT",
+      "quantity": 4423
+    }
+  },
+  {
+    "data": {
+      "id": "TCT6-TSS1",
+      "source": "TCT6",
+      "target": "TSS1",
+      "label": "TCT6-TSS1",
+      "type": "CONTEXT",
+      "quantity": 4717
+    }
+  },
+  {
+    "data": {
+      "id": "CDef1-ArtC2",
+      "source": "CDef1",
+      "target": "ArtC2",
+      "label": "CDef1-ArtC2",
+      "type": "ELEMENT",
+      "quantity": 4423
+    }
+  },
+  {
+    "data": {
+      "id": "ArtC1-ArtC1",
+      "source": "ArtC1",
+      "target": "ArtC1",
+      "label": "ArtC1-ArtC1",
+      "type": "PREVIOUS_VERSION",
+      "quantity": 4422
+    }
+  },
+  {
+    "data": {
+      "id": "ArtC2-EDef2",
+      "source": "ArtC2",
+      "target": "EDef2",
+      "label": "ArtC2-EDef2",
+      "type": "ENVIRONMENT",
+      "quantity": 4717
+    }
+  },
+  {
+    "data": {
+      "id": "CDef3-CDef3",
+      "source": "CDef3",
+      "target": "CDef3",
+      "label": "CDef3-CDef3",
+      "type": "PREVIOUS_VERSION",
+      "quantity": 4999
+    }
+  },
+  {
+    "data": {
+      "id": "TCT5-TSS1",
+      "source": "TCT5",
+      "target": "TSS1",
+      "label": "TCT5-TSS1",
+      "type": "CONTEXT",
+      "quantity": 4717
+    }
+  },
+  {
+    "data": {
+      "id": "TCT3-ActT2",
+      "source": "TCT3",
+      "target": "ActT2",
+      "label": "TCT3-ActT2",
+      "type": "CONTEXT",
+      "quantity": 4423
+    }
+  },
+  {
+    "data": {
+      "id": "TCT6-ArtC2",
+      "source": "TCT6",
+      "target": "ArtC2",
+      "label": "TCT6-ArtC2",
+      "type": "IUT",
+      "quantity": 4717
+    }
+  },
+  {
+    "data": {
+      "id": "CDef1-CLM2",
+      "source": "CDef1",
+      "target": "CLM2",
+      "label": "CDef1-CLM2",
+      "type": "CAUSE",
+      "quantity": 4423
+    }
+  },
+  {
+    "data": {
+      "id": "ActT3-ArtP2",
+      "source": "ActT3",
+      "target": "ArtP2",
+      "label": "ActT3-ArtP2",
+      "type": "CAUSE",
+      "quantity": 4717
+    }
+  },
+  {
+    "data": {
+      "id": "TCT4-ActT2",
+      "source": "TCT4",
+      "target": "ActT2",
+      "label": "TCT4-ActT2",
+      "type": "CONTEXT",
+      "quantity": 4423
+    }
+  },
+  {
+    "data": {
+      "id": "ArtC2-ActT4",
+      "source": "ArtC2",
+      "target": "ActT4",
+      "label": "ArtC2-ActT4",
+      "type": "CONTEXT",
+      "quantity": 4717
+    }
+  },
+  {
+    "data": {
+      "id": "TCT4-ArtC1",
+      "source": "TCT4",
+      "target": "ArtC1",
+      "label": "TCT4-ArtC1",
+      "type": "IUT",
+      "quantity": 4423
+    }
+  },
+  {
+    "data": {
+      "id": "ArtCC2-CDef3",
+      "source": "ArtCC2",
+      "target": "CDef3",
+      "label": "ArtCC2-CDef3",
+      "type": "COMPOSITION",
+      "quantity": 4919
+    }
+  },
+  {
+    "data": {
+      "id": "ArtCC1-ArtCC1",
+      "source": "ArtCC1",
+      "target": "ArtCC1",
+      "label": "ArtCC1-ArtCC1",
+      "type": "PREVIOUS_VERSION",
+      "quantity": 2543
+    }
+  },
+  {
+    "data": {
+      "id": "TCT7-TSS1",
+      "source": "TCT7",
+      "target": "TSS1",
+      "label": "TCT7-TSS1",
+      "type": "CONTEXT",
+      "quantity": 4717
+    }
+  },
+  {
+    "data": {
+      "id": "ArtCC3-ArtCC3",
+      "source": "ArtCC3",
+      "target": "ArtCC3",
+      "label": "ArtCC3-ArtCC3",
+      "type": "PREVIOUS_VERSION",
+      "quantity": 4999
+    }
+  },
+  {
+    "data": {
+      "id": "TCT7-ArtC2",
+      "source": "TCT7",
+      "target": "ArtC2",
+      "label": "TCT7-ArtC2",
+      "type": "IUT",
+      "quantity": 4717
+    }
+  },
+  {
+    "data": {
+      "id": "CDef2-ArtCC2",
+      "source": "CDef2",
+      "target": "ArtCC2",
+      "label": "CDef2-ArtCC2",
+      "type": "ELEMENT",
+      "quantity": 4999
+    }
+  },
+  {
+    "data": {
+      "id": "CDef2-ArtCC3",
+      "source": "CDef2",
+      "target": "ArtCC3",
+      "label": "CDef2-ArtCC3",
+      "type": "ELEMENT",
+      "quantity": 4999
+    }
+  },
+  {
+    "data": {
+      "id": "CLM2-ArtC2",
+      "source": "CLM2",
+      "target": "ArtC2",
+      "label": "CLM2-ArtC2",
+      "type": "SUBJECT",
+      "quantity": 4717
+    }
+  },
+  {
+    "data": {
+      "id": "ArtC2-CDef2",
+      "source": "ArtC2",
+      "target": "CDef2",
+      "label": "ArtC2-CDef2",
+      "type": "COMPOSITION",
+      "quantity": 4717
+    }
+  },
+  {
+    "data": {
+      "id": "CDef2-ArtCC1",
+      "source": "CDef2",
+      "target": "ArtCC1",
+      "label": "CDef2-ArtCC1",
+      "type": "ELEMENT",
+      "quantity": 4999
+    }
+  },
+  {
+    "data": {
+      "id": "ArtP2-ActT4",
+      "source": "ArtP2",
+      "target": "ActT4",
+      "label": "ArtP2-ActT4",
+      "type": "CONTEXT",
+      "quantity": 4717
+    }
+  },
+  {
+    "data": {
+      "id": "SCC1-SCS1",
+      "source": "SCC1",
+      "target": "SCS1",
+      "label": "SCC1-SCS1",
+      "type": "BASE",
+      "quantity": 4999
+    }
+  },
+  {
+    "data": {
+      "id": "CLM2-TSS1",
+      "source": "CLM2",
+      "target": "TSS1",
+      "label": "CLM2-TSS1",
+      "type": "CAUSE",
+      "quantity": 4717
+    }
+  },
+  {
+    "data": {
+      "id": "ArtC1-EDef1",
+      "source": "ArtC1",
+      "target": "EDef1",
+      "label": "ArtC1-EDef1",
+      "type": "ENVIRONMENT",
+      "quantity": 4423
+    }
+  },
+  {
+    "data": {
+      "id": "TCT1-ActT1",
+      "source": "TCT1",
+      "target": "ActT1",
+      "label": "TCT1-ActT1",
+      "type": "CONTEXT",
+      "quantity": 4423
+    }
+  },
+  {
+    "data": {
+      "id": "ActT2-ArtP1",
+      "source": "ActT2",
+      "target": "ArtP1",
+      "label": "ActT2-ArtP1",
+      "type": "CAUSE",
+      "quantity": 4423
+    }
+  },
+  {
+    "data": {
+      "id": "ArtC1-CDef1",
+      "source": "ArtC1",
+      "target": "CDef1",
+      "label": "ArtC1-CDef1",
+      "type": "COMPOSITION",
+      "quantity": 8847
+    }
+  },
+  {
+    "data": {
+      "id": "CDef1-CDef1",
+      "source": "CDef1",
+      "target": "CDef1",
+      "label": "CDef1-CDef1",
+      "type": "PREVIOUS_VERSION",
+      "quantity": 4422
+    }
+  },
+  {
+    "data": {
+      "id": "ArtC2-ArtC2",
+      "source": "ArtC2",
+      "target": "ArtC2",
+      "label": "ArtC2-ArtC2",
+      "type": "PREVIOUS_VERSION",
+      "quantity": 4716
+    }
+  },
+  {
+    "data": {
+      "id": "TCT1-ArtC1",
+      "source": "TCT1",
+      "target": "ArtC1",
+      "label": "TCT1-ArtC1",
+      "type": "IUT",
+      "quantity": 4423
+    }
+  },
+  {
+    "data": {
+      "id": "CLM1-ArtC1",
+      "source": "CLM1",
+      "target": "ArtC1",
+      "label": "CLM1-ArtC1",
+      "type": "SUBJECT",
+      "quantity": 4423
+    }
+  },
+  {
+    "data": {
+      "id": "ArtP2-ArtC2",
+      "source": "ArtP2",
+      "target": "ArtC2",
+      "label": "ArtP2-ArtC2",
+      "type": "ARTIFACT",
+      "quantity": 4717
+    }
+  },
+  {
+    "data": {
+      "id": "ArtCC3-CDef3",
+      "source": "ArtCC3",
+      "target": "CDef3",
+      "label": "ArtCC3-CDef3",
+      "type": "COMPOSITION",
+      "quantity": 10001
+    }
+  },
+  {
+    "data": {
+      "id": "TCT2-ArtC1",
+      "source": "TCT2",
+      "target": "ArtC1",
+      "label": "TCT2-ArtC1",
+      "type": "IUT",
+      "quantity": 4423
+    }
+  },
+  {
+    "data": {
+      "id": "ArtP1-ArtC1",
+      "source": "ArtP1",
+      "target": "ArtC1",
+      "label": "ArtP1-ArtC1",
+      "type": "ARTIFACT",
+      "quantity": 8847
+    }
+  },
+  {
+    "data": {
+      "id": "ActT1-ArtP1",
+      "source": "ActT1",
+      "target": "ArtP1",
+      "label": "ActT1-ArtP1",
+      "type": "CAUSE",
+      "quantity": 4423
+    }
+  },
+  {
+    "data": {
+      "id": "TCT2-ActT1",
+      "source": "TCT2",
+      "target": "ActT1",
+      "label": "TCT2-ActT1",
+      "type": "CONTEXT",
+      "quantity": 4423
+    }
+  },
+  {
+    "data": {
+      "id": "TSS1-ActT3",
+      "source": "TSS1",
+      "target": "ActT3",
+      "label": "TSS1-ActT3",
+      "type": "CONTEXT",
+      "quantity": 4717
+    }
+  },
+  {
+    "data": {
+      "id": "CLM1-TCT1",
+      "source": "CLM1",
+      "target": "TCT1",
+      "label": "CLM1-TCT1",
+      "type": "CAUSE",
+      "quantity": 4423
+    }
+  },
+  {
+    "data": {
+      "id": "CLM1-TCT2",
+      "source": "CLM1",
+      "target": "TCT2",
+      "label": "CLM1-TCT2",
+      "type": "CAUSE",
+      "quantity": 4423
+    }
+  },
+  {
+    "data": {
+      "id": "CDef2-ActT4",
+      "source": "CDef2",
+      "target": "ActT4",
+      "label": "CDef2-ActT4",
+      "type": "CONTEXT",
+      "quantity": 4999
+    }
+  },
+  {
+    "data": {
+      "id": "ActT4-ArtCC1",
+      "source": "ActT4",
+      "target": "ArtCC1",
+      "label": "ActT4-ArtCC1",
+      "type": "CAUSE",
+      "quantity": 2543
+    }
+  },
+  {
+    "data": {
+      "id": "CLM1-TCT3",
+      "source": "CLM1",
+      "target": "TCT3",
+      "label": "CLM1-TCT3",
+      "type": "CAUSE",
+      "quantity": 4423
+    }
+  },
+  {
+    "data": {
+      "id": "ActT4-ArtCC2",
+      "source": "ActT4",
+      "target": "ArtCC2",
+      "label": "ActT4-ArtCC2",
+      "type": "CAUSE",
+      "quantity": 2458
+    }
+  },
+  {
+    "data": {
+      "id": "SCS1-SCS1",
+      "source": "SCS1",
+      "target": "SCS1",
+      "label": "SCS1-SCS1",
+      "type": "PREVIOUS_VERSION",
+      "quantity": 4999
+    }
+  },
+  {
+    "data": {
+      "id": "ArtCC1-CDef3",
+      "source": "ArtCC1",
+      "target": "CDef3",
+      "label": "ArtCC1-CDef3",
+      "type": "COMPOSITION",
+      "quantity": 5089
+    }
+  },
+  {
+    "data": {
+      "id": "ActT4-ArtCC3",
+      "source": "ActT4",
+      "target": "ArtCC3",
+      "label": "ActT4-ArtCC3",
+      "type": "CAUSE",
+      "quantity": 4999
+    }
+  },
+  {
+    "data": {
+      "id": "CLM1-TCT4",
+      "source": "CLM1",
+      "target": "TCT4",
+      "label": "CLM1-TCT4",
+      "type": "CAUSE",
+      "quantity": 4423
+    }
+  },
+  {
+    "data": {
+      "id": "ArtCC2-ArtCC2",
+      "source": "ArtCC2",
+      "target": "ArtCC2",
+      "label": "ArtCC2-ArtCC2",
+      "type": "PREVIOUS_VERSION",
+      "quantity": 2458
+    }
+  },
+  {
+    "data": {
+      "id": "CDef2-CDef2",
+      "source": "CDef2",
+      "target": "CDef2",
+      "label": "CDef2-CDef2",
+      "type": "PREVIOUS_VERSION",
+      "quantity": 4998
+    }
+  },
+  {
+    "data": {
+      "id": "TCT5-ArtC2",
+      "source": "TCT5",
+      "target": "ArtC2",
+      "label": "TCT5-ArtC2",
+      "type": "IUT",
+      "quantity": 4717
+    }
+  },
+  {
+    "data": {
+      "id": "SCS1-SCC1",
+      "source": "SCS1",
+      "target": "SCC1",
+      "label": "SCS1-SCC1",
+      "type": "CHANGE",
+      "quantity": 4999
+    }
+  }
+]

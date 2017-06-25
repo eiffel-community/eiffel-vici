@@ -5,10 +5,21 @@ public class DataEdge {
     private String source;
     private String target;
 
-    public DataEdge(String id, String source, String target) {
+    private String label;
+    private String type;
+    private int quantity;
+
+    public DataEdge(String id, String source, String target, String label, String type) {
         this.id = id;
         this.source = source;
         this.target = target;
+        this.label = label;
+        this.type = type;
+        this.quantity = 0;
+    }
+
+    public void increaseQuantity() {
+        quantity++;
     }
 
     public String getId() {
@@ -33,5 +44,29 @@ public class DataEdge {
 
     public void setTarget(String target) {
         this.target = target;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
     }
 }

@@ -6,19 +6,22 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Event {
-    private Document event;
+    private HashMap<String, String> data;
 
     private String id;
     private String type;
     private ArrayList<Link> links;
     private String name;
-    private long time;
 
     public Event(Document document) {
-        this.event = document;
         JSONObject jsonObject = new JSONObject(document);
+
+        this.data = new HashMap<>();
+        data.put("triggered", jsonObject.getJSONObject("data").toString());
 
         id = jsonObject.getJSONObject("meta").getString("id");
         type = jsonObject.getJSONObject("meta").getString("type");
@@ -42,31 +45,52 @@ public class Event {
             }
         }
 
-        time = jsonObject.getJSONObject("meta").getInt("time");
-
+//        this.time = new Time(jsonObject.getJSONObject("meta").getLong("time"));
     }
 
-    public Document getEvent() {
-        return event;
+    public Event(Event event, String redirect) {
+//        this.events = event.getEvents();
+        this.type = "Redirect";
+        this.name = redirect;
+    }
+
+    public HashMap<String, String> getData() {
+        return data;
+    }
+
+    public void setData(HashMap<String, String> data) {
+        this.data = data;
     }
 
     public String getId() {
         return id;
     }
 
+    public void setId(String id) {
+        this.id = id;
+    }
+
     public String getType() {
         return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public ArrayList<Link> getLinks() {
         return links;
     }
 
+    public void setLinks(ArrayList<Link> links) {
+        this.links = links;
+    }
+
     public String getName() {
         return name;
     }
 
-    public long getTime() {
-        return time;
+    public void setName(String name) {
+        this.name = name;
     }
 }

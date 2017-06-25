@@ -1,14 +1,13 @@
 package vici.api;
 
+import org.json.JSONObject;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import vici.Fetcher;
-import vici.entities.Cytoscape.Edge;
-import vici.entities.Cytoscape.Element;
-import vici.entities.Cytoscape.Info;
-import vici.entities.Cytoscape.Node;
+import vici.entities.Cytoscape.*;
 import vici.entities.Event;
+import vici.entities.Events;
 import vici.entities.Link;
 
 import java.util.ArrayList;
@@ -24,28 +23,76 @@ public class ApiController {
 
 
         Fetcher fetcher = new Fetcher();
-        HashMap<String, Event> events = fetcher.getEvents(url, Long.parseLong(from), Long.parseLong(to), Integer.parseInt(limit));
+        Events eventsObject = fetcher.getEvents(url, Long.parseLong(from), Long.parseLong(to), Integer.parseInt(limit));
+        HashMap<String, Event> events = eventsObject.getEvents();
 
         ArrayList<Element> elements = new ArrayList<>();
 
         HashMap<String, Node> nodes = new HashMap<>();
         HashMap<String, Edge> edges = new HashMap<>();
 
+
         for (String key : events.keySet()) {
             Event event = events.get(key);
 
-            if (nodes.containsKey(event.getName())) {
-                nodes.get(event.getName()).getInfo().increaseQuantity();
-            } else {
-                nodes.put(event.getName(), new Node(event.getName(), new Info(event.getName(), event.getType())));
-            }
+            if (!event.getType().equals("Redirect")) {
+                Node node;
 
-            for (Link link : event.getLinks()) {
-                if (edges.containsKey(getEdgeId(event.getName(), events.get(link.getTarget()).getName()))) {
-                    edges.get(getEdgeId(event.getName(), events.get(link.getTarget()).getName())).getInfo().increaseQuantity();
+                if (nodes.containsKey(event.getName())) {
+//                    nodes.get(event.getName()).getData().increaseQuantity();
+
+                    node = nodes.get(event.getName());
                 } else {
-                    edges.put(getEdgeId(event.getName(), events.get(link.getTarget()).getName()), new Edge(getEdgeId(event.getName(), events.get(link.getTarget()).getName()), event.getName(), events.get(link.getTarget()).getName(),
-                            new Info(getEdgeId(event.getName(), events.get(link.getTarget()).getName()), link.getType())));
+                    node = new Node(new DataNode(event.getName(), event.getName(), event.getType(), null));
+                    nodes.put(event.getName(), node);
+                }
+
+                switch (node.getData().getType()) {
+                    case "TestCase":
+                    case "Activity":
+                    case "TestSuit":
+                        JSONObject jsonObject = new JSONObject(event.getData().get("finished"));
+                        JSONObject outcome = jsonObject.getJSONObject("outcome");
+                        if (outcome.has("conclusion")) {
+                            node.getData().increaseQuantity(outcome.getString("conclusion"));
+                        } else if (outcome.has("verdict")) {
+                            String verdict = outcome.getString("verdict");
+                            if (verdict.equals("PASSED")) {
+                                node.getData().increaseQuantity("SUCCESSFUL");
+                            } else {
+                                node.getData().increaseQuantity(verdict);
+                            }
+                        } else {
+                            node.getData().increaseQuantity("INCONCLUSIVE");
+                            System.out.println(jsonObject.toString());
+                        }
+
+                        break;
+                    default:
+                        node.getData().increaseQuantity();
+                        break;
+                }
+            }
+        }
+
+        for (String key : events.keySet()) {
+            Event event = events.get(key);
+            if (!event.getType().equals("Redirect")) {
+                for (Link link : event.getLinks()) {
+                    String target;
+                    if (events.get(link.getTarget()).getType().equals("Redirect")) {
+                        target = nodes.get(events.get(events.get(link.getTarget()).getName()).getName()).getData().getId();
+                    } else {
+                        target = nodes.get(events.get(link.getTarget()).getName()).getData().getId();
+                    }
+                    if (target == null) {
+                        System.out.println("null");
+                    }
+                    if (edges.containsKey(getEdgeId(event.getName(), target))) {
+                        edges.get(getEdgeId(event.getName(), target)).getData().increaseQuantity();
+                    } else {
+                        edges.put(getEdgeId(event.getName(), target), new Edge(new DataEdge(getEdgeId(event.getName(), target), event.getName(), target, getEdgeId(event.getName(), target), link.getType())));
+                    }
                 }
             }
         }
