@@ -47,30 +47,32 @@ public class ApiController {
                     nodes.put(event.getName(), node);
                 }
 
-                switch (node.getData().getType()) {
-                    case "TestCase":
-                    case "Activity":
-                    case "TestSuit":
-                        JSONObject jsonObject = new JSONObject(event.getData().get("finished"));
-                        JSONObject outcome = jsonObject.getJSONObject("outcome");
-                        if (outcome.has("conclusion")) {
-                            node.getData().increaseQuantity(outcome.getString("conclusion"));
-                        } else if (outcome.has("verdict")) {
-                            String verdict = outcome.getString("verdict");
-                            if (verdict.equals("PASSED")) {
-                                node.getData().increaseQuantity("SUCCESSFUL");
-                            } else {
-                                node.getData().increaseQuantity(verdict);
-                            }
-                        } else {
-                            node.getData().increaseQuantity("INCONCLUSIVE");
-                            System.out.println(jsonObject.toString());
-                        }
 
-                        break;
-                    default:
-                        node.getData().increaseQuantity();
-                        break;
+                if (node.getData().getType().equals("TestCase") || node.getData().getType().equals("Activity") || node.getData().getType().equals("TestSuit")) {
+                    JSONObject jsonObject = new JSONObject(event.getData().get("finished"));
+                    JSONObject outcome = jsonObject.getJSONObject("outcome");
+                    if (outcome.has("conclusion")) {
+                        node.getData().increaseQuantity(outcome.getString("conclusion"));
+                    } else if (outcome.has("verdict")) {
+                        String verdict = outcome.getString("verdict");
+                        if (verdict.equals("PASSED")) {
+                            node.getData().increaseQuantity("SUCCESSFUL");
+                        } else {
+                            node.getData().increaseQuantity(verdict);
+                        }
+                    } else {
+                        node.getData().increaseQuantity("INCONCLUSIVE");
+                        System.out.println(jsonObject.toString());
+                    }
+
+
+                } else if (node.getData().getType().equals("EiffelConfidenceLevelModifiedEvent")) {
+                    String value = new JSONObject(event.getData().get("triggered")).getString("value");
+                    node.getData().increaseQuantity(value);
+
+                } else {
+                    node.getData().increaseQuantity();
+
                 }
             }
         }

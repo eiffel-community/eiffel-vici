@@ -226,7 +226,10 @@
       "label": "CLM2",
       "type": "EiffelConfidenceLevelModifiedEvent",
       "quantity": 4718,
-      "quantities": {}
+      "quantities": {
+        "SUCCESS": 4424,
+        "FAILURE": 294
+      }
     }
   },
   {
@@ -235,7 +238,10 @@
       "label": "CLM1",
       "type": "EiffelConfidenceLevelModifiedEvent",
       "quantity": 4424,
-      "quantities": {}
+      "quantities": {
+        "SUCCESS": 3545,
+        "FAILURE": 879
+      }
     }
   },
   {
