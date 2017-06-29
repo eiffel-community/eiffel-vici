@@ -12,7 +12,7 @@ public class DataNode {
 
     private String value;
 
-    private HashMap<String, Long> data;
+    private HashMap<String, Integer> data;
 
     public DataNode(String id, String label, String type, String value) {
         this.id = id;
@@ -25,9 +25,10 @@ public class DataNode {
 
     public void increaseQuantity(String key) {
         if (!data.containsKey(key)) {
-            data.put(key, (long) 0);
+            data.put(key, 1);
+        } else {
+            data.put(key, data.get(key) + 1);
         }
-        data.put(key, data.get(key) + 1);
         quantity++;
     }
 
@@ -35,11 +36,11 @@ public class DataNode {
         quantity++;
     }
 
-    public HashMap<String, Long> getData() {
+    public HashMap<String, Integer> getData() {
         return data;
     }
 
-    public void setData(HashMap<String, Long> data) {
+    public void setData(HashMap<String, Integer> data) {
         this.data = data;
     }
 

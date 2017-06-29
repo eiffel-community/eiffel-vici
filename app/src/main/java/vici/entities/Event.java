@@ -11,6 +11,8 @@ import java.util.HashMap;
 public class Event {
     private HashMap<String, String> data;
     private HashMap<String, Long> times;
+    private HashMap<String, Integer> quantities;
+    private ArrayList<Event> events;
 
     private String id;
     private String type;
@@ -47,6 +49,9 @@ public class Event {
                 }
             }
         }
+
+        this.quantities = null;
+        this.events = null;
     }
 
     public Event(Event event, String redirect) {
@@ -55,6 +60,25 @@ public class Event {
         this.name = redirect;
 
         this.times = event.getTimes();
+    }
+
+    public void increaseQuantity(String quantity) {
+        if (quantities == null) {
+            quantities = new HashMap<>();
+        }
+        if (quantities.containsKey(quantity)) {
+            quantities.put(quantity, quantities.get(quantity) + 1);
+
+        } else {
+            quantities.put(quantity, 1);
+        }
+    }
+
+    public void addEvent(Event event) {
+        if (events == null) {
+            events = new ArrayList<>();
+        }
+        events.add(event);
     }
 
     public HashMap<String, String> getData() {
@@ -103,5 +127,21 @@ public class Event {
 
     public void setTimes(HashMap<String, Long> times) {
         this.times = times;
+    }
+
+    public HashMap<String, Integer> getQuantities() {
+        return quantities;
+    }
+
+    public void setQuantities(HashMap<String, Integer> quantities) {
+        this.quantities = quantities;
+    }
+
+    public ArrayList<Event> getEvents() {
+        return events;
+    }
+
+    public void setEvents(ArrayList<Event> events) {
+        this.events = events;
     }
 }

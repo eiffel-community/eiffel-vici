@@ -246,39 +246,6 @@
   },
   {
     "data": {
-      "id": "TCT7",
-      "label": "TCT7",
-      "type": "TestCase",
-      "quantity": 4718,
-      "data": {
-        "SUCCESSFUL": 4718
-      }
-    }
-  },
-  {
-    "data": {
-      "id": "TCT6",
-      "label": "TCT6",
-      "type": "TestCase",
-      "quantity": 4718,
-      "data": {
-        "SUCCESSFUL": 4718
-      }
-    }
-  },
-  {
-    "data": {
-      "id": "TCT5",
-      "label": "TCT5",
-      "type": "TestCase",
-      "quantity": 4718,
-      "data": {
-        "SUCCESSFUL": 4718
-      }
-    }
-  },
-  {
-    "data": {
       "id": "SCC1",
       "label": "SCC1",
       "type": "EiffelSourceChangeCreatedEvent",
@@ -327,16 +294,6 @@
   },
   {
     "data": {
-      "id": "TCT6-TSS1",
-      "source": "TCT6",
-      "target": "TSS1",
-      "label": "TCT6-TSS1",
-      "type": "CONTEXT",
-      "quantity": 4717
-    }
-  },
-  {
-    "data": {
       "id": "CDef1-ArtC2",
       "source": "CDef1",
       "target": "ArtC2",
@@ -377,32 +334,12 @@
   },
   {
     "data": {
-      "id": "TCT5-TSS1",
-      "source": "TCT5",
-      "target": "TSS1",
-      "label": "TCT5-TSS1",
-      "type": "CONTEXT",
-      "quantity": 4717
-    }
-  },
-  {
-    "data": {
       "id": "TCT3-ActT2",
       "source": "TCT3",
       "target": "ActT2",
       "label": "TCT3-ActT2",
       "type": "CONTEXT",
       "quantity": 4423
-    }
-  },
-  {
-    "data": {
-      "id": "TCT6-ArtC2",
-      "source": "TCT6",
-      "target": "ArtC2",
-      "label": "TCT6-ArtC2",
-      "type": "IUT",
-      "quantity": 4717
     }
   },
   {
@@ -477,32 +414,12 @@
   },
   {
     "data": {
-      "id": "TCT7-TSS1",
-      "source": "TCT7",
-      "target": "TSS1",
-      "label": "TCT7-TSS1",
-      "type": "CONTEXT",
-      "quantity": 4717
-    }
-  },
-  {
-    "data": {
       "id": "ArtCC3-ArtCC3",
       "source": "ArtCC3",
       "target": "ArtCC3",
       "label": "ArtCC3-ArtCC3",
       "type": "PREVIOUS_VERSION",
       "quantity": 4999
-    }
-  },
-  {
-    "data": {
-      "id": "TCT7-ArtC2",
-      "source": "TCT7",
-      "target": "ArtC2",
-      "label": "TCT7-ArtC2",
-      "type": "IUT",
-      "quantity": 4717
     }
   },
   {
@@ -853,16 +770,6 @@
       "label": "CDef2-CDef2",
       "type": "PREVIOUS_VERSION",
       "quantity": 4998
-    }
-  },
-  {
-    "data": {
-      "id": "TCT5-ArtC2",
-      "source": "TCT5",
-      "target": "ArtC2",
-      "label": "TCT5-ArtC2",
-      "type": "IUT",
-      "quantity": 4717
     }
   },
   {

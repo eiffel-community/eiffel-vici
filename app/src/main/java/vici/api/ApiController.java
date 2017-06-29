@@ -112,7 +112,47 @@ public class ApiController {
         return elements;
     }
 
+
+
     private String getEdgeId(String source, String target) {
         return source + "-" + target;
+    }
+
+    @RequestMapping("/api/eventChainGraph")
+    public ArrayList<Element> eventChainGraph(@RequestParam(value = "from", defaultValue = "0") String from, @RequestParam(value = "to", defaultValue = "0") String to, @RequestParam(value = "limit", defaultValue = "0") String limit, @RequestParam(value = "url", defaultValue = "") String url) {
+        if (url.equals("")) {
+            url = "http://localhost:8080/api/dummy/eiffelevents";
+        }
+
+
+        Fetcher fetcher = new Fetcher();
+        Events eventsObject = fetcher.getEvents(url, Long.parseLong(from), Long.parseLong(to), Integer.parseInt(limit));
+        HashMap<String, Event> events = eventsObject.getEvents();
+
+        ArrayList<Element> elements = new ArrayList<>();
+
+        HashMap<String, Node> nodes = new HashMap<>();
+        HashMap<String, Edge> edges = new HashMap<>();
+
+
+        // Nodes
+        for (String key : events.keySet()) {
+
+        }
+
+        // Edges
+        for (String key : events.keySet()) {
+
+        }
+
+        for (String key : nodes.keySet()) {
+            elements.add(nodes.get(key));
+        }
+
+        for (String key : edges.keySet()) {
+            elements.add(edges.get(key));
+        }
+
+        return elements;
     }
 }
