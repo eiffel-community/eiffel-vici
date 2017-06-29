@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Cytoscape testing</title>
+    <title>Vici - Visualization of Continuous Integration</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 
     <link rel="stylesheet" media="screen" th:href="@{/styles/bootstrap/bootstrap.min.css}"/>
@@ -29,13 +29,13 @@
     <script th:src="@{/js/cytoscape/cytoscape-qtip.js}"></script>
 
     <script th:src="@{/js/graph.js}"></script>
+    <script th:src="@{/js/main.js}"></script>
 </head>
 
 <body>
 <div id="main">
-    <article id="aggregation">
-        <div id="cy-aggregation-qtip"></div>
-        <div id="cy-aggregation" class="cy"></div>
+    <article>
+        <div id="cy"></div>
     </article>
 
     <nav>
@@ -45,13 +45,14 @@
                     Vici
                 </a>
             </li>
-            <li>
+
+            <li class="menu-item" data-value="aggregation">
                 <a href="#">Aggregation</a>
             </li>
-            <li>
+            <li class="menu-item" data-value="details">
                 <a href="#">Details</a>
             </li>
-            <li>
+            <li class="menu-item" data-value="eventChain">
                 <a href="#">Event chain</a>
             </li>
         </ul>

@@ -1,6 +1,8 @@
 html, body {
     height: 100%;
+    width: 100%;
     margin: 0;
+    overflow: hidden;
 }
 
 #main {
@@ -11,17 +13,22 @@ html, body {
 
 #main > article {
     background: #ffffff;
-    flex: 1;
-    order: 1;
+    flex: auto;
+    /*order: 1;*/
 }
 
 #main > nav {
     width: 250px;
+    /*flex: 250px;*/
     background: #000;
-    order: 2;
+    /*order: 2;*/
 }
 
-.cy {
+#cy {
     width: 100%;
     height: 100%;
+}
+
+li.active {
+    background-color: #c9e2b3;
 }
