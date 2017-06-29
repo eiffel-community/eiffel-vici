@@ -32,10 +32,11 @@ public class ApiController {
         HashMap<String, Edge> edges = new HashMap<>();
 
 
+        // Nodes
         for (String key : events.keySet()) {
             Event event = events.get(key);
 
-            if (!event.getType().equals("Redirect")) {
+            if (!event.getType().equals("REDIRECT")) {
                 Node node;
 
                 if (nodes.containsKey(event.getName())) {
@@ -77,12 +78,13 @@ public class ApiController {
             }
         }
 
+        // Edges
         for (String key : events.keySet()) {
             Event event = events.get(key);
-            if (!event.getType().equals("Redirect")) {
+            if (!event.getType().equals("REDIRECT")) {
                 for (Link link : event.getLinks()) {
                     String target;
-                    if (events.get(link.getTarget()).getType().equals("Redirect")) {
+                    if (events.get(link.getTarget()).getType().equals("REDIRECT")) {
                         target = nodes.get(events.get(events.get(link.getTarget()).getName()).getName()).getData().getId();
                     } else {
                         target = nodes.get(events.get(link.getTarget()).getName()).getData().getId();

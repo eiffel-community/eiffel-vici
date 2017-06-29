@@ -11,8 +11,8 @@ $(document).ready(function () {
 //            $('.greeting-content').append(data.content);
         console.log(data);
 
-        let container = $('#cy');
-        let qTipContainer = $('#cy-qtip');
+        let container = $('#cy-aggregation');
+        let qTipContainer = $('#cy-aggregation-qtip');
 
 
         let cy = cytoscape({
@@ -23,6 +23,8 @@ $(document).ready(function () {
                 name: 'dagre',
                 rankDir: 'RL'
             },
+            // Higher = faster zoom
+            wheelSensitivity: 0.075,
             style: [
                 {
                     selector: 'node',
@@ -62,7 +64,7 @@ $(document).ready(function () {
                         'background-image': '/images/green.png',
                         'background-height': '100%',
                         'background-width': function (ele) {
-                            return (ele.data().quantities.SUCCESSFUL * 100 / ele.data().quantity).toString() + '%';
+                            return (ele.data().data.SUCCESSFUL * 100 / ele.data().quantity).toString() + '%';
                         }
                     }
                 },
@@ -119,7 +121,7 @@ $(document).ready(function () {
                         'height': '70x',
                         'pie-size': '100%',
                         'pie-1-background-size': function (ele) {
-                            let value = (ele.data().quantities.SUCCESS);
+                            let value = (ele.data().data.SUCCESS);
                             if (value === undefined) {
                                 value = 0;
                             }
@@ -127,7 +129,7 @@ $(document).ready(function () {
                         },
                         'pie-1-background-color': COLOR_PASS,
                         'pie-2-background-size': function (ele) {
-                            let value = (ele.data().quantities.FAILURE);
+                            let value = (ele.data().data.FAILURE);
                             if (value === undefined) {
                                 value = 0;
                             }
@@ -135,7 +137,7 @@ $(document).ready(function () {
                         },
                         'pie-2-background-color': COLOR_FAIL,
                         'pie-3-background-size': function (ele) {
-                            let value = (ele.data().quantities.INCONCLUSIVE);
+                            let value = (ele.data().data.INCONCLUSIVE);
                             if (value === undefined) {
                                 value = 0;
                             }
@@ -197,7 +199,7 @@ $(document).ready(function () {
                         'background-image': '/images/green.png',
                         'background-height': '100%',
                         'background-width': function (ele) {
-                            return (ele.data().quantities.SUCCESSFUL * 100 / ele.data().quantity).toString() + '%';
+                            return (ele.data().data.SUCCESSFUL * 100 / ele.data().quantity).toString() + '%';
                         },
                         'background-position-x': '0px'
                     }
@@ -215,7 +217,7 @@ $(document).ready(function () {
                         'background-image': '/images/green.png',
                         'background-height': '100%',
                         'background-width': function (ele) {
-                            let success = ele.data().quantities.SUCCESSFUL;
+                            let success = ele.data().data.SUCCESSFUL;
                             if (success === undefined) {
                                 success = 0;
                             }
@@ -228,17 +230,28 @@ $(document).ready(function () {
 
         function getQTipContent(data) {
             let content = '<h4>' + data.label + '</h4>' +
-                '<button type="button" class="btn btn-block btn-info aggregation-tt-btn" value="' + data.id + ';' + data.type + '"> Show all events </button>' +
-                '<table class="table table-bordered">' +
-                '<tr><th>Status</th><th colspan="2">No. of</th></tr>'; // table header
+                '<button type="button" class="btn btn-block btn-secondary" value="' + data.id + ';' + data.type + '"> Show all events </button>' +
+                '<table class="table table-bordered table-sm table-hover table-qtip">' +
+                '<tr><th>Attribute</th><th colspan="2">Amount</th></tr>'; // table header
 
-            for (quantity in data.quantities) {
+            for (quantity in data.data) {
+                if (quantity === 'SUCCESSFUL') {
+                    content = content + '<tr class="table-success">';
+                } else if (quantity === 'FAILED' || quantity === 'UNSUCCESSFUL') {
+                    content = content + '<tr class="table-danger">';
+                } else if (quantity === 'INCONCLUSIVE') {
+                    content = content + '<tr class="table-active">';
+                } else if (quantity === 'TIMED_OUT' || quantity === 'ABORTED') {
+                    content = content + '<tr class="table-warning">';
+                } else {
+                    content = content + '<tr>';
+                }
+
                 content = content +
-                    '<tr><td>' + quantity + '</td><td class="td-right">' + data.quantities[quantity] + '</td><td class="td-right">' + Math.round(10 * (data.quantities[quantity] / data.quantity * 100) / 10) + '%</td></tr>';
-
+                    '<td>' + quantity + '</td><td class="td-right">' + data.data[quantity] + '</td><td class="td-right">' + Math.round(10 * (data.data[quantity] / data.quantity * 100) / 10) + '%</td></tr>';
             }
 
-            content = content + '<tr><td>Total no. of events</td><td colspan="2" class="td-right">' + data.quantity + '</td></tr>' +
+            content = content + '<tr><td><i>Total</i></td><td colspan="2" class="td-right"><i>' + data.quantity + '</i></td></tr>' +
                 '</table>';
 
             return content;
@@ -268,7 +281,7 @@ $(document).ready(function () {
                 event: 'unfocus'
             },
             style: {
-                classes: 'qtip-viswiz qtip-shadow',
+                classes: 'qtip-vici qtip-shadow',
                 tip: {
                     width: 16,
                     height: 8

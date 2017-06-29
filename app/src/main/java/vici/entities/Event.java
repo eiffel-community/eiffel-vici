@@ -7,10 +7,10 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
 public class Event {
     private HashMap<String, String> data;
+    private HashMap<String, Long> times;
 
     private String id;
     private String type;
@@ -22,6 +22,9 @@ public class Event {
 
         this.data = new HashMap<>();
         data.put("triggered", jsonObject.getJSONObject("data").toString());
+
+        this.times = new HashMap<>();
+        times.put("triggered", jsonObject.getJSONObject("meta").getLong("time"));
 
         id = jsonObject.getJSONObject("meta").getString("id");
         type = jsonObject.getJSONObject("meta").getString("type");
@@ -44,14 +47,14 @@ public class Event {
                 }
             }
         }
-
-//        this.time = new Time(jsonObject.getJSONObject("meta").getLong("time"));
     }
 
     public Event(Event event, String redirect) {
 //        this.events = event.getEvents();
-        this.type = "Redirect";
+        this.type = "REDIRECT";
         this.name = redirect;
+
+        this.times = event.getTimes();
     }
 
     public HashMap<String, String> getData() {
@@ -92,5 +95,13 @@ public class Event {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public HashMap<String, Long> getTimes() {
+        return times;
+    }
+
+    public void setTimes(HashMap<String, Long> times) {
+        this.times = times;
     }
 }

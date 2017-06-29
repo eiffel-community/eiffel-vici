@@ -5,7 +5,7 @@
       "label": "ArtCC2",
       "type": "EiffelArtifactCreatedEvent",
       "quantity": 2460,
-      "quantities": {}
+      "data": {}
     }
   },
   {
@@ -14,7 +14,7 @@
       "label": "ArtCC1",
       "type": "EiffelArtifactCreatedEvent",
       "quantity": 2545,
-      "quantities": {}
+      "data": {}
     }
   },
   {
@@ -23,7 +23,7 @@
       "label": "ActT1",
       "type": "Activity",
       "quantity": 4424,
-      "quantities": {
+      "data": {
         "SUCCESSFUL": 3974,
         "UNSUCCESSFUL": 450
       }
@@ -35,7 +35,7 @@
       "label": "ActT4",
       "type": "Activity",
       "quantity": 5000,
-      "quantities": {
+      "data": {
         "SUCCESSFUL": 4718,
         "UNSUCCESSFUL": 282
       }
@@ -47,7 +47,7 @@
       "label": "ActT2",
       "type": "Activity",
       "quantity": 4424,
-      "quantities": {
+      "data": {
         "SUCCESSFUL": 3941,
         "UNSUCCESSFUL": 483
       }
@@ -59,7 +59,7 @@
       "label": "ActT3",
       "type": "Activity",
       "quantity": 4718,
-      "quantities": {
+      "data": {
         "SUCCESSFUL": 4424,
         "UNSUCCESSFUL": 294
       }
@@ -71,7 +71,7 @@
       "label": "ArtCC3",
       "type": "EiffelArtifactCreatedEvent",
       "quantity": 5001,
-      "quantities": {}
+      "data": {}
     }
   },
   {
@@ -80,7 +80,7 @@
       "label": "ArtC1",
       "type": "EiffelArtifactCreatedEvent",
       "quantity": 4424,
-      "quantities": {}
+      "data": {}
     }
   },
   {
@@ -89,7 +89,7 @@
       "label": "TSS1",
       "type": "TestSuit",
       "quantity": 4718,
-      "quantities": {
+      "data": {
         "FAILED": 294,
         "SUCCESSFUL": 4424
       }
@@ -101,7 +101,7 @@
       "label": "ArtC3",
       "type": "EiffelArtifactCreatedEvent",
       "quantity": 1,
-      "quantities": {}
+      "data": {}
     }
   },
   {
@@ -110,7 +110,7 @@
       "label": "ArtC2",
       "type": "EiffelArtifactCreatedEvent",
       "quantity": 4718,
-      "quantities": {}
+      "data": {}
     }
   },
   {
@@ -119,7 +119,7 @@
       "label": "EDef1",
       "type": "EiffelEnvironmentDefinedEvent",
       "quantity": 1,
-      "quantities": {}
+      "data": {}
     }
   },
   {
@@ -128,7 +128,7 @@
       "label": "EDef2",
       "type": "EiffelEnvironmentDefinedEvent",
       "quantity": 1,
-      "quantities": {}
+      "data": {}
     }
   },
   {
@@ -137,7 +137,7 @@
       "label": "CDef2",
       "type": "EiffelCompositionDefinedEvent",
       "quantity": 5000,
-      "quantities": {}
+      "data": {}
     }
   },
   {
@@ -146,7 +146,7 @@
       "label": "CDef3",
       "type": "EiffelCompositionDefinedEvent",
       "quantity": 5001,
-      "quantities": {}
+      "data": {}
     }
   },
   {
@@ -155,7 +155,7 @@
       "label": "TCT4",
       "type": "TestCase",
       "quantity": 4424,
-      "quantities": {
+      "data": {
         "SUCCESSFUL": 4424
       }
     }
@@ -166,7 +166,7 @@
       "label": "SCS1",
       "type": "EiffelSourceChangeSubmittedEvent",
       "quantity": 5001,
-      "quantities": {}
+      "data": {}
     }
   },
   {
@@ -175,7 +175,7 @@
       "label": "TCT3",
       "type": "TestCase",
       "quantity": 4424,
-      "quantities": {
+      "data": {
         "SUCCESSFUL": 4424
       }
     }
@@ -186,7 +186,7 @@
       "label": "TCT2",
       "type": "TestCase",
       "quantity": 4424,
-      "quantities": {
+      "data": {
         "SUCCESSFUL": 4424
       }
     }
@@ -197,7 +197,7 @@
       "label": "TCT1",
       "type": "TestCase",
       "quantity": 4424,
-      "quantities": {
+      "data": {
         "SUCCESSFUL": 4424
       }
     }
@@ -208,7 +208,7 @@
       "label": "ArtP2",
       "type": "EiffelArtifactPublishedEvent",
       "quantity": 4718,
-      "quantities": {}
+      "data": {}
     }
   },
   {
@@ -217,7 +217,7 @@
       "label": "ArtP1",
       "type": "EiffelArtifactPublishedEvent",
       "quantity": 4424,
-      "quantities": {}
+      "data": {}
     }
   },
   {
@@ -226,7 +226,7 @@
       "label": "CLM2",
       "type": "EiffelConfidenceLevelModifiedEvent",
       "quantity": 4718,
-      "quantities": {
+      "data": {
         "SUCCESS": 4424,
         "FAILURE": 294
       }
@@ -238,7 +238,7 @@
       "label": "CLM1",
       "type": "EiffelConfidenceLevelModifiedEvent",
       "quantity": 4424,
-      "quantities": {
+      "data": {
         "SUCCESS": 3545,
         "FAILURE": 879
       }
@@ -250,7 +250,7 @@
       "label": "TCT7",
       "type": "TestCase",
       "quantity": 4718,
-      "quantities": {
+      "data": {
         "SUCCESSFUL": 4718
       }
     }
@@ -261,7 +261,7 @@
       "label": "TCT6",
       "type": "TestCase",
       "quantity": 4718,
-      "quantities": {
+      "data": {
         "SUCCESSFUL": 4718
       }
     }
@@ -272,7 +272,7 @@
       "label": "TCT5",
       "type": "TestCase",
       "quantity": 4718,
-      "quantities": {
+      "data": {
         "SUCCESSFUL": 4718
       }
     }
@@ -283,7 +283,7 @@
       "label": "SCC1",
       "type": "EiffelSourceChangeCreatedEvent",
       "quantity": 5000,
-      "quantities": {}
+      "data": {}
     }
   },
   {
@@ -292,7 +292,7 @@
       "label": "CDef1",
       "type": "EiffelCompositionDefinedEvent",
       "quantity": 4424,
-      "quantities": {}
+      "data": {}
     }
   },
   {

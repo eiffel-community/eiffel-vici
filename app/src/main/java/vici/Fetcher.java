@@ -85,18 +85,22 @@ public class Fetcher {
 
                 case "EiffelTestSuiteFinishedEvent":
                     Event target = events.get(event.getLinks().get(0).getTarget());
-                    events.put(event.getId(), new Event(event, target.getId()));
+                    Event redirect = new Event(event, target.getId());
+                    events.put(event.getId(), redirect);
                     switch (event.getType()) {
                         case "EiffelTestCaseStartedEvent":
                         case "EiffelActivityStartedEvent":
                             target.getData().put("started", event.getData().get("triggered"));
+                            target.getTimes().put("started", event.getTimes().get("triggered"));
                             break;
                         case "EiffelTestCaseCanceledEvent":
                         case "EiffelActivityCanceledEvent":
                             target.getData().put("canceled", event.getData().get("triggered"));
+                            target.getTimes().put("canceled", event.getTimes().get("triggered"));
                             break;
                         default:
                             target.getData().put("finished", event.getData().get("triggered"));
+                            target.getTimes().put("finished", event.getTimes().get("triggered"));
                             break;
                     }
                     break;
