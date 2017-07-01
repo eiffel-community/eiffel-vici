@@ -12,7 +12,7 @@ public class Event {
     private HashMap<String, String> data;
     private HashMap<String, Long> times;
     private HashMap<String, Integer> quantities;
-    private ArrayList<Event> events;
+    private ArrayList<Event> mergedEvents;
 
     private String id;
     private String type;
@@ -51,11 +51,11 @@ public class Event {
         }
 
         this.quantities = null;
-        this.events = null;
+        this.mergedEvents = null;
     }
 
     public Event(Event event, String redirect) {
-//        this.events = event.getEvents();
+//        this.mergedEvents = event.getMergedEvents();
         this.type = "REDIRECT";
         this.name = redirect;
 
@@ -75,10 +75,10 @@ public class Event {
     }
 
     public void addEvent(Event event) {
-        if (events == null) {
-            events = new ArrayList<>();
+        if (mergedEvents == null) {
+            mergedEvents = new ArrayList<>();
         }
-        events.add(event);
+        mergedEvents.add(event);
     }
 
     public HashMap<String, String> getData() {
@@ -137,11 +137,11 @@ public class Event {
         this.quantities = quantities;
     }
 
-    public ArrayList<Event> getEvents() {
-        return events;
+    public ArrayList<Event> getMergedEvents() {
+        return mergedEvents;
     }
 
-    public void setEvents(ArrayList<Event> events) {
-        this.events = events;
+    public void setMergedEvents(ArrayList<Event> mergedEvents) {
+        this.mergedEvents = mergedEvents;
     }
 }

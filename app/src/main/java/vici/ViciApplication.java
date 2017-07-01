@@ -19,7 +19,7 @@ public class ViciApplication {
 
 
 //        Fetcher fetcher = new Fetcher();
-//        ArrayList<Event> events = fetcher.getEvents("http://localhost:8080/api/dummy/eiffelevents");
+//        ArrayList<Event> events = fetcher.getMergedEvents("http://localhost:8080/api/dummy/eiffelevents");
 //
 //        Gson gson = new Gson();
 //

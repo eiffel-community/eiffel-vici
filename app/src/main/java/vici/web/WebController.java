@@ -11,9 +11,4 @@ public class WebController {
         return "index";
     }
 
-    @RequestMapping("/cytoscape")
-    public String cytoscape() {
-        return "cytoscape";
-    }
-
 }

@@ -15,23 +15,23 @@
         What follows is a brief explanation of the application. For technical details see the bottom of this modal.
         <h3>Aggregation view</h3>
         The first canvas consist of the aggregation view. The graph rendered is an aggregation of all event
-        chains contained within the time spans specified in the time line below it. The events depicted were triggered
+        chains contained within the time spans specified in the time line below it. The mergedEvents depicted were triggered
         by each other according to the vertices in the graph, where the time "flows" from left to right.
         For a list of all nodes and their meaning, see the section "Different types of nodes" below.
         To change the data set, simply drag and drop the "start" and "end" time points inside the time line.
         To navigate the graph use "drag n' drop" together with scrolling. There are also some tools for navigating
         in the top left, along with a button to reset the view. The nodes can also be moved around and clicked
-        to display a popup with additional information, and the "show all events"-button inside the popup will
-        load all events represented by the node into the details view.
+        to display a popup with additional information, and the "show all mergedEvents"-button inside the popup will
+        load all mergedEvents represented by the node into the details view.
         <h3>Details view</h3>
-        The details view tabulates the events aggregated in a node selected in the aggregation view.
+        The details view tabulates the mergedEvents aggregated in a node selected in the aggregation view.
         It can be re-ordered by clicking a column header, filtered using the search field to the top right and
         be displayed on a time line by clicking the switch, also in the upper right. By clicking the "Event chain"-
         button the event chain that the event took part in will be loaded into the event chain view.
         <h3>Event chain view</h3>
-        The event chain view renders a graph depicting a series of events based on
+        The event chain view renders a graph depicting a series of mergedEvents based on
         one that was selected in the details view. The selected node is outlined in yellow.
-        The events were triggered by each other as indicated by outgoing vertices. Vertices that are dotted
+        The mergedEvents were triggered by each other as indicated by outgoing vertices. Vertices that are dotted
         symbolizes a reference to a node that does not partake in the event chain, but that is of some other
         importance. I.e. the previous version of an artifact. This view is very similar to the aggregation view,
         and it should be read if more information is required.

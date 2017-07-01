@@ -5,6 +5,7 @@ import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,7 +18,7 @@ import static com.mongodb.client.model.Filters.*;
 public class DummyController {
 
     @RequestMapping("/api/dummy/eiffelevents")
-    public ArrayList<Document> eiffelEvents(@RequestParam(value = "from", defaultValue = "") String from, @RequestParam(value = "to", defaultValue = "") String to, @RequestParam(value = "limit", defaultValue = "0") String limit) {
+    public ArrayList<Document> eiffelEvents(@RequestParam(value = "from", defaultValue = "") String from, @RequestParam(value = "to", defaultValue = "") String to, @RequestParam(value = "limit", defaultValue = "0") String limit, @RequestParam(value = "id", defaultValue = "") String id, @RequestParam(value = "name", defaultValue = "") String name) {
         long fromLong;
         long toLong;
         int limitInt;
@@ -35,6 +36,7 @@ public class DummyController {
         }
         limitInt = Integer.parseInt(limit);
 
+
 //        MongoClient mongoClient = new MongoClient(new MongoClientURI("mongodb://localhost:27017"));
         MongoClient mongoClient = new MongoClient();
 
@@ -50,34 +52,13 @@ public class DummyController {
 
 //        Block<Document> printBlock = documents::add;
 
-        if(limitInt > 0){
-            collection.find(and(gte("meta.time", fromLong), lte("meta.time", toLong))).limit(limitInt).forEach(printBlock);
-        } else {
-            collection.find(and(gte("meta.time", fromLong), lte("meta.time", toLong))).forEach(printBlock);
+        Bson filters = and(gte("meta.time", fromLong), lte("meta.time", toLong));
+        if (!name.equals("")) {
+            filters = and(filters, elemMatch("data.customData", and(eq("key", "name"), eq("value", name))));
         }
+        collection.find(filters).limit(limitInt).forEach(printBlock);
 
 
         return documents;
-    }
-
-    @RequestMapping("/api/dummy/eiffelevent")
-    public ArrayList<Document> eiffelEvent(@RequestParam(value = "id", defaultValue = "") String id) {
-
-//        MongoClient mongoClient = new MongoClient(new MongoClientURI("mongodb://localhost:27017"));
-        MongoClient mongoClient = new MongoClient();
-
-        MongoDatabase database = mongoClient.getDatabase("vici");
-        MongoCollection<Document> collection = database.getCollection("eiffel");
-
-        Document document;
-        if(!id.equals("")){
-            document = collection.find(eq("meta.id", id)).first();
-        } else {
-            document = collection.find().first();
-        }
-        return new ArrayList<Document>() {{
-            document.remove("_id");
-            add(document);
-        }};
     }
 }

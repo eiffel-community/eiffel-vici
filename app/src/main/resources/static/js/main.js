@@ -315,27 +315,81 @@ function renderGraph(container, data) {
     cy.minZoom(0.1); //same setting as panzoom for Krav 2
 }
 
-function stage(stage) {
-    switch (stage) {
-        case 'aggregation':
-            $.ajax({
-//            url: "http://localhost:8080/api/aggregationGraph"
-                url: "http://localhost:8080/dummy.json"
-            }).then(function (data) {
-                let container = $('#cy');
-                renderGraph(container, data);
-            });
-            break;
-        case 'details':
-            break;
-        case 'eventChain':
-            break;
-        default:
-            break;
-    }
-}
 
 $(document).ready(function () {
+    let loader = $('#loader');
+
+    let containerAggregation = $('#aggregation');
+    let containerDetails = $('#details');
+    let containerEventChain = $('#event_chain');
+    let containerLive = $('#live');
+    let containerSettings = $('#settings');
+    let containerHelp = $('#help');
+
+    let tableDetails = $('#details_table');
+
+    function load(stage) {
+        loader.show();
+
+        containerAggregation.hide();
+        containerDetails.hide();
+        containerEventChain.hide();
+        containerLive.hide();
+        containerSettings.hide();
+        containerHelp.hide();
+
+
+        switch (stage) {
+            case 'aggregation':
+                containerAggregation.show();
+                $.ajax({
+                    url: "http://localhost:8080/api/aggregationGraph"
+//                     url: "http://localhost:8080/dummy.json"
+                }).then(function (data) {
+                    renderGraph(containerAggregation, data);
+                    loader.hide();
+                });
+                break;
+            case 'details':
+                containerDetails.show();
+
+                $.ajax({
+                    url: "http://localhost:8080/api/detailedEvents?name=CLM1"
+//                     url: "http://localhost:8080/dummy.json"
+                }).then(function (data) {
+                    console.log(data);
+                    tableDetails.DataTable({
+                        destroy: true,
+                        data: data.data,
+                        columns: [
+                            {title: 'Name', data: 'name'},
+                            {title: 'Id', data: 'id'}
+                        ]
+                    });
+                    loader.hide();
+                });
+
+
+                break;
+            case 'eventChain':
+                containerEventChain.show();
+                break;
+            case 'live':
+                containerLive.show();
+                break;
+            case 'settings':
+                containerSettings.show();
+                loader.hide();
+                break;
+            case 'help':
+                containerHelp.show();
+                loader.hide();
+                break;
+            default:
+                break;
+        }
+    }
+
 
     // Menu
     $('.menu-item').on('click', function (e) {
@@ -344,9 +398,9 @@ $(document).ready(function () {
         console.log($(this).data('value'));
         $(".sidebar-nav li").removeClass("active");
         $(this).addClass('active');
-        stage($(this).data('value'));
+        load($(this).data('value'));
     });
 
 
-    stage('aggregation');
+    load('aggregation');
 });

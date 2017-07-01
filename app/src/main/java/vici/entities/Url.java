@@ -12,16 +12,21 @@ public class Url {
         properties = new ArrayList<>();
     }
 
-    public void addProperty(String key, String value){
+    public Url(String uri, ArrayList<UrlProperty> properties) {
+        this.uri = uri;
+        this.properties = properties;
+    }
+
+    public void addProperty(String key, String value) {
         properties.add(new UrlProperty(key, value));
     }
 
-    public String toString(){
+    public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(uri);
-        if(properties.size() > 0){
+        if (properties != null && properties.size() > 0) {
             sb.append("?");
-            for (UrlProperty property: properties){
+            for (UrlProperty property : properties) {
                 sb.append(property.getKey()).append("=").append(property.getValue()).append("&");
             }
         }

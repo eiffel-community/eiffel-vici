@@ -5,31 +5,34 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
-import vici.entities.Event;
-import vici.entities.Events;
-import vici.entities.Url;
+import vici.entities.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Fetcher {
+    public static HashMap<String, EventCache> eventCaches = new HashMap<>();
+    public static long cacheLifetime = 86400000;
+
     public Fetcher() {
     }
 
     public Events getEvents(String url) {
-        return getEvents(url, 0, 0, 0);
+        return getEvents(url, new ArrayList<>());
     }
 
-    public Events getEvents(String url, long from, long to, int limit) {
-        Url urlObject = new Url(url);
-        if (from > 0) {
-            urlObject.addProperty("from", String.valueOf(from));
+    public Events getEvents(String url, ArrayList<UrlProperty> properties) {
+        if (eventCaches.containsKey(url)) {
+            EventCache eventCache = eventCaches.get(url);
+            if (eventCache.getLastUpdate() > System.currentTimeMillis() - cacheLifetime) {
+                return eventCache.getEvents();
+            }
         }
-        if (to > 0) {
-            urlObject.addProperty("to", String.valueOf(to));
-        }
-        if (limit > 0) {
-            urlObject.addProperty("limit", String.valueOf(limit));
-        }
+
+//        url = "http://localhost:8080/events.json";
+
+//        Url urlObject = new Url(url, properties);
+        Url urlObject = new Url(url, null);
 
         System.out.println("Downloading eiffel-events...");
 
@@ -71,7 +74,7 @@ public class Fetcher {
                     break;
 
                 case "EiffelTestSuiteStartedEvent":
-                    event.setType("TestSuit");
+                    event.setType("TestSuite");
                     events.put(event.getId(), event);
                     break;
 
@@ -122,6 +125,9 @@ public class Fetcher {
             }
         }
 
-        return new Events(events, timeStart, timeEnd);
+        Events eventsObject = new Events(events, timeStart, timeEnd);
+        eventCaches.put(url, new EventCache(eventsObject));
+
+        return eventsObject;
     }
 }
