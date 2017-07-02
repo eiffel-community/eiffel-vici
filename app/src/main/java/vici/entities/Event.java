@@ -48,6 +48,8 @@ public class Event {
 //        this.mergedEvents = event.getMergedEvents();
         this.type = "REDIRECT";
         this.name = redirect;
+        this.links = new ArrayList<>();
+        links.add(new Link(redirect, "REDIRECT"));
 
         this.times = event.getTimes();
     }

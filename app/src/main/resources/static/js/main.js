@@ -1,4 +1,4 @@
-function renderGraph(container, data) {
+function renderGraph(container, data, aggregated) {
 
     const COLOR_PASS = '#22b14c';
     const COLOR_FAIL = '#af0020';
@@ -6,6 +6,14 @@ function renderGraph(container, data) {
 //            $('.greeting-id').append(data.id);
 //            $('.greeting-content').append(data.content);
     console.log(data);
+
+    let style = [];
+
+
+    if (aggregated) {
+
+    }
+
 
     let cy = cytoscape({
 
@@ -25,7 +33,7 @@ function renderGraph(container, data) {
                     'border-color': '#000',
                     'border-width': '1px',
                     'border-style': 'solid',
-                    'label': 'data(id)',
+                    'label': 'data(label)',
                     'font-size': "16"
                 }
             },
@@ -56,6 +64,9 @@ function renderGraph(container, data) {
                     'background-image': '/images/green.png',
                     'background-height': '100%',
                     'background-width': function (ele) {
+                        if (ele.data().data.SUCCESSFUL === undefined) {
+                            ele.data().data.SUCCESSFUL = 0;
+                        }
                         return (ele.data().data.SUCCESSFUL * 100 / ele.data().quantity).toString() + '%';
                     }
                 }
@@ -191,6 +202,9 @@ function renderGraph(container, data) {
                     'background-image': '/images/green.png',
                     'background-height': '100%',
                     'background-width': function (ele) {
+                        if (ele.data().data.SUCCESSFUL === undefined) {
+                            ele.data().data.SUCCESSFUL = 0;
+                        }
                         return (ele.data().data.SUCCESSFUL * 100 / ele.data().quantity).toString() + '%';
                     },
                     'background-position-x': '0px'
@@ -317,6 +331,7 @@ function renderGraph(container, data) {
 
 let systemTarget = undefined;
 let detailsTarget = undefined;
+let eventTarget = undefined;
 
 let loader = undefined;
 
@@ -370,12 +385,11 @@ function load(stage) {
                 $.ajax({
                     url: 'http://localhost:8080/api/aggregationGraph?url=' + systemTarget
                 }).then(function (data) {
-                    renderGraph(containerAggregation, data);
+                    renderGraph(containerAggregation, data, true);
                     storeCache('aggregation', systemTarget);
                     loader.hide();
                 });
             }
-
         } else if (stage === 'details') {
             containerDetails.show();
             if (usableCache('details', detailsTarget)) {
@@ -387,37 +401,35 @@ function load(stage) {
                     }
                 ).then(function (data) {
                     console.log(data);
-                    // if (data.columns.length === 0) {
-                    //     data.columns = [
-                    //         {title: 'No data', data: 'noData'}
-                    //     ];
-                    // }
                     if (detailsDataTable !== undefined) {
                         detailsDataTable.destroy();
                         detailsTable.empty();
                     }
 
+                    let preDefColumns = [
+                        {
+                            title: 'Chain',
+                            data: null,
+                            defaultContent: '<button class="btn btn-default row-button">Graph</button>'
+                        }
+                    ];
+
                     if (data.data.length !== 0) {
                         detailsDataTable = detailsTable.DataTable({
                             destroy: true,
                             data: data.data,
-                            columns: data.columns,
-                            // columns: [
-                            //     {title: 'Name', data: 'name'},
-                            //     {title: 'Id', data: 'id'}
-                            // ],
+                            columns: preDefColumns.concat(data.columns),
                             scrollY: '80vh',
                             scrollCollapse: true,
                             lengthMenu: [[20, 200, -1], [20, 200, "All"]],
-                            // paging: false,
-                            // fixedHeader: {
-                            //     header: true,
-                            //     footer: true
-                            // },
-                            // autoWidth: true
                             order: [3, 'asc'],
                         });
                         storeCache('details', detailsTarget);
+
+                        detailsTable.find('tbody').on('click', 'button', function () {
+                            let data = detailsDataTable.row($(this).parents('tr')).data();
+                            newEventTarget(data.id);
+                        });
                     } else {
                         console.log("No data");
                     }
@@ -426,7 +438,18 @@ function load(stage) {
             }
         } else if (stage === 'eventChain') {
             wrapperEventChain.show();
-            loader.hide();
+            if (usableCache('eventChain', eventTarget)) {
+                console.log('Using cache for ' + eventTarget);
+                loader.hide();
+            } else {
+                $.ajax({
+                    url: 'http://localhost:8080/api/eventChainGraph?id=' + eventTarget
+                }).then(function (data) {
+                    renderGraph(containerEventChain, data, false);
+                    storeCache('eventChain', eventTarget);
+                    loader.hide();
+                });
+            }
         } else if (stage === 'live') {
             wrapperLive.show();
             loader.hide();
@@ -451,6 +474,11 @@ function newDetailsTarget(target) {
     load("details");
 }
 
+function newEventTarget(target) {
+    eventTarget = target;
+    load("eventChain");
+}
+
 $(document).ready(function () {
     loader = $('#loader_overlay');
 
@@ -468,7 +496,6 @@ $(document).ready(function () {
 
     systemTarget = "http://localhost:8080/events.json";
     detailsTarget = "";
-    detailsDataTable = undefined;
 
 
     // Menu
@@ -477,11 +504,6 @@ $(document).ready(function () {
 
         load($(this).data('value'));
     });
-
-    // $('.aggregated-button').on('click', function (e) {
-    //     console.log("clicked");
-    //     console.log($('this').val());
-    // });
 
 
     load('aggregation');
