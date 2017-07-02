@@ -15,6 +15,7 @@ import vici.entities.UrlProperty;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 @RestController
 public class ApiController {
@@ -151,11 +152,7 @@ public class ApiController {
         ArrayList<HashMap<String, String>> data = new ArrayList<>();
         ArrayList<Column> columns = new ArrayList<>();
 
-
-        columns.add(new Column("Name", "name"));
-        columns.add(new Column("ID", "id"));
-        columns.add(new Column("Type", "type"));
-        columns.add(new Column("Time triggered", "time-triggered"));
+        HashSet<String> cSet = new HashSet<>();
 
         for (String key : events.keySet()) {
             Event event = events.get(key);
@@ -163,12 +160,16 @@ public class ApiController {
                 if (event.getName().equals(name)) {
                     HashMap<String, String> row = new HashMap<>();
 
-                    row.put("id", event.getId());
-                    row.put("name", event.getName());
-                    row.put("type", event.getType());
+                    addColumn(row, columns, cSet, "id", event.getId());
+                    addColumn(row, columns, cSet, "name", event.getName());
+                    addColumn(row, columns, cSet, "type", event.getType());
 
                     for (String keyTime : event.getTimes().keySet()) {
-                        row.put(("time-" + keyTime), String.valueOf(event.getTimes().get(keyTime)));
+                        addColumn(row, columns, cSet, "time-" + keyTime, String.valueOf(event.getTimes().get(keyTime)));
+                    }
+
+                    if (event.getTimes().containsKey("started") && event.getTimes().containsKey("finished")) {
+                        addColumn(row, columns, cSet, "time-execution", String.valueOf(event.getTimes().get("finished") - event.getTimes().get("started")));
                     }
 
                     switch (event.getType()) {
@@ -177,17 +178,16 @@ public class ApiController {
                         case "TestSuite":
                             Outcome outcome = event.getData().get("finished").getOutcome();
                             if (outcome.getConclusion() != null) {
-                                row.put("conclusion", outcome.getConclusion());
+                                addColumn(row, columns, cSet, "conclusion", outcome.getConclusion());
                             }
                             if (outcome.getVerdict() != null) {
-                                row.put("verdict", outcome.getVerdict());
+                                addColumn(row, columns, cSet, "verdict", outcome.getVerdict());
                             }
 
                             break;
                         case "EiffelConfidenceLevelModifiedEvent":
-                            row.put("result", event.getData().get("triggered").getValue());
-                            row.put("confidence", event.getData().get("triggered").getName());
-
+                            addColumn(row, columns, cSet, "result", event.getData().get("triggered").getValue());
+                            addColumn(row, columns, cSet, "confidence", event.getData().get("triggered").getName());
                             break;
                         default:
                             break;
@@ -199,5 +199,53 @@ public class ApiController {
         }
 
         return new Source(columns, data);
+    }
+
+    private void addColumn(HashMap<String, String> row, ArrayList<Column> columns, HashSet<String> set, String key, String value) {
+        row.put(key, value);
+        if (!set.contains(key)) {
+            switch (key) {
+                case "name":
+                    columns.add(new Column("Name", key));
+                    break;
+                case "id":
+                    columns.add(new Column("Eiffel ID", key));
+                    break;
+                case "type":
+                    columns.add(new Column("Type", key));
+                    break;
+                case "time-triggered":
+//                    columns.add(new Column("Time triggered", key));
+                    break;
+                case "time-canceled":
+//                    columns.add(new Column("Time triggered", key));
+                    break;
+                case "time-started":
+//                    columns.add(new Column("Time started", key));
+                    break;
+                case "time-finished":
+//                    columns.add(new Column("Time finished", key));
+                    break;
+                case "time-execution":
+                    columns.add(new Column("Execution (ms)", key));
+                    break;
+                case "conclusion":
+                    columns.add(new Column("Conclusion", key));
+                    break;
+                case "verdict":
+                    columns.add(new Column("Verdict", key));
+                    break;
+                case "result":
+                    columns.add(new Column("Result", key));
+                    break;
+                case "confidence":
+                    columns.add(new Column("Confidence", key));
+                    break;
+                default:
+                    columns.add(new Column(key, key));
+                    break;
+            }
+            set.add(key);
+        }
     }
 }

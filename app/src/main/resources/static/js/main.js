@@ -330,7 +330,8 @@ let containerLive = undefined;
 let containerSettings = undefined;
 let containerHelp = undefined;
 
-let tableDetails = undefined;
+let detailsTable = undefined;
+let detailsDataTable = undefined;
 
 let cacheStoreTime = 86400000;
 
@@ -385,7 +386,17 @@ function load(stage) {
                     }
                 ).then(function (data) {
                     console.log(data);
-                    tableDetails.DataTable({
+                    if (data.columns.length === 0) {
+                        data.columns = [
+                            {title: 'No data', data: 'noData'}
+                        ];
+                    }
+                    if (detailsDataTable !== undefined) {
+                        detailsDataTable.destroy();
+                        detailsTable.empty();
+                    }
+
+                    detailsDataTable = detailsTable.DataTable({
                         destroy: true,
                         data: data.data,
                         columns: data.columns,
@@ -395,7 +406,8 @@ function load(stage) {
                         // ],
                         scrollY: '80vh',
                         scrollCollapse: true,
-                        paging: false,
+                        "lengthMenu": [[20, 200, -1], [20, 200, "All"]],
+                        // paging: false,
                         fixedHeader: {
                             header: true,
                             footer: true
@@ -403,6 +415,7 @@ function load(stage) {
                         // autoWidth: true
 
                     });
+
                     cache.details = {
                         value: detailsTarget,
                         time: Date.now()
@@ -445,9 +458,10 @@ $(document).ready(function () {
     containerSettings = $('#settings');
     containerHelp = $('#help');
 
-    tableDetails = $('#details_table');
+    detailsTable = $('#details_table');
 
     systemTarget = "http://localhost:8080/events.json";
+    detailsTarget = "";
 
 
     // Menu
