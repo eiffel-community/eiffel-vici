@@ -1,15 +1,14 @@
 package vici.entities;
 
-
-import org.bson.Document;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import vici.entities.Eiffel.CustomData;
+import vici.entities.Eiffel.Data;
+import vici.entities.Eiffel.EiffelEvent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Event {
-    private HashMap<String, String> data;
+    private HashMap<String, Data> data;
     private HashMap<String, Long> times;
     private HashMap<String, Integer> quantities;
     private ArrayList<Event> mergedEvents;
@@ -19,36 +18,57 @@ public class Event {
     private ArrayList<Link> links;
     private String name;
 
-    public Event(Document document) {
-        JSONObject jsonObject = new JSONObject(document);
+    public Event(EiffelEvent eiffelEvent) {
+//        JSONObject jsonObject = new JSONObject(document);
+//
+//        this.data = new HashMap<>();
+//        data.put("triggered", jsonObject.getJSONObject("data").toString());
+//
+//        this.times = new HashMap<>();
+//        times.put("triggered", jsonObject.getJSONObject("meta").getLong("time"));
+//
+//        id = jsonObject.getJSONObject("meta").getString("id");
+//        type = jsonObject.getJSONObject("meta").getString("type");
+//
+//        JSONArray linksJson = jsonObject.getJSONArray("links");
+//        links = new ArrayList<>();
+//        if (linksJson != null) {
+//            for (int i = 0; i < linksJson.length(); i++) {
+//                links.add(new Link(linksJson.getJSONObject(i).getString("target"), linksJson.getJSONObject(i).getString("type")));
+//            }
+//        }
+//
+//        name = null;
+//        JSONArray customDataJson = jsonObject.getJSONObject("data").getJSONArray("customData");
+//        if (customDataJson != null) {
+//            for (int i = 0; i < customDataJson.length(); i++) {
+//                if (customDataJson.getJSONObject(i).getString("key").equals("name")) {
+//                    name = customDataJson.getJSONObject(i).getString("value");
+//                    break;
+//                }
+//            }
+//        }
 
-        this.data = new HashMap<>();
-        data.put("triggered", jsonObject.getJSONObject("data").toString());
+        data = new HashMap<>();
+        data.put("triggered", eiffelEvent.getData());
+        
+        times = new HashMap<>();
+        times.put("triggered", eiffelEvent.getMeta().getTime());
 
-        this.times = new HashMap<>();
-        times.put("triggered", jsonObject.getJSONObject("meta").getLong("time"));
-
-        id = jsonObject.getJSONObject("meta").getString("id");
-        type = jsonObject.getJSONObject("meta").getString("type");
-
-        JSONArray linksJson = jsonObject.getJSONArray("links");
-        links = new ArrayList<>();
-        if (linksJson != null) {
-            for (int i = 0; i < linksJson.length(); i++) {
-                links.add(new Link(linksJson.getJSONObject(i).getString("target"), linksJson.getJSONObject(i).getString("type")));
-            }
-        }
+        id = eiffelEvent.getMeta().getId();
+        type = eiffelEvent.getMeta().getType();
+        links = eiffelEvent.getLinks();
 
         name = null;
-        JSONArray customDataJson = jsonObject.getJSONObject("data").getJSONArray("customData");
-        if (customDataJson != null) {
-            for (int i = 0; i < customDataJson.length(); i++) {
-                if (customDataJson.getJSONObject(i).getString("key").equals("name")) {
-                    name = customDataJson.getJSONObject(i).getString("value");
+        if (eiffelEvent.getData().getCustomData() != null) {
+            for (CustomData customData : eiffelEvent.getData().getCustomData()) {
+                if (customData.getKey().equals("name")) {
+                    name = customData.getValue();
                     break;
                 }
             }
         }
+
 
         this.quantities = null;
         this.mergedEvents = null;
@@ -81,12 +101,36 @@ public class Event {
         mergedEvents.add(event);
     }
 
-    public HashMap<String, String> getData() {
+    public HashMap<String, Data> getData() {
         return data;
     }
 
-    public void setData(HashMap<String, String> data) {
+    public void setData(HashMap<String, Data> data) {
         this.data = data;
+    }
+
+    public HashMap<String, Long> getTimes() {
+        return times;
+    }
+
+    public void setTimes(HashMap<String, Long> times) {
+        this.times = times;
+    }
+
+    public HashMap<String, Integer> getQuantities() {
+        return quantities;
+    }
+
+    public void setQuantities(HashMap<String, Integer> quantities) {
+        this.quantities = quantities;
+    }
+
+    public ArrayList<Event> getMergedEvents() {
+        return mergedEvents;
+    }
+
+    public void setMergedEvents(ArrayList<Event> mergedEvents) {
+        this.mergedEvents = mergedEvents;
     }
 
     public String getId() {
@@ -119,29 +163,5 @@ public class Event {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public HashMap<String, Long> getTimes() {
-        return times;
-    }
-
-    public void setTimes(HashMap<String, Long> times) {
-        this.times = times;
-    }
-
-    public HashMap<String, Integer> getQuantities() {
-        return quantities;
-    }
-
-    public void setQuantities(HashMap<String, Integer> quantities) {
-        this.quantities = quantities;
-    }
-
-    public ArrayList<Event> getMergedEvents() {
-        return mergedEvents;
-    }
-
-    public void setMergedEvents(ArrayList<Event> mergedEvents) {
-        this.mergedEvents = mergedEvents;
     }
 }

@@ -1,11 +1,11 @@
 package vici.api;
 
-import org.json.JSONObject;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import vici.Fetcher;
 import vici.entities.Cytoscape.*;
+import vici.entities.Eiffel.Outcome;
 import vici.entities.Event;
 import vici.entities.Events;
 import vici.entities.Link;
@@ -52,27 +52,42 @@ public class ApiController {
                     case "TestCase":
                     case "Activity":
                     case "TestSuite":
-                        JSONObject jsonObject = new JSONObject(event.getData().get("finished"));
-                        JSONObject outcome = jsonObject.getJSONObject("outcome");
-                        if (outcome.has("conclusion")) {
-                            node.getData().increaseQuantity(outcome.getString("conclusion"));
-                        } else if (outcome.has("verdict")) {
-                            String verdict = outcome.getString("verdict");
-                            if (verdict.equals("PASSED")) {
+//                        JSONObject jsonObject = new JSONObject(event.getData().get("finished"));
+//                        JSONObject outcome = jsonObject.getJSONObject("outcome");
+//                        if (outcome.has("conclusion")) {
+//                            node.getData().increaseQuantity(outcome.getString("conclusion"));
+//                        } else if (outcome.has("verdict")) {
+//                            String verdict = outcome.getString("verdict");
+//                            if (verdict.equals("PASSED")) {
+//                                node.getData().increaseQuantity("SUCCESSFUL");
+//                            } else {
+//                                node.getData().increaseQuantity(verdict);
+//                            }
+//                        } else {
+//                            node.getData().increaseQuantity("INCONCLUSIVE");
+//                            System.out.println(jsonObject.toString());
+//                        }
+
+                        Outcome outcome = event.getData().get("finished").getOutcome();
+                        if (outcome.getConclusion() != null) {
+                            node.getData().increaseQuantity(outcome.getConclusion());
+                        } else if (outcome.getVerdict() != null) {
+                            if (outcome.getVerdict().equals("PASSED")) {
                                 node.getData().increaseQuantity("SUCCESSFUL");
                             } else {
-                                node.getData().increaseQuantity(verdict);
+                                node.getData().increaseQuantity(outcome.getVerdict());
                             }
                         } else {
                             node.getData().increaseQuantity("INCONCLUSIVE");
-                            System.out.println(jsonObject.toString());
                         }
 
 
                         break;
                     case "EiffelConfidenceLevelModifiedEvent":
-                        String value = new JSONObject(event.getData().get("triggered")).getString("value");
-                        node.getData().increaseQuantity(value);
+//                        String value = new JSONObject(event.getData().get("triggered")).getString("value");
+//                        node.getData().increaseQuantity(value);
+//
+                        node.getData().increaseQuantity(event.getData().get("triggered").getValue());
 
                         break;
                     default:
@@ -133,8 +148,6 @@ public class ApiController {
         Events eventsObject = fetcher.getEvents(url, urlProperties);
         HashMap<String, Event> events = eventsObject.getEvents();
 
-        HashMap<String, String> columnNames = new HashMap<>();
-
         ArrayList<HashMap<String, String>> data = new ArrayList<>();
         ArrayList<Column> columns = new ArrayList<>();
 
@@ -142,6 +155,7 @@ public class ApiController {
         columns.add(new Column("Name", "name"));
         columns.add(new Column("ID", "id"));
         columns.add(new Column("Type", "type"));
+        columns.add(new Column("Time triggered", "time-triggered"));
 
         for (String key : events.keySet()) {
             Event event = events.get(key);
@@ -154,27 +168,26 @@ public class ApiController {
                     row.put("type", event.getType());
 
                     for (String keyTime : event.getTimes().keySet()) {
-                        row.put(("time-" + keyTime), String.valueOf(event.getTimes().get(key)));
+                        row.put(("time-" + keyTime), String.valueOf(event.getTimes().get(keyTime)));
                     }
-
 
                     switch (event.getType()) {
                         case "TestCase":
                         case "Activity":
                         case "TestSuite":
-                            System.out.println(event.getData().toString());
-                            JSONObject jsonObject = new JSONObject(event.getData().get("finished"));
-                            JSONObject outcome = jsonObject.getJSONObject("outcome");
-                            if (outcome.has("conclusion")) {
-                                row.put("conclusion", outcome.getString("conclusion"));
+                            Outcome outcome = event.getData().get("finished").getOutcome();
+                            if (outcome.getConclusion() != null) {
+                                row.put("conclusion", outcome.getConclusion());
                             }
-                            if (outcome.has("verdict")) {
-                                row.put("verdict", outcome.getString("verdict"));
+                            if (outcome.getVerdict() != null) {
+                                row.put("verdict", outcome.getVerdict());
                             }
+
                             break;
                         case "EiffelConfidenceLevelModifiedEvent":
-                            row.put("result", new JSONObject(event.getData().get("triggered")).getString("value"));
-                            row.put("confidence", new JSONObject(event.getData().get("triggered")).getString("name"));
+                            row.put("result", event.getData().get("triggered").getValue());
+                            row.put("confidence", event.getData().get("triggered").getName());
+
                             break;
                         default:
                             break;
@@ -185,6 +198,6 @@ public class ApiController {
             }
         }
 
-        return new Source(null, data);
+        return new Source(columns, data);
     }
 }

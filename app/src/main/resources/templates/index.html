@@ -19,6 +19,7 @@
     <link rel="stylesheet" media="screen" th:href="@{/styles/main.css}"/>
 
     <script th:src="@{/js/jquery/jquery-3.2.1.min.js}"></script>
+    <script th:src="@{/js/underscore/underscore-min.js}"></script>
 
     <script th:src="@{/js/bootstrap/bootstrap.min.js}"></script>
     <script th:src="@{/js/bootstrap/bootstrap-toggle.min.js}"></script>
@@ -38,18 +39,26 @@
 <body>
 <div id="main">
     <article>
-        <div id="loader" class="loader"></div>
-
-        <div id="aggregation" class="content-container cy"></div>
-        <div id="details" class="content-container">
-            <table id="details_table" class="display" cellspacing="0" width="100%">
-
-            </table>
+        <div id="loader_overlay" class="overlay">
+            <div id="loader" class="loader"></div>
         </div>
-        <div id="event_chain" class="content-container cy"></div>
-        <div id="live" class="content-container cy"></div>
-        <div id="settings" class="content-container"></div>
-        <div id="help" class="content-container">
+
+        <div id="aggregation_wrapper" class="content-container">
+            <div id="aggregation" class="content-container cy"></div>
+        </div>
+        <div id="details" class="content-container non-cy">
+            <table id="details_table" class="table table-striped table-bordered" cellspacing="0" width="100%"></table>
+        </div>
+        <div id="event_chain_wrapper">
+            <div id="event_chain" class="content-container cy"></div>
+        </div>
+
+        <div id="live_wrapper">
+            <div id="live" class="content-container cy"></div>
+        </div>
+
+        <div id="settings" class="content-container non-cy"></div>
+        <div id="help" class="content-container non-cy">
 
             <h2>Information</h2>
 
@@ -169,23 +178,23 @@
                 </a>
             </li>
 
-            <li class="menu-item active" data-value="aggregation">
+            <li id="menu_aggregation" class="menu-item" data-value="aggregation">
                 <a href="#">Aggregation</a>
             </li>
-            <li class="menu-item" data-value="details">
+            <li id="menu_details" class="menu-item" data-value="details">
                 <a href="#">Details</a>
             </li>
-            <li class="menu-item" data-value="eventChain">
+            <li id="menu_eventChain" class="menu-item" data-value="eventChain">
                 <a href="#">Event chain</a>
             </li>
-            <li class="menu-item" data-value="live">
+            <li id="menu_live" class="menu-item" data-value="live">
                 <a href="#">Live</a>
             </li>
 
-            <li class="menu-item" data-value="settings">
+            <li id="menu_settings" class="menu-item" data-value="settings">
                 <a href="#"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span></a>
             </li>
-            <li class="menu-item" data-value="help">
+            <li id="menu_help" class="menu-item" data-value="help">
                 <a href="#"><span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span></a>
             </li>
         </ul>

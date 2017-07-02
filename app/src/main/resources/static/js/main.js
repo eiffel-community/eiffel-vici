@@ -222,7 +222,7 @@ function renderGraph(container, data) {
 
     function getQTipContent(data) {
         let content = '<h4>' + data.label + '</h4>' +
-            '<button type="button" class="btn btn-block btn-secondary" value="' + data.id + ';' + data.type + '"> Show all events </button>' +
+            '<button type="button" class="btn btn-block btn-secondary" onclick="newDetailsTarget(\'' + data.id + '\')" value="' + data.id + '"> Show events </button>' +
             '<table class="table table-bordered table-sm table-hover table-qtip">' +
             '<tr><th>Attribute</th><th colspan="2">Amount</th></tr>'; // table header
 
@@ -315,91 +315,152 @@ function renderGraph(container, data) {
     cy.minZoom(0.1); //same setting as panzoom for Krav 2
 }
 
+let systemTarget = undefined;
+let detailsTarget = undefined;
 
-$(document).ready(function () {
-    let loader = $('#loader');
+let loader = undefined;
 
-    let containerAggregation = $('#aggregation');
-    let containerDetails = $('#details');
-    let containerEventChain = $('#event_chain');
-    let containerLive = $('#live');
-    let containerSettings = $('#settings');
-    let containerHelp = $('#help');
+let wrapperAggregation = undefined;
+let containerAggregation = undefined;
+let containerDetails = undefined;
+let wrapperEventChain = undefined;
+let containerEventChain = undefined;
+let wrapperLive = undefined;
+let containerLive = undefined;
+let containerSettings = undefined;
+let containerHelp = undefined;
 
-    let tableDetails = $('#details_table');
+let tableDetails = undefined;
 
-    function load(stage) {
-        loader.show();
+let cacheStoreTime = 86400000;
 
-        containerAggregation.hide();
+let cache = {};
+
+function usableCache(cacheName, request) {
+    if (cache[cacheName] !== undefined && cache[cacheName].time + cacheStoreTime > Date.now() && cache[cacheName].value === request) {
+        return true;
+    }
+    return false;
+}
+
+function load(stage) {
+    loader.show();
+    $(".sidebar-nav li").removeClass("active");
+    $('#menu_' + stage).addClass('active');
+
+    _.defer(function () {
+        wrapperAggregation.hide();
         containerDetails.hide();
-        containerEventChain.hide();
-        containerLive.hide();
+        wrapperEventChain.hide();
+        wrapperLive.hide();
         containerSettings.hide();
         containerHelp.hide();
 
-
-        switch (stage) {
-            case 'aggregation':
-                containerAggregation.show();
+        if (stage === 'aggregation') {
+            wrapperAggregation.show();
+            if (usableCache('aggregation', systemTarget)) {
+                console.log('Using cache for ' + systemTarget);
+                loader.hide();
+            } else {
                 $.ajax({
-                    url: "http://localhost:8080/api/aggregationGraph"
-//                     url: "http://localhost:8080/dummy.json"
+                    url: 'http://localhost:8080/api/aggregationGraph?url=' + systemTarget
                 }).then(function (data) {
                     renderGraph(containerAggregation, data);
+                    cache.aggregation = {
+                        value: systemTarget,
+                        time: Date.now()
+                    };
                     loader.hide();
                 });
-                break;
-            case 'details':
-                containerDetails.show();
+            }
 
+        } else if (stage === 'details') {
+            containerDetails.show();
+            if (usableCache('details', detailsTarget)) {
+                console.log('Using cache for ' + detailsTarget);
+                loader.hide();
+            } else {
                 $.ajax({
-                    url: "http://localhost:8080/api/detailedEvents?name=CLM1"
-//                     url: "http://localhost:8080/dummy.json"
-                }).then(function (data) {
+                        url: "http://localhost:8080/api/detailedEvents?name=" + detailsTarget,
+                    }
+                ).then(function (data) {
                     console.log(data);
                     tableDetails.DataTable({
                         destroy: true,
                         data: data.data,
-                        columns: [
-                            {title: 'Name', data: 'name'},
-                            {title: 'Id', data: 'id'}
-                        ]
+                        columns: data.columns,
+                        // columns: [
+                        //     {title: 'Name', data: 'name'},
+                        //     {title: 'Id', data: 'id'}
+                        // ],
+                        scrollY: '80vh',
+                        scrollCollapse: true,
+                        paging: false,
+                        fixedHeader: {
+                            header: true,
+                            footer: true
+                        },
+                        // autoWidth: true
+
                     });
+                    cache.details = {
+                        value: detailsTarget,
+                        time: Date.now()
+                    };
                     loader.hide();
                 });
-
-
-                break;
-            case 'eventChain':
-                containerEventChain.show();
-                break;
-            case 'live':
-                containerLive.show();
-                break;
-            case 'settings':
-                containerSettings.show();
-                loader.hide();
-                break;
-            case 'help':
-                containerHelp.show();
-                loader.hide();
-                break;
-            default:
-                break;
+            }
+        } else if (stage === 'eventChain') {
+            wrapperEventChain.show();
+            loader.hide();
+        } else if (stage === 'live') {
+            wrapperLive.show();
+            loader.hide();
+        } else if (stage === 'settings') {
+            containerSettings.show();
+            loader.hide();
+        } else if (stage === 'help') {
+            containerHelp.show();
+            loader.hide();
+        } else {
         }
-    }
+    });
+}
+
+function newDetailsTarget(target) {
+    detailsTarget = target;
+    load("details");
+}
+
+$(document).ready(function () {
+    loader = $('#loader_overlay');
+
+    wrapperAggregation = $('#aggregation_wrapper');
+    containerAggregation = $('#aggregation');
+    containerDetails = $('#details');
+    wrapperEventChain = $('#event_chain_wrapper');
+    containerEventChain = $('#event_chain');
+    wrapperLive = $('#live_wrapper');
+    containerLive = $('#live');
+    containerSettings = $('#settings');
+    containerHelp = $('#help');
+
+    tableDetails = $('#details_table');
+
+    systemTarget = "http://localhost:8080/events.json";
 
 
     // Menu
     $('.menu-item').on('click', function (e) {
         // e.preventDefault();
 
-        console.log($(this).data('value'));
-        $(".sidebar-nav li").removeClass("active");
-        $(this).addClass('active');
         load($(this).data('value'));
     });
+
+    // $('.aggregated-button').on('click', function (e) {
+    //     console.log("clicked");
+    //     console.log($('this').val());
+    // });
 
 
     load('aggregation');

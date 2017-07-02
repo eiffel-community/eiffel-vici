@@ -1,10 +1,10 @@
 package vici;
 
-import org.bson.Document;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
+import vici.entities.Eiffel.EiffelEvent;
 import vici.entities.*;
 
 import java.util.ArrayList;
@@ -29,8 +29,6 @@ public class Fetcher {
             }
         }
 
-//        url = "http://localhost:8080/events.json";
-
 //        Url urlObject = new Url(url, properties);
         Url urlObject = new Url(url, null);
 
@@ -38,8 +36,8 @@ public class Fetcher {
 
         RestTemplate restTemplate = new RestTemplate();
 
-        ResponseEntity<Document[]> responseEntity = restTemplate.getForEntity(urlObject.toString(), Document[].class);
-        Document[] documents = responseEntity.getBody();
+        ResponseEntity<EiffelEvent[]> responseEntity = restTemplate.getForEntity(urlObject.toString(), EiffelEvent[].class);
+        EiffelEvent[] documents = responseEntity.getBody();
         MediaType contentType = responseEntity.getHeaders().getContentType();
         HttpStatus statusCode = responseEntity.getStatusCode();
 
@@ -53,7 +51,7 @@ public class Fetcher {
         long timeEnd = Long.MIN_VALUE;
 
         HashMap<String, Event> events = new HashMap<>();
-        for (Document document : documents) {
+        for (EiffelEvent document : documents) {
             Event event = new Event(document);
 //            if (event.getTime().getStart() < timeStart) {
 //                timeStart = event.getTime().getStart();

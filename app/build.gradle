@@ -24,20 +24,20 @@ repositories {
 
 
 dependencies {
-    compile('org.springframework.boot:spring-boot-starter-web')
-    testCompile('org.springframework.boot:spring-boot-starter-test')
+    compile 'org.springframework.boot:spring-boot-starter-web'
+    testCompile 'org.springframework.boot:spring-boot-starter-test'
 
-    compile("org.springframework:spring-web")
+    compile "org.springframework:spring-web"
 
-    compile("org.springframework.boot:spring-boot-starter-thymeleaf")
-    compile("org.springframework.boot:spring-boot-devtools")
-    testCompile("junit:junit")
-
-    compile 'org.mongodb:mongo-java-driver'
+    compile "org.springframework.boot:spring-boot-starter-thymeleaf"
+    compile "org.springframework.boot:spring-boot-devtools"
+    testCompile "junit:junit"
 
     compile 'org.json:json'
 
     compile 'com.google.code.gson:gson'
 
     compile 'com.fasterxml.jackson.core:jackson-databind'
+
+    compile "org.springframework.boot:spring-boot-starter"
 }
