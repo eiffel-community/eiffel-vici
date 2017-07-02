@@ -338,10 +338,14 @@ let cacheStoreTime = 86400000;
 let cache = {};
 
 function usableCache(cacheName, request) {
-    if (cache[cacheName] !== undefined && cache[cacheName].time + cacheStoreTime > Date.now() && cache[cacheName].value === request) {
-        return true;
-    }
-    return false;
+    return cache[cacheName] !== undefined && cache[cacheName].time + cacheStoreTime > Date.now() && cache[cacheName].value === request;
+}
+
+function storeCache(cacheName, value) {
+    cache[cacheName] = {
+        value: value,
+        time: Date.now()
+    };
 }
 
 function load(stage) {
@@ -367,10 +371,7 @@ function load(stage) {
                     url: 'http://localhost:8080/api/aggregationGraph?url=' + systemTarget
                 }).then(function (data) {
                     renderGraph(containerAggregation, data);
-                    cache.aggregation = {
-                        value: systemTarget,
-                        time: Date.now()
-                    };
+                    storeCache('aggregation', systemTarget);
                     loader.hide();
                 });
             }
@@ -386,40 +387,40 @@ function load(stage) {
                     }
                 ).then(function (data) {
                     console.log(data);
-                    if (data.columns.length === 0) {
-                        data.columns = [
-                            {title: 'No data', data: 'noData'}
-                        ];
-                    }
+                    // if (data.columns.length === 0) {
+                    //     data.columns = [
+                    //         {title: 'No data', data: 'noData'}
+                    //     ];
+                    // }
                     if (detailsDataTable !== undefined) {
                         detailsDataTable.destroy();
                         detailsTable.empty();
                     }
 
-                    detailsDataTable = detailsTable.DataTable({
-                        destroy: true,
-                        data: data.data,
-                        columns: data.columns,
-                        // columns: [
-                        //     {title: 'Name', data: 'name'},
-                        //     {title: 'Id', data: 'id'}
-                        // ],
-                        scrollY: '80vh',
-                        scrollCollapse: true,
-                        "lengthMenu": [[20, 200, -1], [20, 200, "All"]],
-                        // paging: false,
-                        fixedHeader: {
-                            header: true,
-                            footer: true
-                        },
-                        // autoWidth: true
-
-                    });
-
-                    cache.details = {
-                        value: detailsTarget,
-                        time: Date.now()
-                    };
+                    if (data.data.length !== 0) {
+                        detailsDataTable = detailsTable.DataTable({
+                            destroy: true,
+                            data: data.data,
+                            columns: data.columns,
+                            // columns: [
+                            //     {title: 'Name', data: 'name'},
+                            //     {title: 'Id', data: 'id'}
+                            // ],
+                            scrollY: '80vh',
+                            scrollCollapse: true,
+                            lengthMenu: [[20, 200, -1], [20, 200, "All"]],
+                            // paging: false,
+                            // fixedHeader: {
+                            //     header: true,
+                            //     footer: true
+                            // },
+                            // autoWidth: true
+                            order: [3, 'asc'],
+                        });
+                        storeCache('details', detailsTarget);
+                    } else {
+                        console.log("No data");
+                    }
                     loader.hide();
                 });
             }
@@ -442,6 +443,11 @@ function load(stage) {
 
 function newDetailsTarget(target) {
     detailsTarget = target;
+    let newDetailsString = 'Details';
+    if (detailsTarget !== "") {
+        newDetailsString = newDetailsString + ' [' + detailsTarget + ']';
+    }
+    $('#menu_details').html('<a href="#">' + newDetailsString + '</a>');
     load("details");
 }
 
@@ -462,6 +468,7 @@ $(document).ready(function () {
 
     systemTarget = "http://localhost:8080/events.json";
     detailsTarget = "";
+    detailsDataTable = undefined;
 
 
     // Menu

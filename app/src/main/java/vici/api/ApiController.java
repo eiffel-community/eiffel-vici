@@ -19,7 +19,7 @@ import java.util.HashSet;
 
 @RestController
 public class ApiController {
-    @RequestMapping("/api/aggregationGraph")
+    @RequestMapping(value = "/api/aggregationGraph", produces = "application/json; charset=UTF-8")
     public ArrayList<Element> aggregationGraph(@RequestParam(value = "url", defaultValue = "http://localhost:8080/events.json") String url) {
 
         Fetcher fetcher = new Fetcher();
@@ -44,7 +44,7 @@ public class ApiController {
 
                     node = nodes.get(event.getName());
                 } else {
-                    node = new Node(new DataNode(event.getName(), event.getName(), event.getType(), null));
+                    node = new Node(new DataNode(event.getName(), event.getName(), event.getType(), null, 0));
                     nodes.put(event.getName(), node);
                 }
 
@@ -53,21 +53,6 @@ public class ApiController {
                     case "TestCase":
                     case "Activity":
                     case "TestSuite":
-//                        JSONObject jsonObject = new JSONObject(event.getData().get("finished"));
-//                        JSONObject outcome = jsonObject.getJSONObject("outcome");
-//                        if (outcome.has("conclusion")) {
-//                            node.getData().increaseQuantity(outcome.getString("conclusion"));
-//                        } else if (outcome.has("verdict")) {
-//                            String verdict = outcome.getString("verdict");
-//                            if (verdict.equals("PASSED")) {
-//                                node.getData().increaseQuantity("SUCCESSFUL");
-//                            } else {
-//                                node.getData().increaseQuantity(verdict);
-//                            }
-//                        } else {
-//                            node.getData().increaseQuantity("INCONCLUSIVE");
-//                            System.out.println(jsonObject.toString());
-//                        }
 
                         Outcome outcome = event.getData().get("finished").getOutcome();
                         if (outcome.getConclusion() != null) {
@@ -85,9 +70,6 @@ public class ApiController {
 
                         break;
                     case "EiffelConfidenceLevelModifiedEvent":
-//                        String value = new JSONObject(event.getData().get("triggered")).getString("value");
-//                        node.getData().increaseQuantity(value);
-//
                         node.getData().increaseQuantity(event.getData().get("triggered").getValue());
 
                         break;
@@ -137,7 +119,7 @@ public class ApiController {
         return source + "-" + target;
     }
 
-    @RequestMapping("/api/detailedEvents")
+    @RequestMapping(value = "/api/detailedEvents", produces = "application/json; charset=UTF-8")
     public Source detailedEvents(@RequestParam(value = "name", defaultValue = "") String name, @RequestParam(value = "url", defaultValue = "http://localhost:8080/events.json") String url) {
 
         ArrayList<UrlProperty> urlProperties = new ArrayList<>();
@@ -215,7 +197,7 @@ public class ApiController {
                     columns.add(new Column("Type", key));
                     break;
                 case "time-triggered":
-//                    columns.add(new Column("Time triggered", key));
+                    columns.add(new Column("Time triggered", key));
                     break;
                 case "time-canceled":
 //                    columns.add(new Column("Time triggered", key));
@@ -247,5 +229,108 @@ public class ApiController {
             }
             set.add(key);
         }
+    }
+
+    @RequestMapping(value = "/api/eventChainGraph", produces = "application/json; charset=UTF-8")
+    public ArrayList<Element> aggregationGraph(@RequestParam(value = "url", defaultValue = "http://localhost:8080/events.json") String url, @RequestParam(value = "id", defaultValue = "") String id, @RequestParam(value = "steps", defaultValue = "20") String stepsString) {
+        ArrayList<Element> elements = new ArrayList<>();
+        if (id.equals("")) {
+            return elements;
+        }
+
+        Fetcher fetcher = new Fetcher();
+        Events eventsObject = fetcher.getEvents(url);
+        HashMap<String, Event> events = eventsObject.getEvents();
+
+        if (!events.containsKey(id)) {
+            return elements;
+        }
+
+        int steps = Integer.parseInt(stepsString);
+
+        Event mainEvent = events.get(id);
+
+        HashMap<String, Event> incEvents = step(mainEvent.getLinks(), events, steps);
+
+        HashMap<String, Node> nodes = new HashMap<>();
+        HashMap<String, Edge> edges = new HashMap<>();
+
+
+        // Nodes
+        for (String key : incEvents.keySet()) {
+            Event event = incEvents.get(key);
+
+            if (!event.getType().equals("REDIRECT")) {
+                Node node;
+
+                node = new Node(new DataNode(event.getName(), event.getName(), event.getType(), null));
+                nodes.put(event.getName(), node);
+            }
+        }
+
+        // Edges
+        for (String key : incEvents.keySet()) {
+            Event event = incEvents.get(key);
+            if (!event.getType().equals("REDIRECT")) {
+                for (Link link : event.getLinks()) {
+                    String target = getTarget(link.getTarget(), events);
+
+                    if (target == null) {
+                        System.out.println("null");
+                    }
+
+                    String edgeId = getEdgeId(event.getId(), target);
+                    edges.put(edgeId, new Edge(new DataEdge(edgeId, event.getId(), target, edgeId, link.getType())));
+                }
+            }
+        }
+
+        for (String key : nodes.keySet()) {
+            elements.add(nodes.get(key));
+        }
+
+        for (String key : edges.keySet()) {
+            elements.add(edges.get(key));
+        }
+
+        return elements;
+    }
+
+    private HashMap<String, Event> step(ArrayList<Link> links, HashMap<String, Event> events, int steps) {
+        HashMap<String, Event> incEvents = new HashMap<>();
+
+        if (links == null) {
+            return incEvents;
+        }
+
+        for (Link link : links) {
+            if (!incEvents.containsKey(link.getTarget())) {
+                Event tmpEvent = events.get(link.getTarget());
+                incEvents.put(link.getTarget(), tmpEvent);
+                if (steps > 0) {
+                    int newSteps = steps;
+                    if (!tmpEvent.getType().equals("REDIRECT")) {
+                        newSteps--;
+                    }
+                    HashMap<String, Event> tmpIncEvents = step(events.get(link.getTarget()).getLinks(), events, newSteps);
+                    for (String key : tmpIncEvents.keySet()) {
+                        incEvents.put(key, tmpIncEvents.get(key));
+                    }
+                }
+            }
+        }
+
+        return incEvents;
+    }
+
+    private String getTarget(String target, HashMap<String, Event> events) {
+        if (!events.containsKey(target)) {
+            return null;
+        }
+        Event event = events.get(target);
+        if (event.getType().equals("REDIRECT")) {
+            return getTarget(event.getName(), events);
+        }
+        return target;
     }
 }

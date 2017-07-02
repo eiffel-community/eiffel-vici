@@ -32,7 +32,7 @@ html, body {
 }
 
 .cy {
-
+    overflow: hidden;
 }
 
 .non-cy {

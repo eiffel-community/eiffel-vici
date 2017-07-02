@@ -15,7 +15,7 @@ public class DataEdge {
         this.target = target;
         this.label = label;
         this.type = type;
-        this.quantity = 0;
+        this.quantity = 1;
     }
 
     public void increaseQuantity() {

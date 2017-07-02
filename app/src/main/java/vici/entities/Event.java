@@ -19,39 +19,9 @@ public class Event {
     private String name;
 
     public Event(EiffelEvent eiffelEvent) {
-//        JSONObject jsonObject = new JSONObject(document);
-//
-//        this.data = new HashMap<>();
-//        data.put("triggered", jsonObject.getJSONObject("data").toString());
-//
-//        this.times = new HashMap<>();
-//        times.put("triggered", jsonObject.getJSONObject("meta").getLong("time"));
-//
-//        id = jsonObject.getJSONObject("meta").getString("id");
-//        type = jsonObject.getJSONObject("meta").getString("type");
-//
-//        JSONArray linksJson = jsonObject.getJSONArray("links");
-//        links = new ArrayList<>();
-//        if (linksJson != null) {
-//            for (int i = 0; i < linksJson.length(); i++) {
-//                links.add(new Link(linksJson.getJSONObject(i).getString("target"), linksJson.getJSONObject(i).getString("type")));
-//            }
-//        }
-//
-//        name = null;
-//        JSONArray customDataJson = jsonObject.getJSONObject("data").getJSONArray("customData");
-//        if (customDataJson != null) {
-//            for (int i = 0; i < customDataJson.length(); i++) {
-//                if (customDataJson.getJSONObject(i).getString("key").equals("name")) {
-//                    name = customDataJson.getJSONObject(i).getString("value");
-//                    break;
-//                }
-//            }
-//        }
-
         data = new HashMap<>();
         data.put("triggered", eiffelEvent.getData());
-        
+
         times = new HashMap<>();
         times.put("triggered", eiffelEvent.getMeta().getTime());
 

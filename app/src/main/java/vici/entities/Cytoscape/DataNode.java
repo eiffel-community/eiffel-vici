@@ -14,11 +14,20 @@ public class DataNode {
 
     private HashMap<String, Integer> data;
 
+    public DataNode(String id, String label, String type, String value, int quantity) {
+        this.id = id;
+        this.label = label;
+        this.type = type;
+        this.quantity = quantity;
+        this.value = value;
+        this.data = new HashMap<>();
+    }
+
     public DataNode(String id, String label, String type, String value) {
         this.id = id;
         this.label = label;
         this.type = type;
-        this.quantity = 0;
+        this.quantity = 1;
         this.value = value;
         this.data = new HashMap<>();
     }
