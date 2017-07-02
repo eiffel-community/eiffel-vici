@@ -101,7 +101,7 @@ public class Fetcher {
                         default:
                             target.getData().put("finished", event.getData().get("triggered"));
                             target.getTimes().put("finished", event.getTimes().get("triggered"));
-                            if (events.get(target.getLinks().get(0).getTarget()).getType().equals("TestSuit")) {
+                            if (events.get(target.getLinks().get(0).getTarget()).getType().equals("TestSuite")) {
                                 Event testSuite = events.get(target.getLinks().get(0).getTarget());
                                 testSuite.addEvent(target);
                                 events.remove(target.getId());
@@ -123,9 +123,18 @@ public class Fetcher {
             }
         }
 
+        System.out.println("Finding children...");
+        for (String key : events.keySet()) {
+            Event event = events.get(key);
+            for (Link link : event.getLinks()) {
+                events.get(link.getTarget()).getChildren().add(event.getId());
+            }
+        }
+
         Events eventsObject = new Events(events, timeStart, timeEnd);
         eventCaches.put(url, new EventCache(eventsObject));
 
+        System.out.println("Events imported.");
         return eventsObject;
     }
 }

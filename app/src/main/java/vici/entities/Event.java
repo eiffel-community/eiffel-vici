@@ -16,6 +16,7 @@ public class Event {
     private String id;
     private String type;
     private ArrayList<Link> links;
+    private ArrayList<String> children;
     private String name;
 
     public Event(EiffelEvent eiffelEvent) {
@@ -28,6 +29,7 @@ public class Event {
         id = eiffelEvent.getMeta().getId();
         type = eiffelEvent.getMeta().getType();
         links = eiffelEvent.getLinks();
+        children = new ArrayList<>();
 
         name = null;
         if (eiffelEvent.getData().getCustomData() != null) {
@@ -46,10 +48,11 @@ public class Event {
 
     public Event(Event event, String redirect) {
 //        this.mergedEvents = event.getMergedEvents();
+        this.id = event.getId();
         this.type = "REDIRECT";
         this.name = redirect;
-        this.links = new ArrayList<>();
-        links.add(new Link(redirect, "REDIRECT"));
+        this.links = event.getLinks();
+        this.children = new ArrayList<>();
 
         this.times = event.getTimes();
     }
@@ -135,5 +138,13 @@ public class Event {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public ArrayList<String> getChildren() {
+        return children;
+    }
+
+    public void setChildren(ArrayList<String> children) {
+        this.children = children;
     }
 }
