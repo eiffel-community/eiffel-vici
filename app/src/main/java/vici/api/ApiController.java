@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 import vici.Fetcher;
 import vici.entities.*;
 import vici.entities.Cytoscape.*;
+import vici.entities.Eiffel.CustomData;
 import vici.entities.Eiffel.Outcome;
 import vici.entities.Table.Column;
 import vici.entities.Table.Source;
@@ -14,14 +15,89 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import static vici.Fetcher.*;
+import static vici.entities.Event.*;
+
 @RestController
 public class ApiController {
+
+    private String getStandardAggregateValue(Event event) {
+        switch (event.getType()) {
+            case ACTIVITY:
+                return event.getThisEiffelEvent().getData().getName();
+            case "EiffelAnnouncementPublishedEvent":
+                return event.getThisEiffelEvent().getData().getHeading();
+            case "EiffelArtifactCreatedEvent":
+//            case "EiffelArtifactPublishedEvent": TODO
+            case "EiffelArtifactReusedEvent":
+                if (event.getThisEiffelEvent().getData().getGav() == null) {
+                    System.out.println(event.getThisEiffelEvent().getMeta().getType());
+                }
+//                return event.getThisEiffelEvent().getData().getGav().getGroupId() + "[" + event.getThisEiffelEvent().getData().getGav().getArtifactId() + "]";
+                return event.getThisEiffelEvent().getData().getGav().getArtifactId();
+            case "EiffelCompositionDefinedEvent":
+            case "EiffelConfidenceLevelModifiedEvent":
+            case "EiffelEnvironmentDefinedEvent":
+            case TEST_SUITE:
+                return event.getThisEiffelEvent().getData().getName();
+            case "EiffelFlowContextDefined":
+                return null;
+            case "EiffelIssueVerifiedEvent":
+                // TODO: -IV: data.issues (notera att detta är en array. Dvs det skulle vara snyggt om samma event kan dyka upp i flera objektrepresentationer i grafen)
+                return null;
+            case "EiffelSourceChangeCreatedEvent":
+            case "EiffelSourceChangeSubmittedEvent":
+                // TODO: möjlighet att välja identifier (git/svn/...)
+
+                String type;
+                if (event.getType().equals("EiffelSourceChangeCreatedEvent")) {
+                    type = "Created";
+                } else {
+                    type = "Submitted";
+                }
+                if (event.getThisEiffelEvent().getData().getGitIdentifier() != null) {
+//                    return event.getThisEiffelEvent().getData().getGitIdentifier().getRepoUri() + "[" + event.getThisEiffelEvent().getData().getGitIdentifier().getBranch() + "]";
+//                    return event.getThisEiffelEvent().getData().getGitIdentifier().getRepoUri();
+                    return type + "@" + event.getThisEiffelEvent().getData().getGitIdentifier().getRepoName();
+                }
+                return null;
+            case TEST_CASE:
+                return event.getThisEiffelEvent().getData().getTestCase().getId();
+            case "EiffelTestExecutionRecipeCollectionCreatedEvent":
+                return null;
+            default:
+                return null;
+        }
+    }
+
+    private String getAggregateValue(Event event, HashMap<String, String> aggregateKeys) {
+        if (aggregateKeys == null || !aggregateKeys.containsKey(event.getType())) {
+            String value = getStandardAggregateValue(event);
+
+            if (value == null) {
+                if (event.getThisEiffelEvent().getData().getCustomData() != null) {
+                    for (CustomData customData : event.getThisEiffelEvent().getData().getCustomData()) {
+                        if (customData.getKey().equals("name")) {
+                            return "Custom[" + customData.getValue() + "]";
+                        }
+                    }
+                }
+            }
+            return value;
+        }
+
+        String aggregateKey = aggregateKeys.get(event.getType());
+        String[] path = aggregateKeys.get(event.getType()).split("\\.");
+
+        return null;
+    }
+
     private void setQuantities(Node node, Event event) {
         switch (node.getData().getType()) {
-            case "TestCase":
-            case "Activity":
-            case "TestSuite":
-                Outcome outcome = event.getData().get("finished").getOutcome();
+            case TEST_CASE:
+            case ACTIVITY:
+            case TEST_SUITE:
+                Outcome outcome = event.getEiffelEvents().get(FINISHED).getData().getOutcome();
                 if (outcome.getConclusion() != null) {
                     node.getData().increaseQuantity(outcome.getConclusion());
                 } else if (outcome.getVerdict() != null) {
@@ -35,7 +111,7 @@ public class ApiController {
                 }
                 break;
             case "EiffelConfidenceLevelModifiedEvent":
-                node.getData().increaseQuantity(event.getData().get("triggered").getValue());
+                node.getData().increaseQuantity(event.getEiffelEvents().get(TRIGGERED).getData().getValue());
 
                 break;
             default:
@@ -56,23 +132,19 @@ public class ApiController {
         HashMap<String, Node> nodes = new HashMap<>();
         HashMap<String, Edge> edges = new HashMap<>();
 
-
         // Nodes
         for (String key : events.keySet()) {
             Event event = events.get(key);
 
-            if (!event.getType().equals("REDIRECT")) {
+            if (!event.getType().equals(REDIRECT)) {
+                event.setAggregateOn(getAggregateValue(event, null));
                 Node node;
-
-                if (nodes.containsKey(event.getName())) {
-//                    nodes.get(event.getName()).getQuantities().increaseQuantity();
-
-                    node = nodes.get(event.getName());
+                if (nodes.containsKey(event.getAggregateOn())) {
+                    node = nodes.get(event.getAggregateOn());
                 } else {
-                    node = new Node(new DataNode(event.getName(), event.getName(), event.getType(), null, 0));
-                    nodes.put(event.getName(), node);
+                    node = new Node(new DataNode(event.getAggregateOn(), event.getAggregateOn(), event.getType(), null, 0));
+                    nodes.put(event.getAggregateOn(), node);
                 }
-
 
                 setQuantities(node, event);
             }
@@ -81,14 +153,14 @@ public class ApiController {
         // Edges
         for (String key : events.keySet()) {
             Event event = events.get(key);
-            if (!event.getType().equals("REDIRECT")) {
+            if (!event.getType().equals(REDIRECT)) {
                 for (Link link : event.getLinks()) {
-                    String target = events.get(getTarget(link.getTarget(), events)).getName();
-                    String edgeId = getEdgeId(event.getName(), target, link.getType());
+                    String target = events.get(getTarget(link.getTarget(), events)).getAggregateOn();
+                    String edgeId = getEdgeId(event.getAggregateOn(), target, link.getType());
                     if (edges.containsKey(edgeId)) {
                         edges.get(edgeId).getData().increaseQuantity();
                     } else {
-                        edges.put(edgeId, new Edge(new DataEdge(edgeId, event.getName(), target, edgeId, link.getType())));
+                        edges.put(edgeId, new Edge(new DataEdge(edgeId, event.getAggregateOn(), target, edgeId, link.getType())));
                     }
                 }
             }
@@ -128,27 +200,27 @@ public class ApiController {
 
         for (String key : events.keySet()) {
             Event event = events.get(key);
-            if (!event.getType().equals("REDIRECT")) {
-                if (event.getName().equals(name)) {
+            if (!event.getType().equals(REDIRECT)) {
+                if (event.getAggregateOn().equals(name)) {
                     HashMap<String, String> row = new HashMap<>();
 
                     addColumn(row, columns, cSet, "id", event.getId());
-                    addColumn(row, columns, cSet, "name", event.getName());
+                    addColumn(row, columns, cSet, "event", event.getAggregateOn());
                     addColumn(row, columns, cSet, "type", event.getType());
 
                     for (String keyTime : event.getTimes().keySet()) {
                         addColumn(row, columns, cSet, "time-" + keyTime, String.valueOf(event.getTimes().get(keyTime)));
                     }
 
-                    if (event.getTimes().containsKey("started") && event.getTimes().containsKey("finished")) {
-                        addColumn(row, columns, cSet, "time-execution", String.valueOf(event.getTimes().get("finished") - event.getTimes().get("started")));
+                    if (event.getTimes().containsKey(STARTED) && event.getTimes().containsKey(FINISHED)) {
+                        addColumn(row, columns, cSet, "time-execution", String.valueOf(event.getTimes().get(FINISHED) - event.getTimes().get(STARTED)));
                     }
 
                     switch (event.getType()) {
-                        case "TestCase":
-                        case "Activity":
-                        case "TestSuite":
-                            Outcome outcome = event.getData().get("finished").getOutcome();
+                        case TEST_CASE:
+                        case ACTIVITY:
+                        case TEST_SUITE:
+                            Outcome outcome = event.getEiffelEvents().get(FINISHED).getData().getOutcome();
                             if (outcome.getConclusion() != null) {
                                 addColumn(row, columns, cSet, "conclusion", outcome.getConclusion());
                             }
@@ -158,8 +230,8 @@ public class ApiController {
 
                             break;
                         case "EiffelConfidenceLevelModifiedEvent":
-                            addColumn(row, columns, cSet, "result", event.getData().get("triggered").getValue());
-                            addColumn(row, columns, cSet, "confidence", event.getData().get("triggered").getName());
+                            addColumn(row, columns, cSet, "result", event.getEiffelEvents().get(TRIGGERED).getData().getValue());
+                            addColumn(row, columns, cSet, "confidence", event.getEiffelEvents().get(TRIGGERED).getData().getName());
                             break;
                         default:
                             break;
@@ -177,8 +249,8 @@ public class ApiController {
         row.put(key, value);
         if (!set.contains(key)) {
             switch (key) {
-                case "name":
-                    columns.add(new Column("Name", key));
+                case "event":
+                    columns.add(new Column("Event", key));
                     break;
                 case "id":
                     columns.add(new Column("Eiffel ID", key));
@@ -268,8 +340,8 @@ public class ApiController {
         for (String key : incEvents.keySet()) {
             Event event = incEvents.get(key);
 
-            if (!event.getType().equals("REDIRECT")) {
-                Node node = new Node(new DataNode(event.getId(), event.getName(), event.getType(), null, 0));
+            if (!event.getType().equals(REDIRECT)) {
+                Node node = new Node(new DataNode(event.getId(), event.getAggregateOn(), event.getType(), null, 0));
                 nodes.put(event.getId(), node);
                 graph.increaseInfo("nodeTypes", node.getData().getType());
                 setQuantities(node, event);
@@ -280,7 +352,7 @@ public class ApiController {
         for (String key : incEvents.keySet()) {
             Event event = incEvents.get(key);
 
-            if (!event.getType().equals("REDIRECT") && event.getLinks().size() + event.getChildren().size() <= maxConnections) {
+            if (!event.getType().equals(REDIRECT) && event.getLinks().size() + event.getChildren().size() <= maxConnections) {
                 for (Link link : event.getLinks()) {
                     String target = getTarget(link.getTarget(), events);
                     if (!incEvents.containsKey(target)) {
@@ -371,8 +443,8 @@ public class ApiController {
             return null;
         }
         Event event = events.get(target);
-        if (event.getType().equals("REDIRECT")) {
-            return getTarget(event.getName(), events);
+        if (event.getType().equals(REDIRECT)) {
+            return getTarget(event.getAggregateOn(), events);
         }
         return target;
     }

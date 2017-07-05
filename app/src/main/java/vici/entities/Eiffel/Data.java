@@ -11,18 +11,30 @@ public class Data {
     private String value;
     private String reason;
     private Outcome outcome;
+    private String heading;
+    private String body;
     private ArrayList<CustomData> customData;
+    private GAV gav;
+    private GitIdentifier gitIdentifier;
+    private TestCase testCase;
 
     public Data() {
     }
 
-    public Data(String name, String version, String value, String reason, Outcome outcome, ArrayList<CustomData> customData) {
-        this.name = name;
-        this.version = version;
-        this.value = value;
-        this.reason = reason;
-        this.outcome = outcome;
-        this.customData = customData;
+    public TestCase getTestCase() {
+        return testCase;
+    }
+
+    public void setTestCase(TestCase testCase) {
+        this.testCase = testCase;
+    }
+
+    public GitIdentifier getGitIdentifier() {
+        return gitIdentifier;
+    }
+
+    public void setGitIdentifier(GitIdentifier gitIdentifier) {
+        this.gitIdentifier = gitIdentifier;
     }
 
     public String getName() {
@@ -71,5 +83,29 @@ public class Data {
 
     public void setCustomData(ArrayList<CustomData> customData) {
         this.customData = customData;
+    }
+
+    public GAV getGav() {
+        return gav;
+    }
+
+    public void setGav(GAV gav) {
+        this.gav = gav;
+    }
+
+    public String getHeading() {
+        return heading;
+    }
+
+    public void setHeading(String heading) {
+        this.heading = heading;
+    }
+
+    public String getBody() {
+        return body;
+    }
+
+    public void setBody(String body) {
+        this.body = body;
     }
 }

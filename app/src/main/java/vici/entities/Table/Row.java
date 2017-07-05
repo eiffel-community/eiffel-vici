@@ -1,9 +1,13 @@
 package vici.entities.Table;
 
-import org.json.JSONObject;
+import vici.entities.Eiffel.Outcome;
 import vici.entities.Event;
 
 import java.util.HashMap;
+
+import static vici.Fetcher.*;
+import static vici.entities.Event.FINISHED;
+import static vici.entities.Event.TRIGGERED;
 
 public class Row {
     private HashMap<String, String> data;
@@ -14,7 +18,7 @@ public class Row {
         this.data = new HashMap<>();
 
         data.put("id", event.getId());
-        data.put("name", event.getName());
+        data.put("name", event.getAggregateOn());
         data.put("type", event.getType());
 
         for (String key : event.getTimes().keySet()) {
@@ -23,22 +27,20 @@ public class Row {
 
 
         switch (event.getType()) {
-            case "TestCase":
-            case "Activity":
-            case "TestSuite":
-                System.out.println(event.getData().toString());
-                JSONObject jsonObject = new JSONObject(event.getData().get("finished"));
-                JSONObject outcome = jsonObject.getJSONObject("outcome");
-                if (outcome.has("conclusion")) {
-                    this.data.put("conclusion", outcome.getString("conclusion"));
+            case TEST_CASE:
+            case ACTIVITY:
+            case TEST_SUITE:
+                Outcome outcome = event.getEiffelEvents().get(FINISHED).getData().getOutcome();
+                if (outcome.getConclusion() != null) {
+                    this.data.put("conclusion", outcome.getConclusion());
                 }
-                if (outcome.has("verdict")) {
-                    this.data.put("verdict", outcome.getString("verdict"));
+                if (outcome.getVerdict() != null) {
+                    this.data.put("verdict", outcome.getVerdict());
                 }
                 break;
             case "EiffelConfidenceLevelModifiedEvent":
-                this.data.put("result", new JSONObject(event.getData().get("triggered")).getString("value"));
-                this.data.put("confidence", new JSONObject(event.getData().get("triggered")).getString("name"));
+                this.data.put("result", event.getEiffelEvents().get(TRIGGERED).getData().getValue());
+                this.data.put("confidence", event.getEiffelEvents().get(TRIGGERED).getData().getName());
                 break;
             default:
                 break;

@@ -35,7 +35,7 @@ function renderGraph(container, data, target) {
 
         // Specific style
         {
-            selector: 'node[label ^= "Act"]', // All nodes with ID Activity
+            selector: 'node[type ^= "Activity"]',
             style: {
                 'shape': 'polygon',
                 'shape-polygon-points': '-0.95 -0.77 -0.9 -0.82 -0.85 -0.87 -0.8 -0.91 -0.74 -0.94 -0.68 -0.97 -0.62 -0.98 -0.56 -1 -0.5 -1 -0.44 -1 -0.38 -0.98 -0.32 -0.97 -0.26 -0.94 -0.2 -0.91 -0.15 -0.87 -0.1 -0.82 -0.05 -0.77 0.05 -0.67 0.1 -0.62 0.15 -0.57 0.2 -0.53 0.26 -0.5 0.32 -0.47 0.38 -0.46 0.44 -0.44 0.5 -0.44 0.56 -0.44 0.62 -0.46 0.68 -0.47 0.74 -0.5 0.8 -0.53 0.85 -0.57 0.9 -0.62 0.95 -0.67 0.95 0.77 0.9 0.82 0.85 0.87 0.8 0.91 0.74 0.94 0.68 0.97 0.62 0.98 0.56 1 0.5 1 0.44 1 0.38 0.98 0.32 0.97 0.26 0.94 0.2 0.91 0.15 0.87 0.1 0.82 0.05 0.77 -0.05 0.67 -0.1 0.62 -0.15 0.57 -0.2 0.53 -0.26 0.5 -0.32 0.47 -0.38 0.46 -0.44 0.44 -0.5 0.44 -0.56 0.44 -0.62 0.46 -0.68 0.47 -0.74 0.5 -0.8 0.53 -0.85 0.57 -0.9 0.62 -0.95 0.67',
@@ -54,7 +54,7 @@ function renderGraph(container, data, target) {
             }
         },
         {
-            selector: 'node[label ^= "AP"]', // All nodes with ID Announcement Published
+            selector: 'node[type ^= "EiffelAnnouncementPublishedEvent"]',
             style: {
                 'shape': 'polygon',
                 'shape-polygon-points': '-0.1 0.99 -0.27 0.96 -0.43 0.9 -0.58 0.81 -0.72 0.7 -0.83 0.56 -0.91 0.41 -0.97 0.25 -1 0.07 -0.99 -0.1 -0.96 -0.27 -0.9 -0.43 -0.81 -0.58 -0.7 -0.72 -0.56 -0.83 -0.41 -0.91 -0.25 -0.97 -0.07 -1 0.1 -0.99 0.27 -0.96 0.43 -0.9 0.58 -0.81 0.72 -0.7 0.83 -0.56 0.91 -0.41 0.97 -0.25 1 -0.07 1 0 0.98 0.17 0.94 0.34 0.87 0.5 0.77 0.64 0.64 0.77 0.5 0.87 0.34 0.94 0.17 0.98 0 1 -0.33 0.07 0.51 0.16 0.45 0.1 0.4 0.05 0.29 -0.16 0.22 -0.3 0.19 -0.42 0.17 -0.5 0.16 -0.6 0.17 -0.7 0.18 -0.78 0.26 -0.7 0.3 -0.66 0.35 -0.6 0.41 -0.5 0.47 -0.4 0.49 -0.3 0.52 -0.2 0.53 -0.1 0.54 0 0.52 0.1 0.51 0.16 0.45 0.1 0.4 0.05 0.29 -0.16 0.22 -0.3 0.19 -0.42 0.17 -0.5 0.16 -0.6 0.17 -0.7 0.18 -0.78 -0.46 -0.09 -0.61 -0.05 -0.57 0.13 -0.41 0.09',
@@ -63,7 +63,7 @@ function renderGraph(container, data, target) {
             }
         },
         {
-            selector: 'node[label ^= "Art"]', // All nodes with ID starting with Art (Artifact)
+            selector: 'node[type ^= "EiffelArtifact"]',
             style: {
                 'shape': 'polygon',
                 'shape-polygon-points': '1 -0.4 0 -0.8 -1 -0.4 0 0 1 -0.4 1 0.6 0 1 0 0 0 1 -1 0.6 -1 -0.4 0 0 1 -0.4',
@@ -72,25 +72,25 @@ function renderGraph(container, data, target) {
             }
         },
         {
-            selector: 'node[label ^= "ArtC"]', // All nodes with ID Artifact Created
+            selector: 'node[type ^= "EiffelArtifactCreatedEvent"]',
             style: {
                 'background-color': '#557e62',
             }
         },
         {
-            selector: 'node[label ^= "ArtP"]', // All nodes with ID Artifact Published
+            selector: 'node[type ^= "EiffelArtifactPublishedEvent"]',
             style: {
                 'background-color': '#5a617e',
             }
         },
         {
-            selector: 'node[label ^= "ArtR"]', // All nodes with ID Artifact Reused
+            selector: 'node[type ^= "EiffelArtifactReusedEvent"]',
             style: {
                 'background-color': '#7e5344',
             }
         },
         {
-            selector: 'node[label ^= "CDef"]', // All nodes with ID Composition Defined
+            selector: 'node[type ^= "EiffelCompositionDefinedEvent"]',
             style: {
                 'shape': 'polygon',
                 'shape-polygon-points': '1 0 1 0.6 0.5 0.8 0 0.6 -0.5 0.8 -1 0.6 -1 0 -0.5 -0.2 -0.5 -0.8 0 -1 0.5 -0.8 0.5 -0.2 1 0  0.5 0.2 0.5 0.8 0.5 0.2 0 0 0 0.6 0 0 -0.5 0.2 -0.5 0.8 -0.5 0.2 -1 0 -0.5 -0.2 0 0 0.5 -0.2 0 0 0 -0.6 -0.5 -0.8 0 -0.6 0.5 -0.8 0.5 -0.2 1 0',
@@ -99,7 +99,7 @@ function renderGraph(container, data, target) {
             }
         },
         {
-            selector: 'node[label ^= "CLM"]', // All nodes with ID Confidence Level
+            selector: 'node[type ^= "EiffelConfidenceLevelModifiedEvent"]',
             style: {
                 'background-color': '#fff',
                 'width': '70px',
@@ -132,19 +132,7 @@ function renderGraph(container, data, target) {
             }
         },
         {
-            selector: 'node[label ^= "CA"]', // All nodes with ID Configuration Applied
-            style: {
-                'shape': 'polygon',
-                'shape-polygon-points': '-0.1 1 -0.17 0.77 -0.32 0.72 -0.53 0.87 -0.68 0.77 -0.6 0.53 -0.68 0.38 -0.94 0.39 -1 0.22 -0.79 0.08 -0.79 -0.08 -1 -0.22 -0.94 -0.39 -0.68 -0.38 -0.6 -0.53 -0.68 -0.77 -0.53 -0.87 -0.32 -0.72 -0.17 -0.77 -0.1 -1 0.1 -1 0.17 -0.77 0.32 -0.72 0.53 -0.87 0.68 -0.77 0.6 -0.53 0.68 -0.38 0.94 -0.39 1 -0.22 0.79 -0.08 0.79 0.08 1 0.22 0.94 0.39 0.68 0.38 0.6 0.53 0.68 0.77 0.53 0.87 0.32 0.72 0.17 0.77 0.1 1',
-                'height': 70,
-                'width': 70,
-                'pie-size': '40%',
-                'pie-1-background-size': '100%',
-                'pie-1-background-color': '#fff',
-            }
-        },
-        {
-            selector: 'node[label ^= "EDef"]', // All nodes with ID Environment Defined
+            selector: 'node[type ^= "EiffelEnvironmentDefinedEvent"]',
             style: {
                 'shape': 'polygon',
                 'shape-polygon-points': '1 0 0.97 -0.26 0.87 -0.5 0.71 -0.71 0.5 -0.87 0.26 -0.97 ' +
@@ -157,7 +145,7 @@ function renderGraph(container, data, target) {
             }
         },
         {
-            selector: 'node[label ^= "SCC"]', // All nodes with ID Source Change Created
+            selector: 'node[type ^= "EiffelSourceChangeCreatedEvent"]',
             style: {
                 'shape': 'polygon',
                 'shape-polygon-points': '-0.33 -0.8 -0.35 -0.81 -0.37 -0.83 -0.39 -0.85 -0.4 -0.87 -0.4 -0.9 -0.4 -0.93 -0.39 -0.95 -0.37 -0.97 -0.35 -0.99 -0.33 -1 -0.3 -1 -0.27 -1 -0.25 -0.99 -0.23 -0.97 -0.21 -0.95 -0.2 -0.93 -0.2 -0.9 -0.2 -0.9 -0.2 -0.87 -0.21 -0.85 -0.23 -0.83 -0.25 -0.81 -0.27 -0.8 -0.27 -0.64 0.25 -0.09 0.27 -0.1 0.3 -0.1 0.33 -0.1 0.35 -0.09 0.37 -0.07 0.39 -0.05 0.4 -0.03 0.4 0 0.4 0 0.4 0.03 0.39 0.05 0.37 0.07 0.35 0.09 0.33 0.1 0.3 0.1 0.27 0.1 0.25 0.09 0.23 0.07 0.21 0.05 0.2 0.03 0.2 0 -0.27 -0.5 -0.27 0.5 -0.12 0.5 -0.3 0.7 -0.48 0.5 -0.33 0.5',
@@ -166,7 +154,7 @@ function renderGraph(container, data, target) {
             }
         },
         {
-            selector: 'node[label ^= "SCS"]', // All nodes with ID Source Change Submitted
+            selector: 'node[type ^= "EiffelSourceChangeSubmittedEvent"]',
             style: {
                 'shape': 'polygon',
                 'shape-polygon-points': '-0.33 -0.8 -0.35 -0.81 -0.37 -0.83 -0.39 -0.85 -0.4 -0.87 -0.4 -0.9 -0.4 -0.93 -0.39 -0.95 -0.37 -0.97 -0.35 -0.99 -0.33 -1 -0.3 -1 -0.27 -1 -0.25 -0.99 -0.23 -0.97 -0.21 -0.95 -0.2 -0.93 -0.2 -0.9 -0.2 -0.9 -0.2 -0.87 -0.21 -0.85 -0.23 -0.83 -0.25 -0.81 -0.27 -0.8 -0.27 -0.64 0.25 -0.09 0.27 -0.1 0.3 -0.1 0.33 -0.1 0.35 -0.09 0.37 -0.07 0.39 -0.05 0.4 -0.03 0.4 0 0.4 0 0.4 0.03 0.39 0.05 0.37 0.07 0.35 0.09 0.33 0.1 0.3 0.1 0.27 0.1 0.25 0.09 0.25 0.09 -0.27 0.38 -0.27 0.28 0.2 0 -0.27 -0.5 -0.27 0.5 -0.12 0.5 -0.3 0.7 -0.48 0.5 -0.33 0.5',
@@ -175,7 +163,7 @@ function renderGraph(container, data, target) {
             }
         },
         {
-            selector: 'node[label ^= "TC"]', // All nodes with ID Test Case
+            selector: 'node[type ^= "TestCase"]',
             style: {
                 'background-color': COLOR_FAIL,
                 'shape': 'rectangle',
@@ -193,7 +181,7 @@ function renderGraph(container, data, target) {
             }
         },
         {
-            selector: 'node[label ^= "TS"]', // All nodes with ID Test Suite
+            selector: 'node[type ^= "TestSuite"]',
             style: {
                 'shape': 'rectangle',
                 'border-style': 'double', // solid, dotted, dashed, or double.
@@ -397,7 +385,7 @@ function load(stage) {
                     storeCache('aggregation', systemTarget);
                 });
             }
-            
+
         } else if (stage === 'details') {
             containerDetails.show();
             if (usableCache('details', detailsTarget)) {

@@ -1,56 +1,56 @@
 package vici.entities;
 
 import vici.entities.Eiffel.CustomData;
-import vici.entities.Eiffel.Data;
 import vici.entities.Eiffel.EiffelEvent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Event {
-    private HashMap<String, Data> data;
+    public static final String TRIGGERED = "triggered";
+    public static final String STARTED = "started";
+    public static final String FINISHED = "finished";
+    public static final String CANCELED = "canceled";
+
+    public static final String REDIRECT = "REDIRECT";
+
+    private EiffelEvent thisEiffelEvent;
+    private HashMap<String, EiffelEvent> eiffelEvents;
     private HashMap<String, Long> times;
     private HashMap<String, Integer> quantities;
     private ArrayList<Event> mergedEvents;
+
 
     private String id;
     private String type;
     private ArrayList<Link> links;
     private ArrayList<ChildLink> children;
-    private String name;
+    private String aggregateOn;
 
     public Event(EiffelEvent eiffelEvent) {
-        data = new HashMap<>();
-        data.put("triggered", eiffelEvent.getData());
+        thisEiffelEvent = eiffelEvent;
+        eiffelEvents = new HashMap<>();
+        eiffelEvents.put(TRIGGERED, eiffelEvent);
 
         times = new HashMap<>();
-        times.put("triggered", eiffelEvent.getMeta().getTime());
+        times.put(TRIGGERED, eiffelEvent.getMeta().getTime());
 
         id = eiffelEvent.getMeta().getId();
         type = eiffelEvent.getMeta().getType();
         links = eiffelEvent.getLinks();
         children = new ArrayList<>();
 
-        name = null;
-        if (eiffelEvent.getData().getCustomData() != null) {
-            for (CustomData customData : eiffelEvent.getData().getCustomData()) {
-                if (customData.getKey().equals("name")) {
-                    name = customData.getValue();
-                    break;
-                }
-            }
-        }
+        aggregateOn = null;
 
-
-        this.quantities = null;
-        this.mergedEvents = null;
+        quantities = null;
+        mergedEvents = null;
     }
 
     public Event(Event event, String redirect) {
 //        this.mergedEvents = event.getMergedEvents();
         this.id = event.getId();
-        this.type = "REDIRECT";
-        this.name = redirect;
+        this.type = REDIRECT;
+        this.aggregateOn = redirect;
 //        this.links = event.getLinks();
 //        this.children = new ArrayList<>();
 
@@ -76,12 +76,12 @@ public class Event {
         mergedEvents.add(event);
     }
 
-    public HashMap<String, Data> getData() {
-        return data;
+    public EiffelEvent getThisEiffelEvent() {
+        return thisEiffelEvent;
     }
 
-    public void setData(HashMap<String, Data> data) {
-        this.data = data;
+    public void setThisEiffelEvent(EiffelEvent thisEiffelEvent) {
+        this.thisEiffelEvent = thisEiffelEvent;
     }
 
     public HashMap<String, Long> getTimes() {
@@ -132,12 +132,12 @@ public class Event {
         this.links = links;
     }
 
-    public String getName() {
-        return name;
+    public String getAggregateOn() {
+        return aggregateOn;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setAggregateOn(String aggregateOn) {
+        this.aggregateOn = aggregateOn;
     }
 
     public ArrayList<ChildLink> getChildren() {
@@ -146,5 +146,13 @@ public class Event {
 
     public void setChildren(ArrayList<ChildLink> children) {
         this.children = children;
+    }
+
+    public HashMap<String, EiffelEvent> getEiffelEvents() {
+        return eiffelEvents;
+    }
+
+    public void setEiffelEvents(HashMap<String, EiffelEvent> eiffelEvents) {
+        this.eiffelEvents = eiffelEvents;
     }
 }

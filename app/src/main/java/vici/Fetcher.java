@@ -11,8 +11,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import static vici.api.ApiController.getTarget;
+import static vici.entities.Event.*;
 
 public class Fetcher {
+    public static final String TEST_CASE = "TestCase";
+    public static final String ACTIVITY = "Activity";
+    public static final String TEST_SUITE = "TestSuite";
+
     public static HashMap<String, EventCache> eventCaches = new HashMap<>();
     public static long cacheLifetime = 86400000;
 
@@ -64,17 +69,17 @@ public class Fetcher {
 
             switch (event.getType()) {
                 case "EiffelTestCaseTriggeredEvent":
-                    event.setType("TestCase");
+                    event.setType(TEST_CASE);
                     events.put(event.getId(), event);
                     break;
 
                 case "EiffelActivityTriggeredEvent":
-                    event.setType("Activity");
+                    event.setType(ACTIVITY);
                     events.put(event.getId(), event);
                     break;
 
                 case "EiffelTestSuiteStartedEvent":
-                    event.setType("TestSuite");
+                    event.setType(TEST_SUITE);
                     events.put(event.getId(), event);
                     break;
 
@@ -106,22 +111,22 @@ public class Fetcher {
                         switch (event.getType()) {
                             case "EiffelTestCaseStartedEvent":
                             case "EiffelActivityStartedEvent":
-                                target.getData().put("started", event.getData().get("triggered"));
-                                target.getTimes().put("started", event.getTimes().get("triggered"));
+                                target.getEiffelEvents().put(STARTED, event.getEiffelEvents().get(TRIGGERED));
+                                target.getTimes().put(STARTED, event.getTimes().get(TRIGGERED));
                                 break;
                             case "EiffelTestCaseCanceledEvent":
                             case "EiffelActivityCanceledEvent":
-                                target.getData().put("canceled", event.getData().get("triggered"));
-                                target.getTimes().put("canceled", event.getTimes().get("triggered"));
+                                target.getEiffelEvents().put(CANCELED, event.getEiffelEvents().get(TRIGGERED));
+                                target.getTimes().put(CANCELED, event.getTimes().get(TRIGGERED));
                                 break;
                             default:
-                                target.getData().put("finished", event.getData().get("triggered"));
-                                target.getTimes().put("finished", event.getTimes().get("triggered"));
+                                target.getEiffelEvents().put(FINISHED, event.getEiffelEvents().get(TRIGGERED));
+                                target.getTimes().put(FINISHED, event.getTimes().get(TRIGGERED));
 
                                 tmpLinks = new ArrayList<>();
                                 Event testSuite = null;
                                 for (Link link : target.getLinks()) {
-                                    if (events.get(link.getTarget()).getType().equals("TestSuite")) {
+                                    if (events.get(link.getTarget()).getType().equals(TEST_SUITE)) {
                                         testSuite = events.get(link.getTarget());
                                         testSuite.addEvent(target);
 //                                        events.remove(target.getId());
@@ -157,7 +162,7 @@ public class Fetcher {
         System.out.println("Finding children...");
         for (String key : events.keySet()) {
             Event event = events.get(key);
-            if (!event.getType().equals("REDIRECT")) {
+            if (!event.getType().equals(REDIRECT)) {
                 for (Link link : event.getLinks()) {
                     String target = getTarget(link.getTarget(), events);
                     events.get(target).getChildren().add(new ChildLink(event.getId(), link.getType()));
