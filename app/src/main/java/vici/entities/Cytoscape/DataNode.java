@@ -12,7 +12,8 @@ public class DataNode {
 
     private String value;
 
-    private HashMap<String, Integer> data;
+    private HashMap<String, Integer> quantities;
+    private HashMap<String, String> info;
 
     public DataNode(String id, String label, String type, String value, int quantity) {
         this.id = id;
@@ -20,7 +21,8 @@ public class DataNode {
         this.type = type;
         this.quantity = quantity;
         this.value = value;
-        this.data = new HashMap<>();
+        this.quantities = new HashMap<>();
+        this.info = new HashMap<>();
     }
 
     public DataNode(String id, String label, String type, String value) {
@@ -29,28 +31,37 @@ public class DataNode {
         this.type = type;
         this.quantity = 1;
         this.value = value;
-        this.data = new HashMap<>();
+        this.quantities = new HashMap<>();
+        this.info = new HashMap<>();
     }
 
     public void increaseQuantity(String key) {
-        if (!data.containsKey(key)) {
-            data.put(key, 1);
+        if (!quantities.containsKey(key)) {
+            quantities.put(key, 1);
         } else {
-            data.put(key, data.get(key) + 1);
+            quantities.put(key, quantities.get(key) + 1);
         }
         quantity++;
+    }
+
+    public HashMap<String, String> getInfo() {
+        return info;
+    }
+
+    public void setInfo(HashMap<String, String> info) {
+        this.info = info;
     }
 
     public void increaseQuantity() {
         quantity++;
     }
 
-    public HashMap<String, Integer> getData() {
-        return data;
+    public HashMap<String, Integer> getQuantities() {
+        return quantities;
     }
 
-    public void setData(HashMap<String, Integer> data) {
-        this.data = data;
+    public void setQuantities(HashMap<String, Integer> quantities) {
+        this.quantities = quantities;
     }
 
     public String getValue() {

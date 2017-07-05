@@ -46,10 +46,10 @@ function renderGraph(container, data, target) {
                 'background-image': '/images/green.png',
                 'background-height': '100%',
                 'background-width': function (ele) {
-                    if (ele.data().data.SUCCESSFUL === undefined) {
-                        ele.data().data.SUCCESSFUL = 0;
+                    if (ele.data().quantities.SUCCESSFUL === undefined) {
+                        ele.data().quantities.SUCCESSFUL = 0;
                     }
-                    return (ele.data().data.SUCCESSFUL * 100 / ele.data().quantity).toString() + '%';
+                    return (ele.data().quantities.SUCCESSFUL * 100 / ele.data().quantity).toString() + '%';
                 }
             }
         },
@@ -106,7 +106,7 @@ function renderGraph(container, data, target) {
                 'height': '70x',
                 'pie-size': '100%',
                 'pie-1-background-size': function (ele) {
-                    let value = (ele.data().data.SUCCESS);
+                    let value = (ele.data().quantities.SUCCESS);
                     if (value === undefined) {
                         value = 0;
                     }
@@ -114,7 +114,7 @@ function renderGraph(container, data, target) {
                 },
                 'pie-1-background-color': COLOR_PASS,
                 'pie-2-background-size': function (ele) {
-                    let value = (ele.data().data.FAILURE);
+                    let value = (ele.data().quantities.FAILURE);
                     if (value === undefined) {
                         value = 0;
                     }
@@ -122,7 +122,7 @@ function renderGraph(container, data, target) {
                 },
                 'pie-2-background-color': COLOR_FAIL,
                 'pie-3-background-size': function (ele) {
-                    let value = (ele.data().data.INCONCLUSIVE);
+                    let value = (ele.data().quantities.INCONCLUSIVE);
                     if (value === undefined) {
                         value = 0;
                     }
@@ -172,10 +172,10 @@ function renderGraph(container, data, target) {
                 'background-image': '/images/green.png',
                 'background-height': '100%',
                 'background-width': function (ele) {
-                    if (ele.data().data.SUCCESSFUL === undefined) {
-                        ele.data().data.SUCCESSFUL = 0;
+                    if (ele.data().quantities.SUCCESSFUL === undefined) {
+                        ele.data().quantities.SUCCESSFUL = 0;
                     }
-                    return (ele.data().data.SUCCESSFUL * 100 / ele.data().quantity).toString() + '%';
+                    return (ele.data().quantities.SUCCESSFUL * 100 / ele.data().quantity).toString() + '%';
                 },
                 'background-position-x': '0px'
             }
@@ -193,7 +193,7 @@ function renderGraph(container, data, target) {
                 'background-image': '/images/green.png',
                 'background-height': '100%',
                 'background-width': function (ele) {
-                    let success = ele.data().data.SUCCESSFUL;
+                    let success = ele.data().quantities.SUCCESSFUL;
                     if (success === undefined) {
                         success = 0;
                     }
@@ -229,10 +229,19 @@ function renderGraph(container, data, target) {
     function getQTipContent(data) {
         let content = '<h4>' + data.label + '</h4>' +
             '<button type="button" class="btn btn-block btn-secondary" onclick="newDetailsTarget(\'' + data.id + '\')" value="' + data.id + '"> Show events </button>' +
+            '<table class="table table-bordered table-sm table-hover table-qtip">';
+        // '<tr><th>Attribute</th><th colspan="2">Value</th></tr>'; // table header
+
+        for (key in data.info) {
+            content = content +
+                '<tr><td>' + key + '</td><td class="td-right">' + data.info[key] + '</td></tr>';
+        }
+
+        content = content + '</table>' +
             '<table class="table table-bordered table-sm table-hover table-qtip">' +
             '<tr><th>Attribute</th><th colspan="2">Amount</th></tr>'; // table header
 
-        for (quantity in data.data) {
+        for (quantity in data.quantities) {
             if (quantity === 'SUCCESSFUL') {
                 content = content + '<tr class="table-success">';
             } else if (quantity === 'FAILED' || quantity === 'UNSUCCESSFUL') {
@@ -246,7 +255,7 @@ function renderGraph(container, data, target) {
             }
 
             content = content +
-                '<td>' + quantity + '</td><td class="td-right">' + data.data[quantity] + '</td><td class="td-right">' + Math.round(10 * (data.data[quantity] / data.quantity * 100) / 10) + '%</td></tr>';
+                '<td>' + quantity + '</td><td class="td-right">' + data.quantities[quantity] + '</td><td class="td-right">' + Math.round(10 * (data.quantities[quantity] / data.quantity * 100) / 10) + '%</td></tr>';
         }
 
         content = content + '<tr><td><i>Total</i></td><td colspan="2" class="td-right"><i>' + data.quantity + '</i></td></tr>' +

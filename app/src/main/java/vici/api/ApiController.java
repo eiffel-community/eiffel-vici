@@ -143,6 +143,7 @@ public class ApiController {
                     node = nodes.get(event.getAggregateOn());
                 } else {
                     node = new Node(new DataNode(event.getAggregateOn(), event.getAggregateOn(), event.getType(), null, 0));
+                    node.getData().getInfo().put("Type", event.getType());
                     nodes.put(event.getAggregateOn(), node);
                 }
 
