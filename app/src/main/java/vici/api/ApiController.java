@@ -4,14 +4,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import vici.Fetcher;
+import vici.entities.*;
 import vici.entities.Cytoscape.*;
 import vici.entities.Eiffel.Outcome;
-import vici.entities.Event;
-import vici.entities.Events;
-import vici.entities.Link;
 import vici.entities.Table.Column;
 import vici.entities.Table.Source;
-import vici.entities.UrlProperty;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -68,7 +65,7 @@ public class ApiController {
                 Node node;
 
                 if (nodes.containsKey(event.getName())) {
-//                    nodes.get(event.getName()).getData().increaseQuantity();
+//                    nodes.get(event.getName()).getQuantities().increaseQuantity();
 
                     node = nodes.get(event.getName());
                 } else {
@@ -86,19 +83,12 @@ public class ApiController {
             Event event = events.get(key);
             if (!event.getType().equals("REDIRECT")) {
                 for (Link link : event.getLinks()) {
-                    String target;
-                    if (events.get(link.getTarget()).getType().equals("REDIRECT")) {
-                        target = nodes.get(events.get(events.get(link.getTarget()).getName()).getName()).getData().getId();
+                    String target = events.get(getTarget(link.getTarget(), events)).getName();
+                    String edgeId = getEdgeId(event.getName(), target, link.getType());
+                    if (edges.containsKey(edgeId)) {
+                        edges.get(edgeId).getData().increaseQuantity();
                     } else {
-                        target = nodes.get(events.get(link.getTarget()).getName()).getData().getId();
-                    }
-                    if (target == null) {
-                        System.out.println("null");
-                    }
-                    if (edges.containsKey(getEdgeId(event.getName(), target))) {
-                        edges.get(getEdgeId(event.getName(), target)).getData().increaseQuantity();
-                    } else {
-                        edges.put(getEdgeId(event.getName(), target), new Edge(new DataEdge(getEdgeId(event.getName(), target), event.getName(), target, getEdgeId(event.getName(), target), link.getType())));
+                        edges.put(edgeId, new Edge(new DataEdge(edgeId, event.getName(), target, edgeId, link.getType())));
                     }
                 }
             }
@@ -115,8 +105,8 @@ public class ApiController {
         return elements;
     }
 
-    private String getEdgeId(String source, String target) {
-        return source + "-" + target;
+    private String getEdgeId(String source, String target, String type) {
+        return source + "-" + type + "-" + target;
     }
 
     @RequestMapping(value = "/api/detailedEvents", produces = "application/json; charset=UTF-8")
@@ -232,10 +222,12 @@ public class ApiController {
     }
 
     @RequestMapping(value = "/api/eventChainGraph", produces = "application/json; charset=UTF-8")
-    public ArrayList<Element> aggregationGraph(@RequestParam(value = "url", defaultValue = "http://localhost:8080/events.json") String url, @RequestParam(value = "id", defaultValue = "") String id, @RequestParam(value = "steps", defaultValue = "3") String stepsString) {
-        ArrayList<Element> elements = new ArrayList<>();
+    public Graph eventChainGraph(@RequestParam(value = "url", defaultValue = "http://localhost:8080/events.json") String url, @RequestParam(value = "id", defaultValue = "") String id, @RequestParam(value = "steps", defaultValue = "8") String stepsString) {
+//        ArrayList<Element> elements = new ArrayList<>();
+//        HashMap<String, HashMap<String, Integer>> info = new HashMap<>();
+        Graph graph = new Graph();
         if (id.equals("")) {
-            return elements;
+            return graph;
         }
 
         Fetcher fetcher = new Fetcher();
@@ -243,7 +235,7 @@ public class ApiController {
         HashMap<String, Event> events = eventsObject.getEvents();
 
         if (!events.containsKey(id)) {
-            return elements;
+            return graph;
         }
 
         int steps = Integer.parseInt(stepsString);
@@ -252,7 +244,17 @@ public class ApiController {
 
 
         HashMap<String, Event> incEvents = new HashMap<>();
-        step(mainEvent, incEvents, events, steps);
+
+        HashSet<String> bannedLinks = new HashSet<>();
+        bannedLinks.add("PREVIOUS_VERSION");
+//        bannedLinks.add("ENVIRONMENT");
+//        bannedLinks.add("ELEMENT");
+
+        HashSet<String> dangerousEvents = new HashSet<>();
+        dangerousEvents.add("EiffelEnvironmentDefinedEvent");
+        dangerousEvents.add("EiffelCompositionDefinedEvent");
+
+        step(mainEvent, incEvents, events, steps, bannedLinks, dangerousEvents);
 //        for (String key : incEvents.keySet()) {
 //            System.out.println(incEvents.get(key).getType());
 //        }
@@ -268,6 +270,7 @@ public class ApiController {
             if (!event.getType().equals("REDIRECT")) {
                 Node node = new Node(new DataNode(event.getId(), event.getName(), event.getType(), null, 0));
                 nodes.put(event.getId(), node);
+                graph.increaseInfo("nodeTypes", node.getData().getType());
                 setQuantities(node, event);
             }
         }
@@ -279,28 +282,33 @@ public class ApiController {
             if (!event.getType().equals("REDIRECT")) {
                 for (Link link : event.getLinks()) {
                     String target = getTarget(link.getTarget(), events);
-//                    if (!incEvents.containsKey(target)) {
-//                        nodes.put(target, new Node(new DataNode(target, "unknown", "unknown", null, 1)));
-//                    }
+                    if (!incEvents.containsKey(target) && !dangerousEvents.contains(event.getType())) {
+                        nodes.put(target, new Node(new DataNode(target, "unknown", "unknown", null, 1)));
+                        graph.increaseInfo("nodeTypes", "unknown");
 
-                    if (incEvents.containsKey(target)) {
-                        String edgeId = getEdgeId(event.getId(), target);
+                    }
+
+                    if (nodes.containsKey(target)) {
+                        String edgeId = getEdgeId(event.getId(), target, link.getType());
                         if (!edges.containsKey(edgeId)) {
                             edges.put(edgeId, new Edge(new DataEdge(edgeId, event.getId(), target, edgeId, link.getType())));
+                            graph.increaseInfo("edgeTypes", link.getType());
                         }
                     }
 
                 }
-                for (String child : event.getChildren()) {
-                    String newChild = getChild(child, events);
-//                    if (!incEvents.containsKey(newChild)) {
-//                        nodes.put(newChild, new Node(new DataNode(newChild, "unknown", "unknown", null, 1)));
-//                    }
+                for (ChildLink child : event.getChildren()) {
+                    String childId = child.getChild();
+                    if (!incEvents.containsKey(childId) && !dangerousEvents.contains(event.getType())) {
+                        nodes.put(childId, new Node(new DataNode(childId, "unknown", "unknown", null, 1)));
+                        graph.increaseInfo("nodeTypes", "unknown");
+                    }
 
-                    if (incEvents.containsKey(newChild)) {
-                        String edgeId = getEdgeId(newChild, event.getId());
+                    if (nodes.containsKey(childId)) {
+                        String edgeId = getEdgeId(childId, event.getId(), child.getType());
                         if (!edges.containsKey(edgeId)) {
-                            edges.put(edgeId, new Edge(new DataEdge(edgeId, newChild, event.getId(), edgeId, null)));
+                            edges.put(edgeId, new Edge(new DataEdge(edgeId, childId, event.getId(), edgeId, child.getType())));
+                            graph.increaseInfo("edgeTypes", child.getType());
                         }
                     }
                 }
@@ -308,17 +316,25 @@ public class ApiController {
         }
 
         for (String key : nodes.keySet()) {
-            elements.add(nodes.get(key));
+            graph.getElements().add(nodes.get(key));
         }
 
         for (String key : edges.keySet()) {
-            elements.add(edges.get(key));
+            graph.getElements().add(edges.get(key));
         }
 
-        return elements;
+        for (String key : graph.getQuantities().keySet()) {
+            System.out.println(key + ":");
+            for (String valueKey : graph.getQuantities().get(key).keySet()) {
+                System.out.println(valueKey + ": " + graph.getQuantities().get(key).get(valueKey));
+            }
+        }
+
+        return graph;
+        // TODO: dynamic links.length steps block
     }
 
-    private void step(Event event, HashMap<String, Event> incEvents, HashMap<String, Event> events, int steps) {
+    private void step(Event event, HashMap<String, Event> incEvents, HashMap<String, Event> events, int steps, HashSet<String> bannedLinks, HashSet<String> dangerousEvents) {
         incEvents.put(event.getId(), event);
         if (steps <= 0) {
             return;
@@ -327,29 +343,33 @@ public class ApiController {
         ArrayList<Link> links = event.getLinks();
         if (links != null) {
             for (Link link : links) {
-                Event tmpEvent = events.get(link.getTarget());
-                int newSteps = steps;
-                if (!tmpEvent.getType().equals("REDIRECT")) {
-                    newSteps--;
+                if (!bannedLinks.contains(link.getType())) {
+                    Event tmpEvent = events.get(getTarget(link.getTarget(), events));
+                    int newSteps = steps - 1;
+                    if (dangerousEvents.contains(tmpEvent.getType())) {
+                        newSteps = 0;
+                    }
+                    step(tmpEvent, incEvents, events, newSteps, bannedLinks, dangerousEvents);
                 }
-                step(tmpEvent, incEvents, events, newSteps);
             }
         }
 
-        ArrayList<String> children = event.getChildren();
+        ArrayList<ChildLink> children = event.getChildren();
         if (children != null) {
-            for (String child : children) {
-                Event tmpEvent = events.get(child);
-                int newSteps = steps;
-                if (!tmpEvent.getType().equals("REDIRECT")) {
-                    newSteps--;
+            for (ChildLink child : children) {
+                if (!bannedLinks.contains(child.getType())) {
+                    Event tmpEvent = events.get(child.getChild());
+                    int newSteps = steps - 1;
+                    if (dangerousEvents.contains(tmpEvent.getType())) {
+                        newSteps = 0;
+                    }
+                    step(tmpEvent, incEvents, events, newSteps, bannedLinks, dangerousEvents);
                 }
-                step(tmpEvent, incEvents, events, newSteps);
             }
         }
     }
 
-    private String getTarget(String target, HashMap<String, Event> events) {
+    public static String getTarget(String target, HashMap<String, Event> events) {
         if (!events.containsKey(target)) {
             return null;
         }
@@ -358,16 +378,5 @@ public class ApiController {
             return getTarget(event.getName(), events);
         }
         return target;
-    }
-
-    private String getChild(String child, HashMap<String, Event> events) {
-        if (!events.containsKey(child)) {
-            return null;
-        }
-        Event event = events.get(child);
-        if (event.getType().equals("REDIRECT")) {
-            return getChild(event.getName(), events);
-        }
-        return child;
     }
 }

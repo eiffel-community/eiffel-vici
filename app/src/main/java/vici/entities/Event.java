@@ -16,7 +16,7 @@ public class Event {
     private String id;
     private String type;
     private ArrayList<Link> links;
-    private ArrayList<String> children;
+    private ArrayList<ChildLink> children;
     private String name;
 
     public Event(EiffelEvent eiffelEvent) {
@@ -51,10 +51,10 @@ public class Event {
         this.id = event.getId();
         this.type = "REDIRECT";
         this.name = redirect;
-        this.links = event.getLinks();
-        this.children = new ArrayList<>();
+//        this.links = event.getLinks();
+//        this.children = new ArrayList<>();
 
-        this.times = event.getTimes();
+//        this.times = event.getTimes();
     }
 
     public void increaseQuantity(String quantity) {
@@ -140,11 +140,11 @@ public class Event {
         this.name = name;
     }
 
-    public ArrayList<String> getChildren() {
+    public ArrayList<ChildLink> getChildren() {
         return children;
     }
 
-    public void setChildren(ArrayList<String> children) {
+    public void setChildren(ArrayList<ChildLink> children) {
         this.children = children;
     }
 }

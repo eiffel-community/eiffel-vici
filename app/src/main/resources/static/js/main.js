@@ -5,7 +5,7 @@ function renderGraph(container, data, target) {
     const COLOR_UNDEFINED = '#666';
 //            $('.greeting-id').append(data.id);
 //            $('.greeting-content').append(data.content);
-    console.log(data);
+//     console.log(data);
 
     let style = [
         {
@@ -389,6 +389,7 @@ function load(stage) {
                 $.ajax({
                     url: 'http://localhost:8080/api/aggregationGraph?url=' + systemTarget
                 }).then(function (data) {
+                    console.log(data);
                     renderGraph(containerAggregation, data, undefined);
                     storeCache('aggregation', systemTarget);
                     loader.hide();
@@ -449,7 +450,8 @@ function load(stage) {
                 $.ajax({
                     url: 'http://localhost:8080/api/eventChainGraph?id=' + eventTarget
                 }).then(function (data) {
-                    renderGraph(containerEventChain, data, eventTarget);
+                    console.log(data);
+                    renderGraph(containerEventChain, data.elements, eventTarget);
                     storeCache('eventChain', eventTarget);
                     loader.hide();
                 });

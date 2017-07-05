@@ -4,11 +4,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
-import vici.entities.Eiffel.EiffelEvent;
 import vici.entities.*;
+import vici.entities.Eiffel.EiffelEvent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import static vici.api.ApiController.getTarget;
 
 public class Fetcher {
     public static HashMap<String, EventCache> eventCaches = new HashMap<>();
@@ -37,13 +39,13 @@ public class Fetcher {
         RestTemplate restTemplate = new RestTemplate();
 
         ResponseEntity<EiffelEvent[]> responseEntity = restTemplate.getForEntity(urlObject.toString(), EiffelEvent[].class);
-        EiffelEvent[] documents = responseEntity.getBody();
+        EiffelEvent[] eiffelEvents = responseEntity.getBody();
         MediaType contentType = responseEntity.getHeaders().getContentType();
         HttpStatus statusCode = responseEntity.getStatusCode();
 
         System.out.println("Downloaded eiffel-events. Importing...");
 
-        int total = documents.length;
+        int total = eiffelEvents.length;
         int count = 0;
         int lastPrint = count;
 
@@ -51,8 +53,8 @@ public class Fetcher {
         long timeEnd = Long.MIN_VALUE;
 
         HashMap<String, Event> events = new HashMap<>();
-        for (EiffelEvent document : documents) {
-            Event event = new Event(document);
+        for (EiffelEvent eiffelEvent : eiffelEvents) {
+            Event event = new Event(eiffelEvent);
 //            if (event.getTime().getStart() < timeStart) {
 //                timeStart = event.getTime().getStart();
 //            }
@@ -85,29 +87,58 @@ public class Fetcher {
                 case "EiffelActivityCanceledEvent":
 
                 case "EiffelTestSuiteFinishedEvent":
-                    Event target = events.get(event.getLinks().get(0).getTarget());
-                    events.put(event.getId(), new Event(event, target.getId()));
-                    switch (event.getType()) {
-                        case "EiffelTestCaseStartedEvent":
-                        case "EiffelActivityStartedEvent":
-                            target.getData().put("started", event.getData().get("triggered"));
-                            target.getTimes().put("started", event.getTimes().get("triggered"));
-                            break;
-                        case "EiffelTestCaseCanceledEvent":
-                        case "EiffelActivityCanceledEvent":
-                            target.getData().put("canceled", event.getData().get("triggered"));
-                            target.getTimes().put("canceled", event.getTimes().get("triggered"));
-                            break;
-                        default:
-                            target.getData().put("finished", event.getData().get("triggered"));
-                            target.getTimes().put("finished", event.getTimes().get("triggered"));
-                            if (events.get(target.getLinks().get(0).getTarget()).getType().equals("TestSuite")) {
-                                Event testSuite = events.get(target.getLinks().get(0).getTarget());
-                                testSuite.addEvent(target);
-                                events.remove(target.getId());
-                                events.put(target.getId(), new Event(event, testSuite.getId()));
-                            }
-                            break;
+                    Event target = null;
+
+                    ArrayList<Link> tmpLinks = new ArrayList<>();
+                    for (Link link : event.getLinks()) {
+                        if (link.getType().equals("ACTIVITY_EXECUTION") || link.getType().equals("TEST_CASE_EXECUTION") || link.getType().equals("TEST_SUITE_EXECUTION")) {
+                            target = events.get(link.getTarget());
+                        } else {
+                            tmpLinks.add(link);
+                        }
+                    }
+                    if (target != null) {
+                        for (Link link : tmpLinks) {
+                            events.get(target.getId()).getLinks().add(link);
+                        }
+
+                        events.put(event.getId(), new Event(event, target.getId()));
+                        switch (event.getType()) {
+                            case "EiffelTestCaseStartedEvent":
+                            case "EiffelActivityStartedEvent":
+                                target.getData().put("started", event.getData().get("triggered"));
+                                target.getTimes().put("started", event.getTimes().get("triggered"));
+                                break;
+                            case "EiffelTestCaseCanceledEvent":
+                            case "EiffelActivityCanceledEvent":
+                                target.getData().put("canceled", event.getData().get("triggered"));
+                                target.getTimes().put("canceled", event.getTimes().get("triggered"));
+                                break;
+                            default:
+                                target.getData().put("finished", event.getData().get("triggered"));
+                                target.getTimes().put("finished", event.getTimes().get("triggered"));
+
+                                tmpLinks = new ArrayList<>();
+                                Event testSuite = null;
+                                for (Link link : target.getLinks()) {
+                                    if (events.get(link.getTarget()).getType().equals("TestSuite")) {
+                                        testSuite = events.get(link.getTarget());
+                                        testSuite.addEvent(target);
+//                                        events.remove(target.getId());
+                                        events.put(target.getId(), new Event(event, testSuite.getId()));
+                                    } else {
+                                        tmpLinks.add(link);
+                                    }
+                                }
+                                if (testSuite != null) {
+                                    for (Link link : tmpLinks) {
+                                        testSuite.getLinks().add(link);
+                                    }
+                                }
+                                break;
+                        }
+                    } else {
+                        System.out.println("ERROR: Eiffel wrong links.");
                     }
                     break;
 
@@ -126,8 +157,11 @@ public class Fetcher {
         System.out.println("Finding children...");
         for (String key : events.keySet()) {
             Event event = events.get(key);
-            for (Link link : event.getLinks()) {
-                events.get(link.getTarget()).getChildren().add(event.getId());
+            if (!event.getType().equals("REDIRECT")) {
+                for (Link link : event.getLinks()) {
+                    String target = getTarget(link.getTarget(), events);
+                    events.get(target).getChildren().add(new ChildLink(event.getId(), link.getType()));
+                }
             }
         }
 
