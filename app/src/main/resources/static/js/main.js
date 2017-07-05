@@ -351,6 +351,8 @@ let detailsDataTable = undefined;
 
 let cacheStoreTime = 86400000;
 
+let menuDetailsMaxStringLength = 16;
+
 let cache = {};
 
 function usableCache(cacheName, request) {
@@ -385,13 +387,14 @@ function load(stage) {
             } else {
                 $.ajax({
                     url: '/api/aggregationGraph?url=' + systemTarget,
+                    success: function (data) {
+                        console.log(data);
+                        renderGraph(containerAggregation, data, undefined);
+                        storeCache('aggregation', systemTarget);
+                    },
                     complete: function () {
                         loader.hide();
                     }
-                }).then(function (data) {
-                    console.log(data);
-                    renderGraph(containerAggregation, data, undefined);
-                    storeCache('aggregation', systemTarget);
                 });
             }
 
@@ -402,44 +405,44 @@ function load(stage) {
                 loader.hide();
             } else {
                 $.ajax({
-                        url: "/api/detailedEvents?name=" + detailsTarget,
-                        complete: function () {
-                            loader.hide();
+                    url: "/api/detailedEvents?name=" + detailsTarget,
+                    success: function (data) {
+                        console.log(data);
+                        if (detailsDataTable !== undefined) {
+                            detailsDataTable.destroy();
+                            detailsTable.empty();
                         }
-                    }
-                ).then(function (data) {
-                    console.log(data);
-                    if (detailsDataTable !== undefined) {
-                        detailsDataTable.destroy();
-                        detailsTable.empty();
-                    }
 
-                    let preDefColumns = [
-                        {
-                            title: 'Chain',
-                            data: null,
-                            defaultContent: '<button class="btn btn-default row-button">Graph</button>'
+                        let preDefColumns = [
+                            {
+                                title: 'Chain',
+                                data: null,
+                                defaultContent: '<button class="btn btn-default row-button">Graph</button>'
+                            }
+                        ];
+
+                        if (data.data.length !== 0) {
+                            detailsDataTable = detailsTable.DataTable({
+                                destroy: true,
+                                data: data.data,
+                                columns: preDefColumns.concat(data.columns),
+                                scrollY: '80vh',
+                                scrollCollapse: true,
+                                lengthMenu: [[20, 200, -1], [20, 200, "All"]],
+                                order: [4, 'asc'],
+                            });
+                            storeCache('details', detailsTarget);
+
+                            detailsTable.find('tbody').on('click', 'button', function () {
+                                let data = detailsDataTable.row($(this).parents('tr')).data();
+                                newEventTarget(data.id);
+                            });
+                        } else {
+                            console.log("No data");
                         }
-                    ];
-
-                    if (data.data.length !== 0) {
-                        detailsDataTable = detailsTable.DataTable({
-                            destroy: true,
-                            data: data.data,
-                            columns: preDefColumns.concat(data.columns),
-                            scrollY: '80vh',
-                            scrollCollapse: true,
-                            lengthMenu: [[20, 200, -1], [20, 200, "All"]],
-                            order: [4, 'asc'],
-                        });
-                        storeCache('details', detailsTarget);
-
-                        detailsTable.find('tbody').on('click', 'button', function () {
-                            let data = detailsDataTable.row($(this).parents('tr')).data();
-                            newEventTarget(data.id);
-                        });
-                    } else {
-                        console.log("No data");
+                    },
+                    complete: function () {
+                        loader.hide();
                     }
                 });
             }
@@ -452,14 +455,20 @@ function load(stage) {
                 return;
             }
             $.ajax({
+                type: "POST",
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json',
                 url: '/api/eventChainGraph?id=' + eventTarget,
+                data: JSON.stringify(getSettings()),
+                // data: getSettings(),
+                success: function (data) {
+                    console.log(data);
+                    renderGraph(containerEventChain, data.elements, eventTarget);
+                    storeCache('eventChain', eventTarget);
+                },
                 complete: function () {
                     loader.hide();
                 }
-            }).then(function (data) {
-                console.log(data);
-                renderGraph(containerEventChain, data.elements, eventTarget);
-                storeCache('eventChain', eventTarget);
             });
 
         } else if (stage === 'live') {
@@ -482,7 +491,11 @@ function newDetailsTarget(target) {
     detailsTarget = target;
     let newDetailsString = 'Details';
     if (detailsTarget !== "") {
-        newDetailsString = newDetailsString + ' [' + detailsTarget + ']';
+        let detailsTargetPrint = detailsTarget;
+        if (detailsTarget.length > menuDetailsMaxStringLength) {
+            detailsTargetPrint = detailsTarget.substring(0, menuDetailsMaxStringLength - 3) + '...';
+        }
+        newDetailsString = newDetailsString + ' [' + detailsTargetPrint + ']';
     }
     $('#menu_details').html('<a href="#">' + newDetailsString + '</a>');
     load("details");
@@ -491,6 +504,24 @@ function newDetailsTarget(target) {
 function newEventTarget(target) {
     eventTarget = target;
     load("eventChain");
+}
+
+function getSettings() {
+    let settings = {
+        aggregation: {},
+        details: {},
+        eventChain: {
+            steps: 6,
+            upStream: true,
+            downStream: true,
+            maxConnections: 16,
+            bannedLinks: [
+                "PREVIOUS_VERSION",
+            ]
+        },
+        live: {}
+    };
+    return settings;
 }
 
 $(document).ready(function () {

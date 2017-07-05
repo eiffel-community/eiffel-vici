@@ -1,9 +1,11 @@
 package vici.api;
 
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import vici.Fetcher;
+import vici.api.examples.Settings.Settings;
 import vici.entities.*;
 import vici.entities.Cytoscape.*;
 import vici.entities.Eiffel.CustomData;
@@ -120,7 +122,7 @@ public class ApiController {
         }
     }
 
-    @GetMapping(value = "/api/aggregationGraph", produces = "application/json; charset=UTF-8")
+    @RequestMapping(value = "/api/aggregationGraph", produces = "application/json; charset=UTF-8")
     public ArrayList<Element> aggregationGraph(@RequestParam(value = "url", defaultValue = "http://localhost:8080/events.json") String url) {
 
         Fetcher fetcher = new Fetcher();
@@ -182,7 +184,7 @@ public class ApiController {
         return source + "-" + type + "-" + target;
     }
 
-    @GetMapping(value = "/api/detailedEvents", produces = "application/json; charset=UTF-8")
+    @RequestMapping(value = "/api/detailedEvents", produces = "application/json; charset=UTF-8")
     public Source detailedEvents(@RequestParam(value = "name", defaultValue = "") String name, @RequestParam(value = "url", defaultValue = "http://localhost:8080/events.json") String url) {
 
         ArrayList<UrlProperty> urlProperties = new ArrayList<>();
@@ -294,9 +296,10 @@ public class ApiController {
         }
     }
 
-    @GetMapping(value = "/api/eventChainGraph", produces = "application/json; charset=UTF-8")
-    public Graph eventChainGraph(@RequestParam(value = "id", defaultValue = "") String id, @RequestParam(value = "steps", defaultValue = "6") String stepsString, @RequestParam(value = "maxConnections", defaultValue = "16") String maxConnectionsString, @RequestParam(value = "url", defaultValue = "http://localhost:8080/events.json") String url) {
-//        ArrayList<Element> elements = new ArrayList<>();
+    @RequestMapping(value = "/api/eventChainGraph", produces = "application/json; charset=UTF-8")
+    public Graph eventChainGraph(@RequestBody Settings settings, @RequestParam(value = "id", defaultValue = "") String id, @RequestParam(value = "url", defaultValue = "http://localhost:8080/events.json") String url) {
+
+        //        ArrayList<Element> elements = new ArrayList<>();
 //        HashMap<String, HashMap<String, Integer>> info = new HashMap<>();
         Graph graph = new Graph();
         if (id.equals("")) {
@@ -310,9 +313,6 @@ public class ApiController {
         if (!events.containsKey(id)) {
             return graph;
         }
-
-        int steps = Integer.parseInt(stepsString);
-        int maxConnections = Integer.parseInt(maxConnectionsString);
 
         Event mainEvent = events.get(id);
 
@@ -328,7 +328,7 @@ public class ApiController {
 //        dangerousEvents.add("EiffelEnvironmentDefinedEvent");
 //        dangerousEvents.add("EiffelCompositionDefinedEvent");
 
-        step(mainEvent, incEvents, events, steps, maxConnections, bannedLinks);
+        step(settings, mainEvent, incEvents, events, settings.getEventChain().getSteps());
 //        for (String key : incEvents.keySet()) {
 //            System.out.println(incEvents.get(key).getType());
 //        }
@@ -353,7 +353,7 @@ public class ApiController {
         for (String key : incEvents.keySet()) {
             Event event = incEvents.get(key);
 
-            if (!event.getType().equals(REDIRECT) && event.getLinks().size() + event.getChildren().size() <= maxConnections) {
+            if (!event.getType().equals(REDIRECT) && event.getLinks().size() + event.getChildren().size() <= settings.getEventChain().getMaxConnections()) {
                 for (Link link : event.getLinks()) {
                     String target = getTarget(link.getTarget(), events);
                     if (!incEvents.containsKey(target)) {
@@ -406,34 +406,37 @@ public class ApiController {
         return graph;
     }
 
-    private void step(Event event, HashMap<String, Event> incEvents, HashMap<String, Event> events, int steps, int maxConnections, HashSet<String> bannedLinks) {
+    private void step(Settings settings, Event event, HashMap<String, Event> incEvents, HashMap<String, Event> events, int steps) {
 
         incEvents.put(event.getId(), event);
-        if (event.getChildren().size() + event.getLinks().size() > maxConnections) {
+        if (event.getChildren().size() + event.getLinks().size() > settings.getEventChain().getMaxConnections()) {
             return;
         }
         if (steps <= 0) {
             return;
         }
-
-        ArrayList<Link> links = event.getLinks();
-        if (links != null) {
-            for (Link link : links) {
-                if (!bannedLinks.contains(link.getType())) {
-                    Event tmpEvent = events.get(getTarget(link.getTarget(), events));
-                    int newSteps = steps - 1;
-                    step(tmpEvent, incEvents, events, newSteps, maxConnections, bannedLinks);
+        if (settings.getEventChain().isDownStream()) {
+            ArrayList<Link> links = event.getLinks();
+            if (links != null) {
+                for (Link link : links) {
+                    if (!settings.getEventChain().getBannedLinks().contains(link.getType())) {
+                        Event tmpEvent = events.get(getTarget(link.getTarget(), events));
+                        int newSteps = steps - 1;
+                        step(settings, tmpEvent, incEvents, events, newSteps);
+                    }
                 }
             }
         }
 
-        ArrayList<ChildLink> children = event.getChildren();
-        if (children != null) {
-            for (ChildLink child : children) {
-                if (!bannedLinks.contains(child.getType())) {
-                    Event tmpEvent = events.get(child.getChild());
-                    int newSteps = steps - 1;
-                    step(tmpEvent, incEvents, events, newSteps, maxConnections, bannedLinks);
+        if (settings.getEventChain().isUpStream()) {
+            ArrayList<ChildLink> children = event.getChildren();
+            if (children != null) {
+                for (ChildLink child : children) {
+                    if (!settings.getEventChain().getBannedLinks().contains(child.getType())) {
+                        Event tmpEvent = events.get(child.getChild());
+                        int newSteps = steps - 1;
+                        step(settings, tmpEvent, incEvents, events, newSteps);
+                    }
                 }
             }
         }
