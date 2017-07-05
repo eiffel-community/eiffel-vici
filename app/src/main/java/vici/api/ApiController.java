@@ -222,7 +222,7 @@ public class ApiController {
     }
 
     @RequestMapping(value = "/api/eventChainGraph", produces = "application/json; charset=UTF-8")
-    public Graph eventChainGraph(@RequestParam(value = "url", defaultValue = "http://localhost:8080/events.json") String url, @RequestParam(value = "id", defaultValue = "") String id, @RequestParam(value = "steps", defaultValue = "8") String stepsString) {
+    public Graph eventChainGraph(@RequestParam(value = "id", defaultValue = "") String id, @RequestParam(value = "steps", defaultValue = "6") String stepsString, @RequestParam(value = "maxConnections", defaultValue = "16") String maxConnectionsString, @RequestParam(value = "url", defaultValue = "http://localhost:8080/events.json") String url) {
 //        ArrayList<Element> elements = new ArrayList<>();
 //        HashMap<String, HashMap<String, Integer>> info = new HashMap<>();
         Graph graph = new Graph();
@@ -239,6 +239,7 @@ public class ApiController {
         }
 
         int steps = Integer.parseInt(stepsString);
+        int maxConnections = Integer.parseInt(maxConnectionsString);
 
         Event mainEvent = events.get(id);
 
@@ -250,11 +251,11 @@ public class ApiController {
 //        bannedLinks.add("ENVIRONMENT");
 //        bannedLinks.add("ELEMENT");
 
-        HashSet<String> dangerousEvents = new HashSet<>();
-        dangerousEvents.add("EiffelEnvironmentDefinedEvent");
-        dangerousEvents.add("EiffelCompositionDefinedEvent");
+//        HashSet<String> dangerousEvents = new HashSet<>();
+//        dangerousEvents.add("EiffelEnvironmentDefinedEvent");
+//        dangerousEvents.add("EiffelCompositionDefinedEvent");
 
-        step(mainEvent, incEvents, events, steps, bannedLinks, dangerousEvents);
+        step(mainEvent, incEvents, events, steps, maxConnections, bannedLinks);
 //        for (String key : incEvents.keySet()) {
 //            System.out.println(incEvents.get(key).getType());
 //        }
@@ -279,13 +280,12 @@ public class ApiController {
         for (String key : incEvents.keySet()) {
             Event event = incEvents.get(key);
 
-            if (!event.getType().equals("REDIRECT")) {
+            if (!event.getType().equals("REDIRECT") && event.getLinks().size() + event.getChildren().size() <= maxConnections) {
                 for (Link link : event.getLinks()) {
                     String target = getTarget(link.getTarget(), events);
-                    if (!incEvents.containsKey(target) && !dangerousEvents.contains(event.getType())) {
+                    if (!incEvents.containsKey(target)) {
                         nodes.put(target, new Node(new DataNode(target, "unknown", "unknown", null, 1)));
                         graph.increaseInfo("nodeTypes", "unknown");
-
                     }
 
                     if (nodes.containsKey(target)) {
@@ -299,7 +299,7 @@ public class ApiController {
                 }
                 for (ChildLink child : event.getChildren()) {
                     String childId = child.getChild();
-                    if (!incEvents.containsKey(childId) && !dangerousEvents.contains(event.getType())) {
+                    if (!incEvents.containsKey(childId)) {
                         nodes.put(childId, new Node(new DataNode(childId, "unknown", "unknown", null, 1)));
                         graph.increaseInfo("nodeTypes", "unknown");
                     }
@@ -323,19 +323,22 @@ public class ApiController {
             graph.getElements().add(edges.get(key));
         }
 
-        for (String key : graph.getQuantities().keySet()) {
-            System.out.println(key + ":");
-            for (String valueKey : graph.getQuantities().get(key).keySet()) {
-                System.out.println(valueKey + ": " + graph.getQuantities().get(key).get(valueKey));
-            }
-        }
+//        for (String key : graph.getQuantities().keySet()) {
+//            System.out.println(key + ":");
+//            for (String valueKey : graph.getQuantities().get(key).keySet()) {
+//                System.out.println(valueKey + ": " + graph.getQuantities().get(key).get(valueKey));
+//            }
+//        }
 
         return graph;
-        // TODO: dynamic links.length steps block
     }
 
-    private void step(Event event, HashMap<String, Event> incEvents, HashMap<String, Event> events, int steps, HashSet<String> bannedLinks, HashSet<String> dangerousEvents) {
+    private void step(Event event, HashMap<String, Event> incEvents, HashMap<String, Event> events, int steps, int maxConnections, HashSet<String> bannedLinks) {
+
         incEvents.put(event.getId(), event);
+        if (event.getChildren().size() + event.getLinks().size() > maxConnections) {
+            return;
+        }
         if (steps <= 0) {
             return;
         }
@@ -346,10 +349,7 @@ public class ApiController {
                 if (!bannedLinks.contains(link.getType())) {
                     Event tmpEvent = events.get(getTarget(link.getTarget(), events));
                     int newSteps = steps - 1;
-                    if (dangerousEvents.contains(tmpEvent.getType())) {
-                        newSteps = 0;
-                    }
-                    step(tmpEvent, incEvents, events, newSteps, bannedLinks, dangerousEvents);
+                    step(tmpEvent, incEvents, events, newSteps, maxConnections, bannedLinks);
                 }
             }
         }
@@ -360,10 +360,7 @@ public class ApiController {
                 if (!bannedLinks.contains(child.getType())) {
                     Event tmpEvent = events.get(child.getChild());
                     int newSteps = steps - 1;
-                    if (dangerousEvents.contains(tmpEvent.getType())) {
-                        newSteps = 0;
-                    }
-                    step(tmpEvent, incEvents, events, newSteps, bannedLinks, dangerousEvents);
+                    step(tmpEvent, incEvents, events, newSteps, maxConnections, bannedLinks);
                 }
             }
         }

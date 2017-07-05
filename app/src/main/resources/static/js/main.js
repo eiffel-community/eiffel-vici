@@ -387,14 +387,17 @@ function load(stage) {
                 loader.hide();
             } else {
                 $.ajax({
-                    url: 'http://localhost:8080/api/aggregationGraph?url=' + systemTarget
+                    url: 'http://localhost:8080/api/aggregationGraph?url=' + systemTarget,
+                    complete: function () {
+                        loader.hide();
+                    }
                 }).then(function (data) {
                     console.log(data);
                     renderGraph(containerAggregation, data, undefined);
                     storeCache('aggregation', systemTarget);
-                    loader.hide();
                 });
             }
+            
         } else if (stage === 'details') {
             containerDetails.show();
             if (usableCache('details', detailsTarget)) {
@@ -403,6 +406,9 @@ function load(stage) {
             } else {
                 $.ajax({
                         url: "http://localhost:8080/api/detailedEvents?name=" + detailsTarget,
+                        complete: function () {
+                            loader.hide();
+                        }
                     }
                 ).then(function (data) {
                     console.log(data);
@@ -438,24 +444,32 @@ function load(stage) {
                     } else {
                         console.log("No data");
                     }
-                    loader.hide();
                 });
             }
+
         } else if (stage === 'eventChain') {
+            // if (eventTarget === undefined) {
+            //     console.log("No event-chain target.");
+            //     loader.hide();
+            //     return;
+            // }
             wrapperEventChain.show();
             if (usableCache('eventChain', eventTarget)) {
                 console.log('Using cache for ' + eventTarget);
                 loader.hide();
-            } else {
-                $.ajax({
-                    url: 'http://localhost:8080/api/eventChainGraph?id=' + eventTarget
-                }).then(function (data) {
-                    console.log(data);
-                    renderGraph(containerEventChain, data.elements, eventTarget);
-                    storeCache('eventChain', eventTarget);
-                    loader.hide();
-                });
+                return;
             }
+            $.ajax({
+                url: 'http://localhost:8080/api/eventChainGraph?id=' + eventTarget,
+                complete: function () {
+                    loader.hide();
+                }
+            }).then(function (data) {
+                console.log(data);
+                renderGraph(containerEventChain, data.elements, eventTarget);
+                storeCache('eventChain', eventTarget);
+            });
+
         } else if (stage === 'live') {
             wrapperLive.show();
             loader.hide();
@@ -466,6 +480,8 @@ function load(stage) {
             containerHelp.show();
             loader.hide();
         } else {
+            console.log("Error in mode switch");
+            console.log(stage);
         }
     });
 }
@@ -507,7 +523,6 @@ $(document).ready(function () {
     // Menu
     $('.menu-item').on('click', function (e) {
         // e.preventDefault();
-
         load($(this).data('value'));
     });
 

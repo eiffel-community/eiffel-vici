@@ -65,10 +65,10 @@
             <h2>Information</h2>
 
             <h3>Overview of the application</h3>
-            This application is used to visualize the quantities flow of a continuous integration system to
+            This application is used to visualize the data flow of a continuous integration system to
             enable analyzing it's performance and potential bottlenecks.
-            It uses quantities from the <a href="https://github.com/Ericsson/eiffel">Eiffel</a> framework which
-            offers a platform agnostic messaging protocol to trace the quantities flow.
+            It uses data from the <a href="https://github.com/Ericsson/eiffel">Eiffel</a> framework which
+            offers a platform agnostic messaging protocol to trace the data flow.
             What follows is a brief explanation of the application. For technical details see the bottom of this
             modal.
             <h3>Aggregation view</h3>
@@ -77,7 +77,7 @@
             triggered
             by each other according to the vertices in the graph, where the time "flows" from left to right.
             For a list of all nodes and their meaning, see the section "Different types of nodes" below.
-            To change the quantities set, simply drag and drop the "start" and "end" time points inside the time line.
+            To change the data set, simply drag and drop the "start" and "end" time points inside the time line.
             To navigate the graph use "drag n' drop" together with scrolling. There are also some tools for
             navigating
             in the top left, along with a button to reset the view. The nodes can also be moved around and clicked
@@ -180,24 +180,24 @@
                 </a>
             </li>
 
-            <li id="menu_aggregation" class="menu-item" quantities-value="aggregation">
+            <li id="menu_aggregation" class="menu-item" data-value="aggregation">
                 <a href="#">Aggregation</a>
             </li>
-            <li id="menu_details" class="menu-item" quantities-value="details">
+            <li id="menu_details" class="menu-item" data-value="details">
                 <a href="#">Details</a>
             </li>
-            <li id="menu_eventChain" class="menu-item" quantities-value="eventChain">
+            <li id="menu_eventChain" class="menu-item" data-value="eventChain">
                 <a href="#">Event chain</a>
             </li>
-            <li id="menu_live" class="menu-item" quantities-value="live">
+            <li id="menu_live" class="menu-item" data-value="live">
                 <a href="#">Live</a>
             </li>
 
-            <li id="menu_settings" class="menu-item" quantities-value="settings">
+            <li id="menu_settings" class="menu-item" data-value="settings">
                 <a href="#"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span></a>
             </li>
-            <li id="menu_help" class="menu-item" quantities-value="help">
-                <a href="#"><span class="glyphicon glyphicon-quantities-sign" aria-hidden="true"></span></a>
+            <li id="menu_help" class="menu-item" data-value="help">
+                <a href="#"><span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span></a>
             </li>
         </ul>
     </nav>
