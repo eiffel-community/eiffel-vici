@@ -14,6 +14,7 @@ import vici.entities.Table.Column;
 import vici.entities.Table.Source;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -320,6 +321,10 @@ public class ApiController {
         HashMap<String, Node> nodes = new HashMap<>();
         HashMap<String, Edge> edges = new HashMap<>();
 
+        ArrayList<Node> nodesList = null;
+        if (settings.getEventChain().isRelativeXAxis()) {
+            nodesList = new ArrayList<>();
+        }
 
         // Nodes
         for (String key : incEvents.keySet()) {
@@ -327,9 +332,25 @@ public class ApiController {
 
             if (!event.getType().equals(REDIRECT)) {
                 Node node = new Node(new DataNode(event.getId(), event.getAggregateOn(), event.getType(), null, 0));
-                nodes.put(event.getId(), node);
+                node.getData().getInfo().put("ID", event.getId());
+                node.getData().getInfo().put("Type", event.getType());
+
+                node.getData().setTimes(event.getTimes());
+                long time = event.getTimes().get(TRIGGERED);
+                if (time < graph.getTime().getStart()) {
+                    graph.getTime().setStart(time);
+                }
+                if (time > graph.getTime().getFinish()) {
+                    graph.getTime().setFinish(time);
+                }
+
                 graph.increaseInfo("nodeTypes", node.getData().getType());
                 setQuantities(node, event);
+                nodes.put(event.getId(), node);
+                if (settings.getEventChain().isRelativeXAxis()) {
+                    node.setPosition(new Position((int) (node.getData().getTimes().get(TRIGGERED) - graph.getTime().getStart()) / 1000, 0));
+                    nodesList.add(node);
+                }
             }
         }
 
@@ -341,7 +362,12 @@ public class ApiController {
                 for (Link link : event.getLinks()) {
                     String target = getTarget(link.getTarget(), events);
                     if (!incEvents.containsKey(target)) {
-                        nodes.put(target, new Node(new DataNode(target, "unknown", "unknown", null, 1)));
+                        Node node = new Node(new DataNode(target, "unknown", "unknown", null));
+                        nodes.put(target, node);
+                        if (settings.getEventChain().isRelativeXAxis()) {
+                            node.setPosition(new Position((int) (event.getTimes().get(TRIGGERED) - graph.getTime().getStart()) / 1000, 0));
+                            nodesList.add(node);
+                        }
                         graph.increaseInfo("nodeTypes", "unknown");
                     }
 
@@ -357,7 +383,12 @@ public class ApiController {
                 for (ChildLink child : event.getChildren()) {
                     String childId = child.getChild();
                     if (!incEvents.containsKey(childId)) {
-                        nodes.put(childId, new Node(new DataNode(childId, "unknown", "unknown", null, 1)));
+                        Node node = new Node(new DataNode(childId, "unknown", "unknown", null));
+                        nodes.put(childId, node);
+                        if (settings.getEventChain().isRelativeXAxis()) {
+                            node.setPosition(new Position((int) (event.getTimes().get(TRIGGERED) - graph.getTime().getStart()) / 1000, 0));
+                            nodesList.add(node);
+                        }
                         graph.increaseInfo("nodeTypes", "unknown");
                     }
 
@@ -371,6 +402,33 @@ public class ApiController {
                 }
             }
         }
+
+        if (settings.getEventChain().isRelativeXAxis()) {
+            nodesList.sort(Comparator.comparingInt(o -> o.getPosition().getX()));
+            HashMap<Integer, Integer> lastPositions = new HashMap<>();
+
+            int startY = nodesList.size() * 200;
+            int y = startY;
+            for (Node node : nodesList) {
+                int i = startY;
+                while (i > 0) {
+//            for (int i = startY; i > 0; i -= 200) {
+                    i -= 200;
+                    if (lastPositions.containsKey(i)) {
+                        if (lastPositions.get(i) + 200 < node.getPosition().getX()) {
+                            y = i;
+                            break;
+                        }
+                    } else {
+                        y = i;
+                        break;
+                    }
+                }
+                node.getPosition().setY(y);
+                lastPositions.put(y, node.getPosition().getX());
+            }
+        }
+
 
         for (String key : nodes.keySet()) {
             graph.getElements().add(nodes.get(key));

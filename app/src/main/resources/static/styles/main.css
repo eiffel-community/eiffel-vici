@@ -125,22 +125,16 @@ li.active {
     width: 200px;
 }
 
+/* Buttons */
+
 .btn, .form-control, .input-group-addon {
     border-radius: 2px;
 }
 
-.form-check-label {
-    margin-bottom: 0;
-    cursor: pointer;
-    font-weight: 400;
-}
-
-.form-check-input {
-    cursor: pointer;
-}
+/* Settings */
 
 .settings-container {
-    max-width: 300px;
+    max-width: 400px;
 }
 
 .input-group {

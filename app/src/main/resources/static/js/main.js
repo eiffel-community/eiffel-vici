@@ -1,4 +1,4 @@
-function renderGraph(container, data, target) {
+function renderGraph(container, data, settings, target) {
 
     const COLOR_PASS = '#22b14c';
     const COLOR_FAIL = '#af0020';
@@ -202,6 +202,10 @@ function renderGraph(container, data, target) {
             }
         },
     ];
+    let layout = {
+        name: 'dagre',
+        rankDir: 'RL',
+    };
 
     if (target !== undefined) {
         style.push({
@@ -211,16 +215,19 @@ function renderGraph(container, data, target) {
                 'border-color': '#ffea22',
             }
         });
+        if (settings.eventChain.relativeXAxis) {
+            layout = {
+                name: 'preset',
+            }
+        }
     }
+
 
     let cy = cytoscape({
 
         container: container,
         elements: data,
-        layout: {
-            name: 'dagre',
-            rankDir: 'RL'
-        },
+        layout: layout,
         // Higher = faster zoom
         wheelSensitivity: 0.075,
         style: style
@@ -389,7 +396,7 @@ function load(stage) {
                     url: '/api/aggregationGraph?url=' + systemTarget,
                     success: function (data) {
                         console.log(data);
-                        renderGraph(containerAggregation, data, undefined);
+                        renderGraph(containerAggregation, data, getSettings(), undefined);
                         storeCache('aggregation', systemTarget);
                     },
                     complete: function () {
@@ -463,7 +470,7 @@ function load(stage) {
                 // data: getSettings(),
                 success: function (data) {
                     console.log(data);
-                    renderGraph(containerEventChain, data.elements, eventTarget);
+                    renderGraph(containerEventChain, data.elements, getSettings(), eventTarget);
                     storeCache('eventChain', eventTarget);
                 },
                 complete: function () {
@@ -515,8 +522,9 @@ function getSettings() {
         eventChain: {
             steps: settingsElement.steps.val(),
             maxConnections: settingsElement.maxConnections.val(),
-            upStream: settingsElement.upStream.is(':checked'),
-            downStream: settingsElement.downStream.is(':checked'),
+            upStream: settingsElement.upStream.prop('checked'),
+            downStream: settingsElement.downStream.prop('checked'),
+            relativeXAxis: settingsElement.relativeXAxis.prop('checked'),
             bannedLinks: [
                 "PREVIOUS_VERSION",
             ]
@@ -532,12 +540,14 @@ $(document).ready(function () {
         downStream: $('#downStream'),
         steps: $('#steps'),
         maxConnections: $('#maxConnections'),
+        relativeXAxis: $('#relativeXAxis'),
     };
 
-    settingsElement.upStream.attr('checked', true);
-    settingsElement.downStream.attr('checked', true);
+    settingsElement.upStream.prop('checked', true).change();
+    settingsElement.downStream.prop('checked', true).change();
     settingsElement.steps.val(6);
     settingsElement.maxConnections.val(16);
+    settingsElement.relativeXAxis.prop('checked', false).change();
 
 
     loader = $('#loader_overlay');
@@ -564,7 +574,7 @@ $(document).ready(function () {
         load($(this).data('value'));
     });
 
-    containerSettings.find('input').focus(function () {
+    containerSettings.find('input').change(function () {
         console.log("Cache invalidated.");
         cache = {};
     });

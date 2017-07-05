@@ -7,6 +7,7 @@ public class EventChain {
     private boolean upStream;
     private boolean downStream;
     private int maxConnections;
+    private boolean relativeXAxis;
     private HashSet<String> bannedLinks;
 
     public EventChain() {
@@ -14,6 +15,14 @@ public class EventChain {
 
     public int getSteps() {
         return steps;
+    }
+
+    public boolean isRelativeXAxis() {
+        return relativeXAxis;
+    }
+
+    public void setRelativeXAxis(boolean relativeXAxis) {
+        this.relativeXAxis = relativeXAxis;
     }
 
     public void setSteps(int steps) {
