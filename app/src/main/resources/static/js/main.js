@@ -375,7 +375,7 @@ function load(stage) {
                 loader.hide();
             } else {
                 $.ajax({
-                    url: 'http://localhost:8080/api/aggregationGraph?url=' + systemTarget,
+                    url: '/api/aggregationGraph?url=' + systemTarget,
                     complete: function () {
                         loader.hide();
                     }
@@ -393,7 +393,7 @@ function load(stage) {
                 loader.hide();
             } else {
                 $.ajax({
-                        url: "http://localhost:8080/api/detailedEvents?name=" + detailsTarget,
+                        url: "/api/detailedEvents?name=" + detailsTarget,
                         complete: function () {
                             loader.hide();
                         }
@@ -436,11 +436,6 @@ function load(stage) {
             }
 
         } else if (stage === 'eventChain') {
-            // if (eventTarget === undefined) {
-            //     console.log("No event-chain target.");
-            //     loader.hide();
-            //     return;
-            // }
             wrapperEventChain.show();
             if (usableCache('eventChain', eventTarget)) {
                 console.log('Using cache for ' + eventTarget);
@@ -448,7 +443,7 @@ function load(stage) {
                 return;
             }
             $.ajax({
-                url: 'http://localhost:8080/api/eventChainGraph?id=' + eventTarget,
+                url: '/api/eventChainGraph?id=' + eventTarget,
                 complete: function () {
                     loader.hide();
                 }

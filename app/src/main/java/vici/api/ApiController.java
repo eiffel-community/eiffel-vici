@@ -1,6 +1,6 @@
 package vici.api;
 
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import vici.Fetcher;
@@ -120,7 +120,7 @@ public class ApiController {
         }
     }
 
-    @RequestMapping(value = "/api/aggregationGraph", produces = "application/json; charset=UTF-8")
+    @GetMapping(value = "/api/aggregationGraph", produces = "application/json; charset=UTF-8")
     public ArrayList<Element> aggregationGraph(@RequestParam(value = "url", defaultValue = "http://localhost:8080/events.json") String url) {
 
         Fetcher fetcher = new Fetcher();
@@ -181,7 +181,7 @@ public class ApiController {
         return source + "-" + type + "-" + target;
     }
 
-    @RequestMapping(value = "/api/detailedEvents", produces = "application/json; charset=UTF-8")
+    @GetMapping(value = "/api/detailedEvents", produces = "application/json; charset=UTF-8")
     public Source detailedEvents(@RequestParam(value = "name", defaultValue = "") String name, @RequestParam(value = "url", defaultValue = "http://localhost:8080/events.json") String url) {
 
         ArrayList<UrlProperty> urlProperties = new ArrayList<>();
@@ -293,7 +293,7 @@ public class ApiController {
         }
     }
 
-    @RequestMapping(value = "/api/eventChainGraph", produces = "application/json; charset=UTF-8")
+    @GetMapping(value = "/api/eventChainGraph", produces = "application/json; charset=UTF-8")
     public Graph eventChainGraph(@RequestParam(value = "id", defaultValue = "") String id, @RequestParam(value = "steps", defaultValue = "6") String stepsString, @RequestParam(value = "maxConnections", defaultValue = "16") String maxConnectionsString, @RequestParam(value = "url", defaultValue = "http://localhost:8080/events.json") String url) {
 //        ArrayList<Element> elements = new ArrayList<>();
 //        HashMap<String, HashMap<String, Integer>> info = new HashMap<>();
