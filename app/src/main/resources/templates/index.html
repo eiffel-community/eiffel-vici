@@ -58,43 +58,101 @@
         </div>
 
         <div id="settings" class="content-container non-cy">
-            <h2>Settings</h2>
+            <div class="container settings-container">
+                <div class="row">
+                    <div class="col-12">
+                        <h2>Settings</h2>
+                        <h3>Aggregation</h3>
+
+                        <h3>Details</h3>
+
+                        <h3>Event Chain</h3>
+
+                        <div class="input-group">
+                            <span class="input-group-addon" id="label-steps">Maximum jumps</span>
+                            <input id="steps" type="number" class="form-control" placeholder="Positive integer"
+                                   aria-describedby="label-steps"/>
+                        </div>
+                        <div class="input-group">
+                            <span class="input-group-addon"
+                                  id="label-maxConnections">Maximum connections/node</span>
+                            <input id="maxConnections" type="number" class="form-control" placeholder="Positive integer"
+                                   aria-describedby="label-steps"/>
+                        </div>
+
+                        <div class="form-check">
+                            <label class="form-check-label">
+                                <input class="form-check-input" type="checkbox" value="" id="upStream"/>
+                                Follow links <b>up</b> stream
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <label class="form-check-label">
+                                <input class="form-check-input" type="checkbox" value="" id="downStream"/>
+                                Follow links <b>down</b> stream
+                            </label>
+                        </div>
+
+                        <h3>Live</h3>
+
+                    </div>
+                </div>
+            </div>
         </div>
-        <div id="help" class="content-container non-cy">
+
+        <div id=" help" class="content-container non-cy">
 
             <h2>Information</h2>
 
             <h3>Overview of the application</h3>
-            This application is used to visualize the data flow of a continuous integration system to
+            This application is used to visualize the data flow of a continuous integration
+            system to
             enable analyzing it's performance and potential bottlenecks.
-            It uses data from the <a href="https://github.com/Ericsson/eiffel">Eiffel</a> framework which
+            It uses data from the <a href="https://github.com/Ericsson/eiffel">Eiffel</a>
+            framework which
             offers a platform agnostic messaging protocol to trace the data flow.
-            What follows is a brief explanation of the application. For technical details see the bottom of this
+            What follows is a brief explanation of the application. For technical details see
+            the bottom of this
             modal.
             <h3>Aggregation view</h3>
-            The first canvas consist of the aggregation view. The graph rendered is an aggregation of all event
-            chains contained within the time spans specified in the time line below it. The events depicted were
+            The first canvas consist of the aggregation view. The graph rendered is an
+            aggregation of all event
+            chains contained within the time spans specified in the time line below it. The
+            events depicted were
             triggered
-            by each other according to the vertices in the graph, where the time "flows" from left to right.
-            For a list of all nodes and their meaning, see the section "Different types of nodes" below.
-            To change the data set, simply drag and drop the "start" and "end" time points inside the time line.
-            To navigate the graph use "drag n' drop" together with scrolling. There are also some tools for
+            by each other according to the vertices in the graph, where the time "flows" from
+            left to right.
+            For a list of all nodes and their meaning, see the section "Different types of
+            nodes" below.
+            To change the data set, simply drag and drop the "start" and "end" time points
+            inside the time line.
+            To navigate the graph use "drag n' drop" together with scrolling. There are also
+            some tools for
             navigating
-            in the top left, along with a button to reset the view. The nodes can also be moved around and clicked
-            to display a popup with additional information, and the "show all events"-button inside the popup will
+            in the top left, along with a button to reset the view. The nodes can also be moved
+            around and clicked
+            to display a popup with additional information, and the "show all events"-button
+            inside the popup will
             load all events represented by the node into the details view.
             <h3>Details view</h3>
-            The details view tabulates the events aggregated in a node selected in the aggregation view.
-            It can be re-ordered by clicking a column header, filtered using the search field to the top right and
-            be displayed on a time line by clicking the switch, also in the upper right. By clicking the "Event
+            The details view tabulates the events aggregated in a node selected in the
+            aggregation view.
+            It can be re-ordered by clicking a column header, filtered using the search field to
+            the top right and
+            be displayed on a time line by clicking the switch, also in the upper right. By
+            clicking the "Event
             chain"-
-            button the event chain that the event took part in will be loaded into the event chain view.
+            button the event chain that the event took part in will be loaded into the event
+            chain view.
             <h3>Event chain view</h3>
             The event chain view renders a graph depicting a series of events based on
             one that was selected in the details view. The selected node is outlined in yellow.
-            The events were triggered by each other as indicated by outgoing vertices. Vertices that are dotted
-            symbolizes a reference to a node that does not partake in the event chain, but that is of some other
-            importance. I.e. the previous version of an artifact. This view is very similar to the aggregation view,
+            The events were triggered by each other as indicated by outgoing vertices. Vertices
+            that are dotted
+            symbolizes a reference to a node that does not partake in the event chain, but that
+            is of some other
+            importance. I.e. the previous version of an artifact. This view is very similar to
+            the aggregation view,
             and it should be read if more information is required.
             <h3>Different types of nodes</h3>
             <div class="node-row">

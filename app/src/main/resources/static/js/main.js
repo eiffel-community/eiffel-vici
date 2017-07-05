@@ -506,15 +506,17 @@ function newEventTarget(target) {
     load("eventChain");
 }
 
+let settingsElement = undefined;
+
 function getSettings() {
     let settings = {
         aggregation: {},
         details: {},
         eventChain: {
-            steps: 6,
-            upStream: true,
-            downStream: true,
-            maxConnections: 16,
+            steps: settingsElement.steps.val(),
+            maxConnections: settingsElement.maxConnections.val(),
+            upStream: settingsElement.upStream.is(':checked'),
+            downStream: settingsElement.downStream.is(':checked'),
             bannedLinks: [
                 "PREVIOUS_VERSION",
             ]
@@ -525,6 +527,19 @@ function getSettings() {
 }
 
 $(document).ready(function () {
+    settingsElement = {
+        upStream: $('#upStream'),
+        downStream: $('#downStream'),
+        steps: $('#steps'),
+        maxConnections: $('#maxConnections'),
+    };
+
+    settingsElement.upStream.attr('checked', true);
+    settingsElement.downStream.attr('checked', true);
+    settingsElement.steps.val(6);
+    settingsElement.maxConnections.val(16);
+
+
     loader = $('#loader_overlay');
 
     wrapperAggregation = $('#aggregation_wrapper');
@@ -547,6 +562,11 @@ $(document).ready(function () {
     $('.menu-item').on('click', function (e) {
         // e.preventDefault();
         load($(this).data('value'));
+    });
+
+    containerSettings.find('input').focus(function () {
+        console.log("Cache invalidated.");
+        cache = {};
     });
 
 

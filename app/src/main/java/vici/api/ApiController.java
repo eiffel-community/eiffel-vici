@@ -298,9 +298,6 @@ public class ApiController {
 
     @RequestMapping(value = "/api/eventChainGraph", produces = "application/json; charset=UTF-8")
     public Graph eventChainGraph(@RequestBody Settings settings, @RequestParam(value = "id", defaultValue = "") String id, @RequestParam(value = "url", defaultValue = "http://localhost:8080/events.json") String url) {
-
-        //        ArrayList<Element> elements = new ArrayList<>();
-//        HashMap<String, HashMap<String, Integer>> info = new HashMap<>();
         Graph graph = new Graph();
         if (id.equals("")) {
             return graph;
@@ -316,22 +313,9 @@ public class ApiController {
 
         Event mainEvent = events.get(id);
 
-
         HashMap<String, Event> incEvents = new HashMap<>();
 
-        HashSet<String> bannedLinks = new HashSet<>();
-        bannedLinks.add("PREVIOUS_VERSION");
-//        bannedLinks.add("ENVIRONMENT");
-//        bannedLinks.add("ELEMENT");
-
-//        HashSet<String> dangerousEvents = new HashSet<>();
-//        dangerousEvents.add("EiffelEnvironmentDefinedEvent");
-//        dangerousEvents.add("EiffelCompositionDefinedEvent");
-
         step(settings, mainEvent, incEvents, events, settings.getEventChain().getSteps());
-//        for (String key : incEvents.keySet()) {
-//            System.out.println(incEvents.get(key).getType());
-//        }
 
         HashMap<String, Node> nodes = new HashMap<>();
         HashMap<String, Edge> edges = new HashMap<>();
@@ -395,13 +379,6 @@ public class ApiController {
         for (String key : edges.keySet()) {
             graph.getElements().add(edges.get(key));
         }
-
-//        for (String key : graph.getQuantities().keySet()) {
-//            System.out.println(key + ":");
-//            for (String valueKey : graph.getQuantities().get(key).keySet()) {
-//                System.out.println(valueKey + ": " + graph.getQuantities().get(key).get(valueKey));
-//            }
-//        }
 
         return graph;
     }
