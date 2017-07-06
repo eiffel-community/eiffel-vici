@@ -33,6 +33,8 @@
 
     <script th:src="@{/js/datatables/datatables.min.js}"></script>
 
+    <script th:src="@{/js/moment/moment.min.js}"></script>
+
     <script th:src="@{/js/main.js}"></script>
 </head>
 
@@ -61,47 +63,60 @@
             <div class="container settings-container">
                 <div class="row">
                     <div class="col-12">
+
                         <h2>Settings</h2>
-                        <h3>Aggregation</h3>
 
-                        <h3>Details</h3>
-
-                        <h3>Event Chain</h3>
-
-                        <div class="input-group">
-                            <span class="input-group-addon" id="label-steps">Maximum jumps</span>
-                            <input id="steps" type="number" class="form-control" placeholder="Positive integer"
-                                   aria-describedby="label-steps"/>
+                        <div id="settings-aggregation">
+                            <h3>Aggregation</h3>
                         </div>
-                        <div class="input-group">
+
+                        <div id="settings-details">
+                            <h3>Details</h3>
+                        </div>
+
+                        <div id="settings-eventChain">
+                            <h3>Event Chain</h3>
+
+                            <div class="input-group">
+                                <span class="input-group-addon" id="label-steps">Maximum jumps</span>
+                                <input id="steps" type="number" class="form-control" placeholder="Positive integer"
+                                       aria-describedby="label-steps"/>
+                            </div>
+                            <div class="input-group">
                             <span class="input-group-addon"
                                   id="label-maxConnections">Maximum connections/node</span>
-                            <input id="maxConnections" type="number" class="form-control" placeholder="Positive integer"
-                                   aria-describedby="label-steps"/>
+                                <input id="maxConnections" type="number" class="form-control"
+                                       placeholder="Positive integer"
+                                       aria-describedby="label-steps"/>
+                            </div>
+
+                            <div class="input-group">
+                                <label class="checkbox-inline">
+                                    <input type="checkbox" data-toggle="toggle" id="upStream"/> Follow links <b>up</b>
+                                    stream
+                                </label>
+                            </div>
+
+                            <div class="input-group">
+                                <label class="checkbox-inline">
+                                    <input type="checkbox" data-toggle="toggle" id="downStream"/> Follow links
+                                    <b>down</b>
+                                    stream
+                                </label>
+                            </div>
+
+                            <div class="input-group">
+                                <label class="checkbox-inline">
+                                    <input type="checkbox" data-toggle="toggle" id="relativeXAxis"/> Node x-position
+                                    defined
+                                    by actual timestamp
+                                </label>
+                            </div>
                         </div>
 
-                        <div class="input-group">
-                            <label class="checkbox-inline">
-                                <input type="checkbox" data-toggle="toggle" id="upStream"/> Follow links <b>up</b>
-                                stream
-                            </label>
+                        <div id="settings-live">
+                            <h3>Live</h3>
                         </div>
-
-                        <div class="input-group">
-                            <label class="checkbox-inline">
-                                <input type="checkbox" data-toggle="toggle" id="downStream"/> Follow links <b>down</b>
-                                stream
-                            </label>
-                        </div>
-
-                        <div class="input-group">
-                            <label class="checkbox-inline">
-                                <input type="checkbox" data-toggle="toggle" id="relativeXAxis"/> Node x-position defined
-                                by actual time stamp
-                            </label>
-                        </div>
-
-                        <h3>Live</h3>
 
                     </div>
                 </div>

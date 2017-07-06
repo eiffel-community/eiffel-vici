@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import vici.Fetcher;
-import vici.api.examples.Settings.Settings;
+import vici.api.Settings.Settings;
 import vici.entities.*;
 import vici.entities.Cytoscape.*;
 import vici.entities.Eiffel.CustomData;
@@ -217,7 +217,7 @@ public class ApiController {
                     }
 
                     if (event.getTimes().containsKey(STARTED) && event.getTimes().containsKey(FINISHED)) {
-                        addColumn(row, columns, cSet, "time-execution", String.valueOf(event.getTimes().get(FINISHED) - event.getTimes().get(STARTED)));
+                        addColumn(row, columns, cSet, "time-" + EXECUTION, String.valueOf(event.getTimes().get(FINISHED) - event.getTimes().get(STARTED)));
                     }
 
                     switch (event.getType()) {
@@ -262,19 +262,19 @@ public class ApiController {
                 case "type":
                     columns.add(new Column("Type", key));
                     break;
-                case "time-triggered":
+                case "time-" + TRIGGERED:
                     columns.add(new Column("Time triggered", key));
                     break;
-                case "time-canceled":
+                case "time-" + CANCELED:
 //                    columns.add(new Column("Time triggered", key));
                     break;
-                case "time-started":
+                case "time-" + STARTED:
 //                    columns.add(new Column("Time started", key));
                     break;
-                case "time-finished":
+                case "time-" + FINISHED:
 //                    columns.add(new Column("Time finished", key));
                     break;
-                case "time-execution":
+                case "time-" + EXECUTION:
                     columns.add(new Column("Execution (ms)", key));
                     break;
                 case "conclusion":
@@ -336,6 +336,9 @@ public class ApiController {
                 node.getData().getInfo().put("Type", event.getType());
 
                 node.getData().setTimes(event.getTimes());
+                if (node.getData().getTimes().containsKey(STARTED) && event.getTimes().containsKey(FINISHED)) {
+                    node.getData().getTimes().put(EXECUTION, node.getData().getTimes().get(FINISHED) - node.getData().getTimes().get(STARTED));
+                }
                 long time = event.getTimes().get(TRIGGERED);
                 if (time < graph.getTime().getStart()) {
                     graph.getTime().setStart(time);

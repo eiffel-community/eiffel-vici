@@ -1,3 +1,7 @@
+function formatTime(long) {
+    return moment(long).format('YYYY-MM-DD, HH:mm:ss:SSS');
+}
+
 function renderGraph(container, data, settings, target) {
 
     const COLOR_PASS = '#22b14c';
@@ -234,50 +238,79 @@ function renderGraph(container, data, settings, target) {
     });
 
     function getQTipContent(data) {
-        let content = '<h4>' + data.label + '</h4>' +
-            '<button type="button" class="btn btn-block btn-secondary" onclick="newDetailsTarget(\'' + data.id + '\')" value="' + data.id + '"> Show events </button>' +
-            '<table class="table table-bordered table-sm table-hover table-qtip">';
-        // '<tr><th>Attribute</th><th colspan="2">Value</th></tr>'; // table header
+        let content = '<h4>' + data.label + '</h4>';
+        if (target === undefined) {
+            content = content + '<button type="button" class="btn btn-block btn-secondary" onclick="newDetailsTarget(\'' + data.id + '\')" value="' + data.id + '"> Show events </button>';
+        }
+        content = content + '<table class="table table-bordered table-sm table-hover table-qtip">';
 
         for (key in data.info) {
             content = content +
                 '<tr><td>' + key + '</td><td class="td-right">' + data.info[key] + '</td></tr>';
         }
+        if (target !== undefined) {
+            /** @namespace data.quantities */
+            for (quantity in data.quantities) {
+                if (quantity === 'SUCCESSFUL') {
+                    content = content + '<tr class="table-success">';
+                } else if (quantity === 'FAILED' || quantity === 'UNSUCCESSFUL') {
+                    content = content + '<tr class="table-danger">';
+                } else if (quantity === 'INCONCLUSIVE') {
+                    content = content + '<tr class="table-active">';
+                } else if (quantity === 'TIMED_OUT' || quantity === 'ABORTED') {
+                    content = content + '<tr class="table-warning">';
+                } else {
+                    content = content + '<tr>';
+                }
 
-        content = content + '</table>' +
-            '<table class="table table-bordered table-sm table-hover table-qtip">' +
-            '<tr><th>Attribute</th><th colspan="2">Amount</th></tr>'; // table header
-
-        for (quantity in data.quantities) {
-            if (quantity === 'SUCCESSFUL') {
-                content = content + '<tr class="table-success">';
-            } else if (quantity === 'FAILED' || quantity === 'UNSUCCESSFUL') {
-                content = content + '<tr class="table-danger">';
-            } else if (quantity === 'INCONCLUSIVE') {
-                content = content + '<tr class="table-active">';
-            } else if (quantity === 'TIMED_OUT' || quantity === 'ABORTED') {
-                content = content + '<tr class="table-warning">';
-            } else {
-                content = content + '<tr>';
+                content = content +
+                    '<td>Result</td><td class="td">' + quantity + '</td></tr>';
             }
-
-            content = content +
-                '<td>' + quantity + '</td><td class="td-right">' + data.quantities[quantity] + '</td><td class="td-right">' + Math.round(10 * (data.quantities[quantity] / data.quantity * 100) / 10) + '%</td></tr>';
+            content = content + '</table><table class="table table-bordered table-sm table-hover table-qtip"><tr><th>Key</th><th colspan="2">Timestamp</th></tr>';
+            for (time in data.times) {
+                if (time === 'Execution') {
+                    content = content +
+                        '<tr><td>' + time + ' (ms)</td><td class="td-right">' + data.times[time] + '</td></tr>';
+                } else {
+                    content = content +
+                        '<tr><td>' + time + '</td><td class="td-right">' + formatTime(data.times[time]) + '</td></tr>';
+                }
+            }
         }
 
-        content = content + '<tr><td><i>Total</i></td><td colspan="2" class="td-right"><i>' + data.quantity + '</i></td></tr>' +
-            '</table>';
+        content = content + '</table>';
+
+
+        if (target === undefined) {
+            content = content + '<table class="table table-bordered table-sm table-hover table-qtip">' +
+                '<tr><th>Attribute</th><th colspan="2">Amount</th></tr>';
+            for (quantity in data.quantities) {
+                if (quantity === 'SUCCESSFUL') {
+                    content = content + '<tr class="table-success">';
+                } else if (quantity === 'FAILED' || quantity === 'UNSUCCESSFUL') {
+                    content = content + '<tr class="table-danger">';
+                } else if (quantity === 'INCONCLUSIVE') {
+                    content = content + '<tr class="table-active">';
+                } else if (quantity === 'TIMED_OUT' || quantity === 'ABORTED') {
+                    content = content + '<tr class="table-warning">';
+                } else {
+                    content = content + '<tr>';
+                }
+
+                content = content +
+                    '<td>' + quantity + '</td><td class="td-right">' + data.quantities[quantity] + '</td><td class="td-right">' + Math.round(10 * (data.quantities[quantity] / data.quantity * 100) / 10) + '%</td></tr>';
+
+            }
+            content = content + '<tr><td><i>Total</i></td><td colspan="2" class="td-right"><i>' + data.quantity + '</i></td></tr>';
+        }
+
+        content = content + '</table>';
 
         return content;
     }
 
     cy.nodes().qtip({
         content: function () {
-//                    if (level === "aggregation") {
-//                        return getTooltipContent(this.data()); // Ändra här för att ändra vad som ska vara i den
-//                    } else if (level === "eventchain") {
-//                        return getLevelThreeContent(this.data());
-//                    }
             return getQTipContent(this.data());
         },
         position: {
@@ -373,6 +406,10 @@ function storeCache(cacheName, value) {
     };
 }
 
+function invalidateCache(cacheName) {
+    cache[cacheName] = undefined;
+}
+
 function load(stage) {
     loader.show();
     $(".sidebar-nav li").removeClass("active");
@@ -392,16 +429,18 @@ function load(stage) {
                 console.log('Using cache for ' + systemTarget);
                 loader.hide();
             } else {
-                $.ajax({
-                    url: '/api/aggregationGraph?url=' + systemTarget,
-                    success: function (data) {
-                        console.log(data);
-                        renderGraph(containerAggregation, data, getSettings(), undefined);
-                        storeCache('aggregation', systemTarget);
-                    },
-                    complete: function () {
-                        loader.hide();
-                    }
+                _.defer(function () {
+                    $.ajax({
+                        url: '/api/aggregationGraph?url=' + systemTarget,
+                        success: function (data) {
+                            console.log(data);
+                            renderGraph(containerAggregation, data, getSettings(), undefined);
+                            storeCache('aggregation', systemTarget);
+                        },
+                        complete: function () {
+                            loader.hide();
+                        }
+                    });
                 });
             }
 
@@ -411,46 +450,48 @@ function load(stage) {
                 console.log('Using cache for ' + detailsTarget);
                 loader.hide();
             } else {
-                $.ajax({
-                    url: "/api/detailedEvents?name=" + detailsTarget,
-                    success: function (data) {
-                        console.log(data);
-                        if (detailsDataTable !== undefined) {
-                            detailsDataTable.destroy();
-                            detailsTable.empty();
-                        }
-
-                        let preDefColumns = [
-                            {
-                                title: 'Chain',
-                                data: null,
-                                defaultContent: '<button class="btn btn-default row-button">Graph</button>'
+                _.defer(function () {
+                    $.ajax({
+                        url: "/api/detailedEvents?name=" + detailsTarget,
+                        success: function (data) {
+                            console.log(data);
+                            if (detailsDataTable !== undefined) {
+                                detailsDataTable.destroy();
+                                detailsTable.empty();
                             }
-                        ];
 
-                        if (data.data.length !== 0) {
-                            detailsDataTable = detailsTable.DataTable({
-                                destroy: true,
-                                data: data.data,
-                                columns: preDefColumns.concat(data.columns),
-                                scrollY: '80vh',
-                                scrollCollapse: true,
-                                lengthMenu: [[20, 200, -1], [20, 200, "All"]],
-                                order: [4, 'asc'],
-                            });
-                            storeCache('details', detailsTarget);
+                            let preDefColumns = [
+                                {
+                                    title: 'Chain',
+                                    data: null,
+                                    defaultContent: '<button class="btn btn-default row-button">Graph</button>'
+                                }
+                            ];
 
-                            detailsTable.find('tbody').on('click', 'button', function () {
-                                let data = detailsDataTable.row($(this).parents('tr')).data();
-                                newEventTarget(data.id);
-                            });
-                        } else {
-                            console.log("No data");
+                            if (data.data.length !== 0) {
+                                detailsDataTable = detailsTable.DataTable({
+                                    destroy: true,
+                                    data: data.data,
+                                    columns: preDefColumns.concat(data.columns),
+                                    scrollY: '80vh',
+                                    scrollCollapse: true,
+                                    lengthMenu: [[20, 200, -1], [20, 200, "All"]],
+                                    order: [4, 'asc'],
+                                });
+                                storeCache('details', detailsTarget);
+
+                                detailsTable.find('tbody').on('click', 'button', function () {
+                                    let data = detailsDataTable.row($(this).parents('tr')).data();
+                                    newEventTarget(data.id);
+                                });
+                            } else {
+                                console.log("No data");
+                            }
+                        },
+                        complete: function () {
+                            loader.hide();
                         }
-                    },
-                    complete: function () {
-                        loader.hide();
-                    }
+                    });
                 });
             }
 
@@ -459,25 +500,26 @@ function load(stage) {
             if (usableCache('eventChain', eventTarget)) {
                 console.log('Using cache for ' + eventTarget);
                 loader.hide();
-                return;
+            } else {
+                _.defer(function () {
+                    $.ajax({
+                        type: "POST",
+                        contentType: 'application/json; charset=utf-8',
+                        dataType: 'json',
+                        url: '/api/eventChainGraph?id=' + eventTarget,
+                        data: JSON.stringify(getSettings()),
+                        // data: getSettings(),
+                        success: function (data) {
+                            console.log(data);
+                            renderGraph(containerEventChain, data.elements, getSettings(), eventTarget);
+                            storeCache('eventChain', eventTarget);
+                        },
+                        complete: function () {
+                            loader.hide();
+                        }
+                    });
+                });
             }
-            $.ajax({
-                type: "POST",
-                contentType: 'application/json; charset=utf-8',
-                dataType: 'json',
-                url: '/api/eventChainGraph?id=' + eventTarget,
-                data: JSON.stringify(getSettings()),
-                // data: getSettings(),
-                success: function (data) {
-                    console.log(data);
-                    renderGraph(containerEventChain, data.elements, getSettings(), eventTarget);
-                    storeCache('eventChain', eventTarget);
-                },
-                complete: function () {
-                    loader.hide();
-                }
-            });
-
         } else if (stage === 'live') {
             wrapperLive.show();
             loader.hide();
@@ -534,6 +576,14 @@ function getSettings() {
     return settings;
 }
 
+function setSettingsDefault() {
+    settingsElement.upStream.prop('checked', true).change();
+    settingsElement.downStream.prop('checked', true).change();
+    settingsElement.steps.val(6);
+    settingsElement.maxConnections.val(16);
+    settingsElement.relativeXAxis.prop('checked', false).change();
+}
+
 $(document).ready(function () {
     settingsElement = {
         upStream: $('#upStream'),
@@ -543,12 +593,7 @@ $(document).ready(function () {
         relativeXAxis: $('#relativeXAxis'),
     };
 
-    settingsElement.upStream.prop('checked', true).change();
-    settingsElement.downStream.prop('checked', true).change();
-    settingsElement.steps.val(6);
-    settingsElement.maxConnections.val(16);
-    settingsElement.relativeXAxis.prop('checked', false).change();
-
+    setSettingsDefault();
 
     loader = $('#loader_overlay');
 
@@ -574,9 +619,20 @@ $(document).ready(function () {
         load($(this).data('value'));
     });
 
-    containerSettings.find('input').change(function () {
-        console.log("Cache invalidated.");
-        cache = {};
+    $('#settings-aggregation').find('input').change(function () {
+        invalidateCache('aggregation');
+    });
+
+    $('#settings-details').find('input').change(function () {
+        invalidateCache('details');
+    });
+
+    $('#settings-eventChain').find('input').change(function () {
+        invalidateCache('eventChain');
+    });
+
+    $('#settings-live').find('input').change(function () {
+        invalidateCache('live');
     });
 
 

@@ -1,16 +1,16 @@
 package vici.entities;
 
-import vici.entities.Eiffel.CustomData;
 import vici.entities.Eiffel.EiffelEvent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Event {
-    public static final String TRIGGERED = "triggered";
-    public static final String STARTED = "started";
-    public static final String FINISHED = "finished";
-    public static final String CANCELED = "canceled";
+    public static final String TRIGGERED = "Triggered";
+    public static final String STARTED = "Started";
+    public static final String FINISHED = "Finished";
+    public static final String CANCELED = "Canceled";
+    public static final String EXECUTION = "Execution";
 
     public static final String REDIRECT = "REDIRECT";
 
