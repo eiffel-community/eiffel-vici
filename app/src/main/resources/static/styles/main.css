@@ -137,6 +137,10 @@ li.active {
     max-width: 400px;
 }
 
-.input-group {
+.settings-row {
     margin-bottom: 6px;
+}
+
+.panel {
+    margin-bottom: 0;
 }

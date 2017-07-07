@@ -7,6 +7,7 @@
     <link rel="stylesheet" media="screen" th:href="@{/styles/bootstrap/bootstrap.min.css}"/>
     <link rel="stylesheet" media="screen" th:href="@{/styles/bootstrap/bootstrap-theme.min.css}"/>
     <link rel="stylesheet" media="screen" th:href="@{/styles/bootstrap/bootstrap-toggle.min.css}"/>
+    <link rel="stylesheet" media="screen" th:href="@{/styles/bootstrap/bootstrap-select.min.css}"/>
 
     <link rel="stylesheet" media="screen" th:href="@{/styles/cytoscape/cytoscape.js-panzoom.css}"/>
     <link rel="stylesheet" media="screen" th:href="@{/styles/cytoscape/jquery.qtip.min.css}"/>
@@ -23,6 +24,7 @@
 
     <script th:src="@{/js/bootstrap/bootstrap.min.js}"></script>
     <script th:src="@{/js/bootstrap/bootstrap-toggle.min.js}"></script>
+    <script th:src="@{/js/bootstrap/bootstrap-select.min.js}"></script>
 
     <script th:src="@{/js/cytoscape/cytoscape.min.js}"></script>
     <script th:src="@{/js/cytoscape/dagre.js}"></script>
@@ -65,6 +67,19 @@
                     <div class="col-12">
 
                         <h2>Settings</h2>
+                        When changing a setting, all caches relative to that settings will be invalidated automatically.
+                        <div id="settings-system">
+                            <h3>Systems</h3>
+
+                            <div class="settings-row">
+                                <button class="btn btn-default" type="button" data-toggle="collapse"
+                                        data-target="#systemCollapse" aria-expanded="false">
+                                    Manage systems <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+                                </button>
+                            </div>
+                            <div class="collapse" id="systemCollapse">
+                            </div>
+                        </div>
 
                         <div id="settings-aggregation">
                             <h3>Aggregation</h3>
@@ -75,29 +90,27 @@
                         </div>
 
                         <div id="settings-eventChain">
+
                             <h3>Event Chain</h3>
 
-                            <div class="input-group">
-                                <span class="input-group-addon" id="label-steps">Maximum jumps</span>
-                                <input id="steps" type="number" class="form-control" placeholder="Positive integer"
-                                       aria-describedby="label-steps"/>
+                            <div class="input-group settings-row">
+                                <span class="input-group-addon">Maximum jumps</span>
+                                <input id="steps" type="number" class="form-control" placeholder="Positive integer"/>
                             </div>
-                            <div class="input-group">
-                            <span class="input-group-addon"
-                                  id="label-maxConnections">Maximum connections/node</span>
+                            <div class="input-group settings-row">
+                                <span class="input-group-addon">Maximum connections/node</span>
                                 <input id="maxConnections" type="number" class="form-control"
-                                       placeholder="Positive integer"
-                                       aria-describedby="label-steps"/>
+                                       placeholder="Positive integer"/>
                             </div>
 
-                            <div class="input-group">
+                            <div class="input-group settings-row">
                                 <label class="checkbox-inline">
                                     <input type="checkbox" data-toggle="toggle" id="upStream"/> Follow links <b>up</b>
                                     stream
                                 </label>
                             </div>
 
-                            <div class="input-group">
+                            <div class="input-group settings-row">
                                 <label class="checkbox-inline">
                                     <input type="checkbox" data-toggle="toggle" id="downStream"/> Follow links
                                     <b>down</b>
@@ -105,7 +118,7 @@
                                 </label>
                             </div>
 
-                            <div class="input-group">
+                            <div class="input-group settings-row">
                                 <label class="checkbox-inline">
                                     <input type="checkbox" data-toggle="toggle" id="relativeXAxis"/> Node x-position
                                     defined
@@ -260,6 +273,11 @@
                     Vici
                 </a>
             </li>
+            <select class="selectpicker show-menu-arrow" title="Choose a system" id="systemSelect">
+                <option>Mustard</option>
+                <option>Ketchup</option>
+                <option>Relish</option>
+            </select>
 
             <li id="menu_aggregation" class="menu-item" data-value="aggregation">
                 <a href="#">Aggregation</a>

@@ -244,13 +244,13 @@ function renderGraph(container, data, settings, target) {
         }
         content = content + '<table class="table table-bordered table-sm table-hover table-qtip">';
 
-        for (key in data.info) {
+        for (let key in data.info) {
             content = content +
                 '<tr><td>' + key + '</td><td class="td-right">' + data.info[key] + '</td></tr>';
         }
         if (target !== undefined) {
             /** @namespace data.quantities */
-            for (quantity in data.quantities) {
+            for (let quantity in data.quantities) {
                 if (quantity === 'SUCCESSFUL') {
                     content = content + '<tr class="table-success">';
                 } else if (quantity === 'FAILED' || quantity === 'UNSUCCESSFUL') {
@@ -267,7 +267,7 @@ function renderGraph(container, data, settings, target) {
                     '<td>Result</td><td class="td">' + quantity + '</td></tr>';
             }
             content = content + '</table><table class="table table-bordered table-sm table-hover table-qtip"><tr><th>Key</th><th colspan="2">Timestamp</th></tr>';
-            for (time in data.times) {
+            for (let time in data.times) {
                 if (time === 'Execution') {
                     content = content +
                         '<tr><td>' + time + ' (ms)</td><td class="td-right">' + data.times[time] + '</td></tr>';
@@ -284,7 +284,7 @@ function renderGraph(container, data, settings, target) {
         if (target === undefined) {
             content = content + '<table class="table table-bordered table-sm table-hover table-qtip">' +
                 '<tr><th>Attribute</th><th colspan="2">Amount</th></tr>';
-            for (quantity in data.quantities) {
+            for (let quantity in data.quantities) {
                 if (quantity === 'SUCCESSFUL') {
                     content = content + '<tr class="table-success">';
                 } else if (quantity === 'FAILED' || quantity === 'UNSUCCESSFUL') {
@@ -420,6 +420,7 @@ function load(stage) {
     $(".sidebar-nav li").removeClass("active");
     $('#menu_' + stage).addClass('active');
 
+    let settings = getSettings();
     _.defer(function () {
         wrapperAggregation.hide();
         containerDetails.hide();
@@ -430,8 +431,8 @@ function load(stage) {
 
         if (stage === 'aggregation') {
             wrapperAggregation.show();
-            if (usableCache('aggregation', getSettings().system.uri)) {
-                console.log('Using cache for ' + getSettings().system.uri);
+            if (usableCache('aggregation', settings.systems[systemSelected])) {
+                console.log('Using cache for system ' + settings.systems[systemSelected]);
                 loader.hide();
             } else {
                 _.defer(function () {
@@ -440,11 +441,11 @@ function load(stage) {
                         contentType: 'application/json; charset=utf-8',
                         dataType: 'json',
                         url: '/api/aggregationGraph',
-                        data: JSON.stringify(getSettings()),
+                        data: JSON.stringify(settings),
                         success: function (data) {
                             console.log(data);
-                            renderGraph(containerAggregation, data, getSettings(), undefined);
-                            storeCache('aggregation', getSettings().system.uri);
+                            renderGraph(containerAggregation, data, settings, undefined);
+                            storeCache('aggregation', settings.systems[systemSelected]);
                         },
                         complete: function () {
                             loader.hide();
@@ -465,7 +466,7 @@ function load(stage) {
                         contentType: 'application/json; charset=utf-8',
                         dataType: 'json',
                         url: "/api/detailedEvents?name=" + detailsTarget,
-                        data: JSON.stringify(getSettings()),
+                        data: JSON.stringify(settings),
                         success: function (data) {
                             console.log(data);
                             if (detailsDataTable !== undefined) {
@@ -520,10 +521,10 @@ function load(stage) {
                         contentType: 'application/json; charset=utf-8',
                         dataType: 'json',
                         url: '/api/eventChainGraph?id=' + eventTarget,
-                        data: JSON.stringify(getSettings()),
+                        data: JSON.stringify(settings),
                         success: function (data) {
                             console.log(data);
-                            renderGraph(containerEventChain, data.elements, getSettings(), eventTarget);
+                            renderGraph(containerEventChain, data.elements, settings, eventTarget);
                             storeCache('eventChain', eventTarget);
                         },
                         complete: function () {
@@ -570,10 +571,19 @@ function newEventTarget(target) {
 let settingsElement = undefined;
 
 function getSettings() {
-    let settings = {
+    let systemCount = settingsElement.systems.find('.panel').length;
+    let systems = {};
+    for (let i = 0; i < systemCount; i++) {
+        systems[$('#systemName\\[' + i + '\\]').val()] = $('#systemUri\\[' + i + '\\]').val()
+    }
+    // console.log(systems);
+
+    return {
+        systems: systems,
+
         system: {
-            name: 'Dummy event repository',
-            uri: 'http://localhost:8081/events.json',
+            name: settingsElement.system.val(),
+            uri: systems[settingsElement.system.val()],
         },
         aggregation: {},
         details: {},
@@ -589,16 +599,48 @@ function getSettings() {
         },
         live: {}
     };
-    return settings;
 }
 
 function setSettingsDefault() {
+
     settingsElement.upStream.prop('checked', true).change();
     settingsElement.downStream.prop('checked', true).change();
     settingsElement.steps.val(5);
     settingsElement.maxConnections.val(16);
     settingsElement.relativeXAxis.prop('checked', false).change();
+
+    settingsElement.systems.html('');
+    newSystem('Dummy', 'http://localhost:8081/events.json');
+
+    settingsElement.system.selectpicker('val', undefined);
 }
+
+function newSystem(name, uri) {
+    if (name === undefined) {
+        name = '';
+    }
+    if (uri === undefined) {
+        uri = '';
+    }
+    let settings = getSettings();
+    let count = _.size(settings.systems);
+    settingsElement.systems.append(
+        '<div class="panel panel-default">' +
+        '<div class="input-group">' +
+        '<span class="input-group-addon">Name</span>' +
+        '<input id="systemName[' + count + ']" type="text" class="form-control" ' +
+        'placeholder="My system" value="' + name + '"/>' +
+        '</div>' +
+        '<div class="input-group">' +
+        '<span class="input-group-addon">URI</span>' +
+        '<input id="systemUri[' + count + ']" type="text" class="form-control" ' +
+        'placeholder="http://localhost:8081/events.json" value="' + uri + '"/>' +
+        '</div>' +
+        '</div>'
+    );
+}
+
+let systemSelected = 'Dummy';
 
 $(document).ready(function () {
     settingsElement = {
@@ -607,11 +649,15 @@ $(document).ready(function () {
         steps: $('#steps'),
         maxConnections: $('#maxConnections'),
         relativeXAxis: $('#relativeXAxis'),
+
+        system: $('#systemSelect'),
+        systems: $('#systemCollapse'),
     };
 
     setSettingsDefault();
 
     loader = $('#loader_overlay');
+    loader.hide();
 
     wrapperAggregation = $('#aggregation_wrapper');
     containerAggregation = $('#aggregation');
@@ -629,7 +675,7 @@ $(document).ready(function () {
 
 
     // Menu
-    $('.menu-item').on('click', function (e) {
+    $('.menu-item').on('click', function () {
         // e.preventDefault();
         load($(this).data('value'));
     });
@@ -650,6 +696,9 @@ $(document).ready(function () {
         invalidateCache('live');
     });
 
-
-    load('aggregation');
+    if (getSettings().system.uri !== undefined) {
+        _.defer(function () {
+            load('aggregation');
+        });
+    }
 });
