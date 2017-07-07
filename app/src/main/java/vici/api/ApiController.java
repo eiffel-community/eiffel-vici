@@ -124,10 +124,10 @@ public class ApiController {
     }
 
     @RequestMapping(value = "/api/aggregationGraph", produces = "application/json; charset=UTF-8")
-    public ArrayList<Element> aggregationGraph(@RequestParam(value = "url", defaultValue = "http://localhost:8080/events.json") String url) {
+    public ArrayList<Element> aggregationGraph(@RequestBody Settings settings) {
 
         Fetcher fetcher = new Fetcher();
-        Events eventsObject = fetcher.getEvents(url);
+        Events eventsObject = fetcher.getEvents(settings.getSystem().getUri());
         HashMap<String, Event> events = eventsObject.getEvents();
 
         ArrayList<Element> elements = new ArrayList<>();
@@ -186,7 +186,7 @@ public class ApiController {
     }
 
     @RequestMapping(value = "/api/detailedEvents", produces = "application/json; charset=UTF-8")
-    public Source detailedEvents(@RequestParam(value = "name", defaultValue = "") String name, @RequestParam(value = "url", defaultValue = "http://localhost:8080/events.json") String url) {
+    public Source detailedEvents(@RequestBody Settings settings, @RequestParam(value = "name", defaultValue = "") String name) {
 
         ArrayList<UrlProperty> urlProperties = new ArrayList<>();
 //        if (!name.equals("")) {
@@ -194,7 +194,7 @@ public class ApiController {
 //        }
 
         Fetcher fetcher = new Fetcher();
-        Events eventsObject = fetcher.getEvents(url, urlProperties);
+        Events eventsObject = fetcher.getEvents(settings.getSystem().getUri(), urlProperties);
         HashMap<String, Event> events = eventsObject.getEvents();
 
         ArrayList<HashMap<String, String>> data = new ArrayList<>();
@@ -298,14 +298,14 @@ public class ApiController {
     }
 
     @RequestMapping(value = "/api/eventChainGraph", produces = "application/json; charset=UTF-8")
-    public Graph eventChainGraph(@RequestBody Settings settings, @RequestParam(value = "id", defaultValue = "") String id, @RequestParam(value = "url", defaultValue = "http://localhost:8080/events.json") String url) {
+    public Graph eventChainGraph(@RequestBody Settings settings, @RequestParam(value = "id", defaultValue = "") String id) {
         Graph graph = new Graph();
         if (id.equals("")) {
             return graph;
         }
 
         Fetcher fetcher = new Fetcher();
-        Events eventsObject = fetcher.getEvents(url);
+        Events eventsObject = fetcher.getEvents(settings.getSystem().getUri());
         HashMap<String, Event> events = eventsObject.getEvents();
 
         if (!events.containsKey(id)) {

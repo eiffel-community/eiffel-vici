@@ -43,7 +43,7 @@ public class Fetcher {
 
         RestTemplate restTemplate = new RestTemplate();
 
-        ResponseEntity<EiffelEvent[]> responseEntity = restTemplate.getForEntity(urlObject.toString(), EiffelEvent[].class);
+        ResponseEntity<EiffelEvent[]> responseEntity = restTemplate.getForEntity(url, EiffelEvent[].class);
         EiffelEvent[] eiffelEvents = responseEntity.getBody();
         MediaType contentType = responseEntity.getHeaders().getContentType();
         HttpStatus statusCode = responseEntity.getStatusCode();

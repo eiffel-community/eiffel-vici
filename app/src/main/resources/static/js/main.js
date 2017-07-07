@@ -370,7 +370,6 @@ function renderGraph(container, data, settings, target) {
     cy.minZoom(0.1); //same setting as panzoom for Krav 2
 }
 
-let systemTarget = undefined;
 let detailsTarget = undefined;
 let eventTarget = undefined;
 
@@ -395,19 +394,25 @@ let menuDetailsMaxStringLength = 16;
 
 let cache = {};
 
-function usableCache(cacheName, request) {
-    return cache[cacheName] !== undefined && cache[cacheName].time + cacheStoreTime > Date.now() && cache[cacheName].value === request;
+function usableCache(cacheName, system) {
+    return cache[cacheName] !== undefined && cache[cacheName].time + cacheStoreTime > Date.now() && cache[cacheName].system === system;
 }
 
-function storeCache(cacheName, value) {
+function storeCache(cacheName, system) {
     cache[cacheName] = {
-        value: value,
+        system: system,
         time: Date.now()
     };
 }
 
 function invalidateCache(cacheName) {
-    cache[cacheName] = undefined;
+    if (cacheName === undefined) {
+        cache = {};
+        console.log('Invalidated cache for ' + cacheName)
+    } else {
+        cache[cacheName] = undefined;
+        console.log('Invalidated all cache')
+    }
 }
 
 function load(stage) {
@@ -425,17 +430,21 @@ function load(stage) {
 
         if (stage === 'aggregation') {
             wrapperAggregation.show();
-            if (usableCache('aggregation', systemTarget)) {
-                console.log('Using cache for ' + systemTarget);
+            if (usableCache('aggregation', getSettings().system.uri)) {
+                console.log('Using cache for ' + getSettings().system.uri);
                 loader.hide();
             } else {
                 _.defer(function () {
                     $.ajax({
-                        url: '/api/aggregationGraph?url=' + systemTarget,
+                        type: "POST",
+                        contentType: 'application/json; charset=utf-8',
+                        dataType: 'json',
+                        url: '/api/aggregationGraph',
+                        data: JSON.stringify(getSettings()),
                         success: function (data) {
                             console.log(data);
                             renderGraph(containerAggregation, data, getSettings(), undefined);
-                            storeCache('aggregation', systemTarget);
+                            storeCache('aggregation', getSettings().system.uri);
                         },
                         complete: function () {
                             loader.hide();
@@ -452,7 +461,11 @@ function load(stage) {
             } else {
                 _.defer(function () {
                     $.ajax({
+                        type: "POST",
+                        contentType: 'application/json; charset=utf-8',
+                        dataType: 'json',
                         url: "/api/detailedEvents?name=" + detailsTarget,
+                        data: JSON.stringify(getSettings()),
                         success: function (data) {
                             console.log(data);
                             if (detailsDataTable !== undefined) {
@@ -508,7 +521,6 @@ function load(stage) {
                         dataType: 'json',
                         url: '/api/eventChainGraph?id=' + eventTarget,
                         data: JSON.stringify(getSettings()),
-                        // data: getSettings(),
                         success: function (data) {
                             console.log(data);
                             renderGraph(containerEventChain, data.elements, getSettings(), eventTarget);
@@ -559,6 +571,10 @@ let settingsElement = undefined;
 
 function getSettings() {
     let settings = {
+        system: {
+            name: 'Dummy event repository',
+            uri: 'http://localhost:8081/events.json',
+        },
         aggregation: {},
         details: {},
         eventChain: {
@@ -579,7 +595,7 @@ function getSettings() {
 function setSettingsDefault() {
     settingsElement.upStream.prop('checked', true).change();
     settingsElement.downStream.prop('checked', true).change();
-    settingsElement.steps.val(6);
+    settingsElement.steps.val(5);
     settingsElement.maxConnections.val(16);
     settingsElement.relativeXAxis.prop('checked', false).change();
 }
@@ -609,7 +625,6 @@ $(document).ready(function () {
 
     detailsTable = $('#details_table');
 
-    systemTarget = "http://localhost:8080/events.json";
     detailsTarget = "";
 
 

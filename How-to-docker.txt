@@ -1,19 +1,37 @@
+Vici
 - Dockerfile is found at eiffel-vici\app\src\main\docker\Dockerfile
 - Docker image is created with a gradle docker plugin, found in eiffel-vici\app\build.gradle
 
-1: Unzip eiffel-vici\app\src\main\resources\static\events.zip into eiffel-vici\app\src\main\resources\static\events.json
+1: Move to directory eiffel-vici\app
 
-2: Move to directory eiffel-vici\app
-
-3: Test if build and run works correctly:
+2: Test if build and run works correctly:
 	Windows PowerShell: 	(./gradlew build) -and (java -jar .\build\libs\vici-eiffel-0.1.jar)
 	Linux: 					./gradlew build && java -jar .\build\libs\vici-eiffel-0.1.jar
+
+3: Build docker image:
+	./gradlew build buildDocker
+
+4: Run docker image on http://localhost:8080/:
+	docker run -p 8080:8080 -t --name vici ewahjon/vici-eiffel:0.1
+
+
+Dummy event repository
+- Dockerfile is found at eiffel-vici\dummy-er\src\main\docker\Dockerfile
+- Docker image is created with a gradle docker plugin, found in eiffel-vici\dummy-er\build.gradle
+
+1: Unzip eiffel-vici\dummy-er\src\main\resources\static\events.zip into eiffel-vici\dummy-er\src\main\resources\static\events.json
+
+2: Move to directory eiffel-vici\dummy-er
+
+3: Test if build and run works correctly:
+	Windows PowerShell: 	(./gradlew build) -and (java -jar .\build\libs\dummy-er-0.1.jar)
+	Linux: 					./gradlew build && java -jar .\build\libs\dummy-er-0.1.jar
 
 4: Build docker image:
 	./gradlew build buildDocker
 
-5: Run docker image on http://localhost:8080/:
-	docker run -p 8080:8080 -t ewahjon/vici-eiffel:0.1
+5: Run docker image on http://localhost:8081/:
+	docker run -p 8081:8081 -t --name dummy-er ewahjon/dummy-er:0.1
 
 
 Stop running container:
