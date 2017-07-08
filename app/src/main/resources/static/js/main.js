@@ -9,7 +9,6 @@ function renderGraph(container, data, settings, target) {
     const COLOR_UNDEFINED = '#666';
 //            $('.greeting-id').append(data.id);
 //            $('.greeting-content').append(data.content);
-//     console.log(data);
 
     let style = [
         {
@@ -436,6 +435,7 @@ function load(stage) {
                 loader.hide();
             } else {
                 _.defer(function () {
+                    console.log(settings);
                     $.ajax({
                         type: "POST",
                         contentType: 'application/json; charset=utf-8',
@@ -694,6 +694,20 @@ $(document).ready(function () {
 
     $('#settings-live').find('input').change(function () {
         invalidateCache('live');
+    });
+
+    settingsElement.system.on('show.bs.select', function () {
+        let settings = getSettings();
+
+        settingsElement.system.html('');
+        for (let key in settings.systems) {
+            settingsElement.system.append('<option>' + key + '</option>');
+        }
+        settingsElement.system.selectpicker('refresh');
+    });
+
+    settingsElement.system.on('changed.bs.select', function () {
+        load('aggregation');
     });
 
     if (getSettings().system.uri !== undefined) {

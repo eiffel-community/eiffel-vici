@@ -1,5 +1,6 @@
 package vici.api;
 
+import org.json.JSONObject;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -125,6 +126,9 @@ public class ApiController {
 
     @RequestMapping(value = "/api/aggregationGraph", produces = "application/json; charset=UTF-8")
     public ArrayList<Element> aggregationGraph(@RequestBody Settings settings) {
+
+//        JSONObject jsonObject = new JSONObject(settings);
+//        System.out.println(jsonObject.toString());
 
         Fetcher fetcher = new Fetcher();
         Events eventsObject = fetcher.getEvents(settings.getSystem().getUri());
