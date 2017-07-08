@@ -16,7 +16,6 @@
 
     <link rel="stylesheet" media="screen" th:href="@{/styles/datatables/datatables.min.css}"/>
 
-    <link rel="stylesheet" media="screen" th:href="@{/styles/sidebar.css}"/>
     <link rel="stylesheet" media="screen" th:href="@{/styles/main.css}"/>
 
     <script th:src="@{/js/jquery/jquery-3.2.1.min.js}"></script>
@@ -37,6 +36,12 @@
 
     <script th:src="@{/js/moment/moment.min.js}"></script>
 
+    <script th:src="@{/js/formatting-global.js}"></script>
+    <script th:src="@{/js/rendering-cytoscape.js}"></script>
+    <script th:src="@{/js/rendering-datatable.js}"></script>
+    <script th:src="@{/js/handler-cache.js}"></script>
+    <script th:src="@{/js/handler-ui.js}"></script>
+    <script th:src="@{/js/handler-stage.js}"></script>
     <script th:src="@{/js/main.js}"></script>
 </head>
 
@@ -267,38 +272,25 @@
     </article>
 
     <nav>
-        <ul class="sidebar-nav">
-            <li class="sidebar-brand">
-                <a href="#">
-                    Vici
-                </a>
-            </li>
-            <select class="selectpicker show-menu-arrow" title="Choose a system" id="systemSelect"></select>
 
-            <li id="menu_aggregation" class="menu-item" data-value="aggregation">
-                <a href="#">Aggregation</a>
-            </li>
-            <li id="menu_details" class="menu-item" data-value="details">
-                <a href="#">Details</a>
-            </li>
-            <li id="menu_eventChain" class="menu-item" data-value="eventChain">
-                <a href="#">Event chain</a>
-            </li>
-            <li id="menu_live" class="menu-item" data-value="live">
-                <a href="#">Live</a>
-            </li>
-
-            <li id="menu_settings" class="menu-item" data-value="settings">
-                <a href="#"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span></a>
-            </li>
-            <li id="menu_help" class="menu-item" data-value="help">
-                <a href="#"><span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span></a>
-            </li>
-        </ul>
+        <div class="list-group" id="side-menu">
+            <select class="selectpicker" title="Choose a system" id="systemSelect"
+                    data-style="list-group-item"></select>
+            <a href="#" id="menu_aggregation" data-value="aggregation" class="list-group-item list-group-item-action">Aggregation</a>
+            <a href="#" id="menu_details" data-value="details"
+               class="list-group-item list-group-item-action">Details</a>
+            <a href="#" id="menu_eventChain" data-value="eventChain" class="list-group-item list-group-item-action">Event
+                chain</a>
+            <a href="#" id="menu_live" data-value="live"
+               class="list-group-item list-group-item-action">Live</a>
+            <a href="#" id="menu_settings" data-value="settings"
+               class="list-group-item list-group-item-action"><span class="glyphicon glyphicon-cog"
+                                                                    aria-hidden="true"></span></a>
+            <a href="#" id="menu_help" data-value="help" class="list-group-item list-group-item-action"><span
+                    class="glyphicon glyphicon-info-sign" aria-hidden="true"></span></a>
+        </div>
     </nav>
-
 </div>
-
 
 </body>
 </html>

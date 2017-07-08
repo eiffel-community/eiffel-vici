@@ -144,3 +144,7 @@ li.active {
 .panel {
     margin-bottom: 0;
 }
+
+/*.list-group-item {*/
+    /*text-overflow: ellipsis;*/
+/*}*/
