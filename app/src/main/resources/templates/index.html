@@ -36,12 +36,6 @@
 
     <script th:src="@{/js/moment/moment.min.js}"></script>
 
-    <script th:src="@{/js/formatting-global.js}"></script>
-    <script th:src="@{/js/rendering-cytoscape.js}"></script>
-    <script th:src="@{/js/rendering-datatable.js}"></script>
-    <script th:src="@{/js/handler-cache.js}"></script>
-    <script th:src="@{/js/handler-ui.js}"></script>
-    <script th:src="@{/js/handler-stage.js}"></script>
     <script th:src="@{/js/main.js}"></script>
 </head>
 
@@ -73,8 +67,15 @@
 
                         <h2>Settings</h2>
                         When changing a setting, all caches relative to that settings will be invalidated automatically.
-                        <div id="settings-system">
-                            <h3>Systems</h3>
+
+                        <div id="settings-general">
+                            <h3>General</h3>
+
+                            <div class="input-group settings-row">
+                                <span class="input-group-addon">Time to keep caches</span>
+                                <input id="cacheKeepTime" type="number" class="form-control"
+                                       placeholder="Positive integer"/>
+                            </div>
 
                             <div class="settings-row">
                                 <button class="btn btn-default" type="button" data-toggle="collapse"
@@ -278,9 +279,11 @@
                     data-style="list-group-item"></select>
             <a href="#" id="menu_aggregation" data-value="aggregation" class="list-group-item list-group-item-action">Aggregation</a>
             <a href="#" id="menu_details" data-value="details"
-               class="list-group-item list-group-item-action">Details</a>
+               class="list-group-item list-group-item-action">Details
+                <span id="menu-details-extra" class="menu-item-extra"></span></a>
             <a href="#" id="menu_eventChain" data-value="eventChain" class="list-group-item list-group-item-action">Event
-                chain</a>
+                chain
+                <span id="menu-eventChain-extra" class="menu-item-extra"></span></a>
             <a href="#" id="menu_live" data-value="live"
                class="list-group-item list-group-item-action">Live</a>
             <a href="#" id="menu_settings" data-value="settings"

@@ -145,6 +145,15 @@ li.active {
     margin-bottom: 0;
 }
 
-/*.list-group-item {*/
-    /*text-overflow: ellipsis;*/
-/*}*/
+.bootstrap-select {
+    width: 100% !important;
+}
+
+.menu-item-extra {
+    display: block;
+    font-style: oblique;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
