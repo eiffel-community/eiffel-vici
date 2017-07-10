@@ -22,7 +22,7 @@ function getElementsSettings() {
         relativeXAxis: $('#relativeXAxis'),
 
         system: $('#systemSelect'),
-        systems: $('#systemCollapse'),
+        systems: $('#systemsSettings'),
     };
 }
 
@@ -77,21 +77,23 @@ function getCurrentSettings() {
 
 function updateSystemSelector() {
     settingsElement.system.html('');
-    for (let key in getCurrentSettings().systems) {
+    let settings = getCurrentSettings();
+    console.log(settings);
+    for (let key in settings.systems) {
         settingsElement.system.append('<option>' + key + '</option>');
     }
     settingsElement.system.selectpicker('refresh');
 }
 
-function newSystem(name, uri, index, container) {
+function newSystem(name, uri) {
     if (name === undefined) {
         name = '';
     }
     if (uri === undefined) {
         uri = '';
     }
-    let count = index;
-    container.append(
+    let count = _.size(getCurrentSettings().systems);
+    settingsElement.systems.append(
         '<div class="panel panel-default">' +
         '<div class="input-group">' +
         '<span class="input-group-addon">Name</span>' +
@@ -100,11 +102,14 @@ function newSystem(name, uri, index, container) {
         '</div>' +
         '<div class="input-group">' +
         '<span class="input-group-addon">URI</span>' +
-        '<input id="systemUri[' + count + ']" type="text" class="form-control" ' +
+        '<input id="systemUri[' + count + ']" type="text" class="form-control systemsUriInput" ' +
         'placeholder="http://localhost:8081/events.json" value="' + uri + '"/>' +
         '</div>' +
         '</div>'
     );
+    $('#systemsSettings').find('input').change(function () {
+        updateSystemSelector();
+    });
     updateSystemSelector();
 }
 
@@ -168,7 +173,7 @@ function disableMenuLevel(level) {
         case 2:
             $('#menu_details').removeClass('disabled');
         case 1:
-            $('#menu_aggregation').removeClass('disabled');
+            $('#menu_aggregation').removeClass('stemdisabled');
         default:
             break;
     }
@@ -698,23 +703,25 @@ function renderCytoscape(container, data, settings, target) {
 $(document).ready(function () {
     settingsElement = getElementsSettings();
     setSettingsDefault(settingsElement);
-    newSystem('Dummy', 'http://localhost:8081/events.json', _.size(getCurrentSettings().systems), settingsElement.systems);
+    newSystem('Dummy', 'http://localhost:8081/events.json');
     content = getContentElements();
 
     content.loader.hide();
 
-    // Menu
+    // MENU
     $('.list-group-item-action').on('click', function () {
         // e.preventDefault();
         load($(this).data('value'));
     });
 
-    // $('#settings-general').find('input').change(function () {
-    //     invalidateCache()
-    // });
+    // SETTINGS
 
-    $('#systemCollapse').find('input').change(function () {
-        updateSystemSelector();
+    $('#btnNewSystem').click(function () {
+        newSystem();
+    });
+
+    $('#systemsUriInput').change(function () {
+        invalidateCache();
     });
 
     $('#settings-aggregation').find('input').change(function () {
