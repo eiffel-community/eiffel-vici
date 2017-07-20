@@ -720,9 +720,10 @@ $(document).ready(function () {
         newSystem();
     });
 
-    $('#systemsUriInput').change(function () {
-        invalidateCache();
-    });
+    // TODO
+    // $('#systemsUriInput').change(function () {
+    //     invalidateCache();
+    // });
 
     $('#settings-aggregation').find('input').change(function () {
         invalidateCache('aggregation');
