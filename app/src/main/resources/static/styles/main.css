@@ -157,3 +157,7 @@ li.active {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+.list-group-item.disabled {
+    background-color: #4a4a4a;
+}

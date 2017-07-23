@@ -173,7 +173,7 @@ function disableMenuLevel(level) {
         case 2:
             $('#menu_details').removeClass('disabled');
         case 1:
-            $('#menu_aggregation').removeClass('stemdisabled');
+            $('#menu_aggregation').removeClass('disabled');
         default:
             break;
     }
