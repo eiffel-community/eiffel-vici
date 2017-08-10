@@ -1,0 +1,304 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Vici - Visualization of Continuous Integration</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+
+    <link rel="stylesheet" media="screen" th:href="@{/styles/bootstrap/bootstrap.min.css}"/>
+    <link rel="stylesheet" media="screen" th:href="@{/styles/bootstrap/bootstrap-theme.min.css}"/>
+    <link rel="stylesheet" media="screen" th:href="@{/styles/bootstrap/bootstrap-toggle.min.css}"/>
+    <link rel="stylesheet" media="screen" th:href="@{/styles/bootstrap/bootstrap-select.min.css}"/>
+
+    <link rel="stylesheet" media="screen" th:href="@{/styles/cytoscape/cytoscape.js-panzoom.css}"/>
+    <link rel="stylesheet" media="screen" th:href="@{/styles/cytoscape/jquery.qtip.min.css}"/>
+    <link rel="stylesheet" media="screen" th:href="@{/styles/font-awesome/font-awesome.min.css}"/>
+    <link rel="stylesheet" media="screen" th:href="@{/styles/vici.qtip.css}"/>
+
+    <link rel="stylesheet" media="screen" th:href="@{/styles/datatables/datatables.min.css}"/>
+
+    <link rel="stylesheet" media="screen" th:href="@{/styles/main.css}"/>
+
+    <script th:src="@{/js/jquery/jquery-3.2.1.min.js}"></script>
+    <script th:src="@{/js/underscore/underscore-min.js}"></script>
+
+    <script th:src="@{/js/bootstrap/bootstrap.min.js}"></script>
+    <script th:src="@{/js/bootstrap/bootstrap-toggle.min.js}"></script>
+    <script th:src="@{/js/bootstrap/bootstrap-select.min.js}"></script>
+
+    <script th:src="@{/js/cytoscape/cytoscape.min.js}"></script>
+    <script th:src="@{/js/cytoscape/dagre.js}"></script>
+    <script th:src="@{/js/cytoscape/cytoscape-dagre.js}"></script>
+    <script th:src="@{/js/cytoscape/cytoscape-panzoom.js}"></script>
+    <script th:src="@{/js/cytoscape/jquery.qtip.min.js}"></script>
+    <script th:src="@{/js/cytoscape/cytoscape-qtip.js}"></script>
+
+    <script th:src="@{/js/datatables/datatables.min.js}"></script>
+
+    <script th:src="@{/js/moment/moment.min.js}"></script>
+
+    <script th:src="@{/js/main.js}"></script>
+</head>
+
+<body>
+<div id="main">
+    <article>
+        <div id="loader_overlay" class="overlay">
+            <div id="loader" class="loader"></div>
+        </div>
+
+        <div id="aggregation_wrapper" class="content-container">
+            <div id="aggregation" class="content-container cy"></div>
+        </div>
+        <div id="details" class="content-container non-cy">
+            <table id="details_table" class="table table-striped table-bordered" cellspacing="0" width="100%"></table>
+        </div>
+        <div id="event_chain_wrapper" class="content-container">
+            <div id="event_chain" class="content-container cy"></div>
+        </div>
+
+        <div id="live_wrapper" class="content-container">
+            <div id="live" class="content-container cy"></div>
+        </div>
+
+        <div id="settings" class="content-container non-cy">
+            <div class="container settings-container">
+                <div class="row">
+                    <div class="col-12">
+
+                        <h2>Settings</h2>
+                        When changing a setting, all caches relative to that settings will be invalidated automatically.
+
+                        <div id="settings-general">
+                            <h3>General</h3>
+
+                            <div class="input-group settings-row">
+                                <span class="input-group-addon">Time to keep caches</span>
+                                <input id="cacheKeepTime" type="number" class="form-control"
+                                       placeholder="Positive integer"/>
+                            </div>
+
+                            <div class="settings-row">
+                                <button class="btn btn-default" type="button" data-toggle="collapse"
+                                        data-target="#systemCollapse" aria-expanded="false">
+                                    Manage systems <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+                                </button>
+                            </div>
+                            <div class="collapse" id="systemCollapse">
+                                <div id="systemsSettings">
+
+                                </div>
+                                <button id="btnNewSystem" type="button" class="btn btn-success"><span class="glyphicon glyphicon-plus"
+                                                                                    aria-hidden="true"></span></button>
+                            </div>
+                        </div>
+
+                        <div id="settings-aggregation">
+                            <h3>Aggregation</h3>
+                        </div>
+
+                        <div id="settings-details">
+                            <h3>Details</h3>
+                        </div>
+
+                        <div id="settings-eventChain">
+
+                            <h3>Event Chain</h3>
+
+                            <div class="input-group settings-row">
+                                <span class="input-group-addon">Maximum jumps</span>
+                                <input id="steps" type="number" class="form-control" placeholder="Positive integer"/>
+                            </div>
+                            <div class="input-group settings-row">
+                                <span class="input-group-addon">Maximum connections/node</span>
+                                <input id="maxConnections" type="number" class="form-control"
+                                       placeholder="Positive integer"/>
+                            </div>
+
+                            <div class="input-group settings-row">
+                                <label class="checkbox-inline">
+                                    <input type="checkbox" data-toggle="toggle" id="upStream"/> Follow links <b>up</b>
+                                    stream
+                                </label>
+                            </div>
+
+                            <div class="input-group settings-row">
+                                <label class="checkbox-inline">
+                                    <input type="checkbox" data-toggle="toggle" id="downStream"/> Follow links
+                                    <b>down</b>
+                                    stream
+                                </label>
+                            </div>
+
+                            <div class="input-group settings-row">
+                                <label class="checkbox-inline">
+                                    <input type="checkbox" data-toggle="toggle" id="relativeXAxis"/> Node x-position
+                                    defined
+                                    by actual timestamp
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="settings-live">
+                            <h3>Live</h3>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id=" help" class="content-container non-cy">
+
+            <h2>Information</h2>
+
+            <h3>Overview of the application</h3>
+            This application is used to visualize the data flow of a continuous integration
+            system to
+            enable analyzing it's performance and potential bottlenecks.
+            It uses data from the <a href="https://github.com/Ericsson/eiffel">Eiffel</a>
+            framework which
+            offers a platform agnostic messaging protocol to trace the data flow.
+            What follows is a brief explanation of the application. For technical details see
+            the bottom of this
+            modal.
+            <h3>Aggregation view</h3>
+            The first canvas consist of the aggregation view. The graph rendered is an
+            aggregation of all event
+            chains contained within the time spans specified in the time line below it. The
+            events depicted were
+            triggered
+            by each other according to the vertices in the graph, where the time "flows" from
+            left to right.
+            For a list of all nodes and their meaning, see the section "Different types of
+            nodes" below.
+            To change the data set, simply drag and drop the "start" and "end" time points
+            inside the time line.
+            To navigate the graph use "drag n' drop" together with scrolling. There are also
+            some tools for
+            navigating
+            in the top left, along with a button to reset the view. The nodes can also be moved
+            around and clicked
+            to display a popup with additional information, and the "show all events"-button
+            inside the popup will
+            load all events represented by the node into the details view.
+            <h3>Details view</h3>
+            The details view tabulates the events aggregated in a node selected in the
+            aggregation view.
+            It can be re-ordered by clicking a column header, filtered using the search field to
+            the top right and
+            be displayed on a time line by clicking the switch, also in the upper right. By
+            clicking the "Event
+            chain"-
+            button the event chain that the event took part in will be loaded into the event
+            chain view.
+            <h3>Event chain view</h3>
+            The event chain view renders a graph depicting a series of events based on
+            one that was selected in the details view. The selected node is outlined in yellow.
+            The events were triggered by each other as indicated by outgoing vertices. Vertices
+            that are dotted
+            symbolizes a reference to a node that does not partake in the event chain, but that
+            is of some other
+            importance. I.e. the previous version of an artifact. This view is very similar to
+            the aggregation view,
+            and it should be read if more information is required.
+            <h3>Different types of nodes</h3>
+            <div class="node-row">
+                <div class="node-col">
+                    <img src="/images/tc.png"/> <br/>
+                    <h4>Test case</h4>
+                </div>
+                <div class="node-col">
+                    <img src="/images/ts.png"/> <br/>
+                    <h4>Test suite</h4>
+                </div>
+            </div>
+            <div class="node-row">
+                <div class="node-col">
+                    <img src="/images/clm.png"/> <br/>
+                    <h4>Confidence level modified</h4>
+                </div>
+                <div class="node-col">
+                    <img src="/images/act.png"/> <br/>
+                    <h4>Activity</h4>
+                </div>
+            </div>
+            <div class="node-row">
+                <div class="node-col">
+                    <img src="/images/artc.png"/> <br/>
+                    <h4>Artifact created</h4>
+                </div>
+                <div class="node-col">
+                    <img src="/images/artp.png"/> <br/>
+                    <h4>Artifact published</h4>
+                </div>
+            </div>
+            <div class="node-row">
+                <div class="node-col">
+                    <img src="/images/artr.png"/> <br/>
+                    <h4>Artifact reused</h4>
+                </div>
+                <div class="node-col">
+                    <img src="/images/edef.png"/> <br/>
+                    <h4>Environment defined</h4>
+                </div>
+            </div>
+            <div class="node-row">
+                <div class="node-col">
+                    <img src="/images/cdef.png"/> <br/>
+                    <h4>Composition defined</h4>
+                </div>
+                <div class="node-col">
+                    <img src="/images/capp.png"/> <br/>
+                    <h4>Configuration applied</h4>
+                </div>
+            </div>
+            <div class="node-row">
+                <div class="node-col">
+                    <img src="/images/scc.png"/> <br/>
+                    <h4>Source change created</h4>
+                </div>
+                <div class="node-col">
+                    <img src="/images/scs.png"/> <br/>
+                    <h4>Source change submitted</h4>
+                </div>
+            </div>
+            <div class="node-row">
+                <div class="node-col">
+                    <img src="/images/anp.png"/> <br/>
+                    <h4>Announcement published</h4>
+                </div>
+            </div>
+            <h3>Technical</h3>
+            This section contains technical information about the application.
+            <h4>Source</h4>
+            <!--<a target="_blank" href="https://gitlab.ida.liu.se/tddd96/visualization">Git repository</a>-->
+            <h4>Contact</h4>
+            <p>jonathan.wahlund@ericsson.com</p>
+        </div>
+    </article>
+
+    <nav>
+
+        <div class="list-group" id="side-menu">
+            <select class="selectpicker" title="Choose a system" id="systemSelect"
+                    data-style="list-group-item"></select>
+            <a href="#" id="menu_aggregation" data-value="aggregation" class="list-group-item list-group-item-action">Aggregation</a>
+            <a href="#" id="menu_details" data-value="details"
+               class="list-group-item list-group-item-action">Details
+                <span id="menu-details-extra" class="menu-item-extra"></span></a>
+            <a href="#" id="menu_eventChain" data-value="eventChain" class="list-group-item list-group-item-action">Event
+                chain
+                <span id="menu-eventChain-extra" class="menu-item-extra"></span></a>
+            <a href="#" id="menu_live" data-value="live"
+               class="list-group-item list-group-item-action">Live</a>
+            <a href="#" id="menu_settings" data-value="settings"
+               class="list-group-item list-group-item-action"><span class="glyphicon glyphicon-cog"
+                                                                    aria-hidden="true"></span></a>
+            <a href="#" id="menu_help" data-value="help" class="list-group-item list-group-item-action"><span
+                    class="glyphicon glyphicon-info-sign" aria-hidden="true"></span></a>
+        </div>
+    </nav>
+</div>
+
+</body>
+</html>

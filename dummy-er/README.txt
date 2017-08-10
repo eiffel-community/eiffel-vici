@@ -1,0 +1,1 @@
+For the dummy event repository to work, you have to extract eiffel-vici\dummy-er\src\main\resources\static\events.zip into eiffel-vici\dummy-er\src\main\resources\static\events.json
