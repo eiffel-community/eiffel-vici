@@ -703,6 +703,7 @@ function renderCytoscape(container, data, settings, target) {
 $(document).ready(function () {
     settingsElement = getElementsSettings();
     setSettingsDefault(settingsElement);
+    newSystem('Local dummy', 'http://localhost:8080/events.json');
     newSystem('Dummy', 'http://localhost:8081/events.json');
     content = getContentElements();
 
