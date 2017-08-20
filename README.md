@@ -22,6 +22,40 @@ This repository contains a software implementation based on the Eiffel protocol.
 
 Eiffel Vici is licensed under the [Apache License 2.0](./LICENSE).
 
+## How to Run
+For the dummy event repository to work, you have to extract app\src\main\resources\static\events.zip into app\src\main\resources\static\events.json
+
+From the app/ directory
+
+Windows PowerShell
+~~~~
+(./gradlew build) -and (java -jar .\build\libs\vici-eiffel-0.1.jar)
+~~~~
+Linux:
+~~~~
+./gradlew build && java -jar .\build\libs\vici-eiffel-0.1.jar
+~~~~
+
+## WIP: How to docker
+- Dockerfile is found at app\src\main\docker\Dockerfile
+- Docker image is created with a gradle docker plugin, found in app/src/build.gradle
+
+1: Make sure you have unzipped the events.json file like in the "How to Run" section.
+
+2: Build docker image:
+~~~~
+./gradlew build buildDocker
+~~~~
+
+3: Run docker image on http://localhost:8081/:
+~~~~
+docker run -p 8080:8080 -t --name vici ewahjon/vici-eiffel:0.1
+~~~~
+
+Stop running container:\
+1: docker ps\
+2: docker kill [CONTAINER ID]
+
 ## How to Propose Changes
 
 Anyone is welcome to propose changes to this repository by creating a new [Issue](https://github.com/Ericsson/eiffel-vici/issues) ticket in GitHub. These requests may concern anything contained in the repo: changes to documentation, changes to interfaces, changes to implementations, additional tests et cetera.
