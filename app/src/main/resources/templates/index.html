@@ -50,8 +50,14 @@
             <div id="aggregation" class="content-container cy"></div>
         </div>
         <div id="details" class="content-container non-cy">
-            <table id="details_table" class="table table-striped table-bordered" cellspacing="0" width="100%"></table>
+            <div id="details_table">
+                <table id="details_table_table" class="table table-striped table-bordered" cellspacing="0"
+                       width="100%"></table>
+            </div>
+            <!--<div id="details_plot"></div>-->
+
         </div>
+
         <div id="event_chain_wrapper" class="content-container">
             <div id="event_chain" class="content-container cy"></div>
         </div>
@@ -87,8 +93,9 @@
                                 <div id="systemsSettings">
 
                                 </div>
-                                <button id="btnNewSystem" type="button" class="btn btn-success"><span class="glyphicon glyphicon-plus"
-                                                                                    aria-hidden="true"></span></button>
+                                <button id="btnNewSystem" type="button" class="btn btn-success"><span
+                                        class="glyphicon glyphicon-plus"
+                                        aria-hidden="true"></span></button>
                             </div>
                         </div>
 
@@ -286,6 +293,17 @@
             <a href="#" id="menu_details" data-value="details"
                class="list-group-item list-group-item-action">Details
                 <span id="menu-details-extra" class="menu-item-extra"></span></a>
+
+
+            <a id="menu_details_toggle" class="list-group-item "><input id="details_toggle" type="checkbox"
+                                                                        checked="checked"
+                                                                        data-toggle="toggle" data-on="Table"
+                                                                        data-off="Plot"
+                                                                        data-onstyle="default"
+                                                                        data-offstyle="default"
+                                                                        data-width="100%"/></a>
+
+
             <a href="#" id="menu_eventChain" data-value="eventChain" class="list-group-item list-group-item-action">Event
                 chain
                 <span id="menu-eventChain-extra" class="menu-item-extra"></span></a>

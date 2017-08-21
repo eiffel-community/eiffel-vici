@@ -152,9 +152,12 @@ function getContentElements() {
     return {
         cyAggregation: $('#aggregation'),
         datatableDetails: undefined,
-        datatableDetailsContainer: $('#details_table'),
+        datatableDetailsContainer: $('#details_table_table'),
+        detailsTable: $('#details_table'),
+        detailsPlot: $('#details_plot'),
         cyEventChain: $('#event_chain'),
         loader: $('#loader_overlay'),
+        detailsToggle: $('#details_toggle'),
         containers: {
             aggregation: $('#aggregation_wrapper'),
             details: $('#details'),
@@ -164,14 +167,14 @@ function getContentElements() {
             help: $('#help'),
         },
         menu: {
-
             aggregation: $('#menu_aggregation'),
             details: $('#menu_details'),
+            detailsToggle: $('#menu_details_toggle'),
             eventChain: $('#menu_eventChain'),
             live: $('#menu_live'),
-
         }
-    };
+    }
+        ;
 }
 
 function disableMenuLevel(level) {
@@ -189,7 +192,6 @@ function disableMenuLevel(level) {
             content.menu.details.removeClass('disabled');
         case 1:
             content.menu.aggregation.removeClass('disabled');
-
         default:
             break;
     }
@@ -216,6 +218,7 @@ function load(stage) {
     let systemUri = settings.system.uri;
 
     setMenuActive(settings);
+    content.menu.detailsToggle.hide();
     _.defer(function () {
         for (let container in content.containers) {
             content.containers[container].hide();
@@ -247,6 +250,7 @@ function load(stage) {
                 });
             }
         } else if (stage === 'details') {
+            content.menu.detailsToggle.show();
             content.containers.details.show();
             let detailsTarget = settings.details.target;
             if (usableCache('details', systemUri + detailsTarget, settings.general.timeStoreCache)) {
@@ -272,7 +276,7 @@ function load(stage) {
                                     {
                                         title: 'Chain',
                                         data: null,
-                                        defaultContent: '<button class="btn btn-default row-button">Graph</button>'
+                                        defaultContent: '<button class="btn btn-default btn-xs row-button">Graph</button>'
                                     }
                                 ];
                                 content.datatableDetails = datatable = content.datatableDetailsContainer.DataTable({
@@ -283,6 +287,7 @@ function load(stage) {
                                     scrollCollapse: true,
                                     lengthMenu: [[20, 200, -1], [20, 200, "All"]],
                                     order: [4, 'asc'],
+
                                 });
 
                                 content.datatableDetailsContainer.find('tbody').on('click', 'button', function () {
@@ -718,6 +723,16 @@ function renderCytoscape(container, data, settings, target) {
     cy.minZoom(0.1); //same setting as panzoom for Krav 2
 }
 
+function toggleTable(showTable) {
+    if (showTable) {
+        content.detailsTable.show();
+        content.detailsPlot.hide();
+    } else {
+        content.detailsTable.hide();
+        content.detailsPlot.show();
+    }
+}
+
 $(document).ready(function () {
     settingsElement = getElementsSettings();
     setSettingsDefault(settingsElement);
@@ -727,10 +742,19 @@ $(document).ready(function () {
 
     content.loader.hide();
 
+    content.detailsToggle.bootstrapToggle('on');
+    toggleTable(true);
+    content.menu.detailsToggle.hide();
+
+
     // MENU
     $('.list-group-item-action').on('click', function () {
         // e.preventDefault();
         load($(this).data('value'));
+    });
+
+    content.detailsToggle.change(function () {
+        toggleTable($(this).prop('checked'));
     });
 
     // SETTINGS
