@@ -85,6 +85,11 @@ function updateSystemSelector() {
     settingsElement.system.selectpicker('refresh');
 }
 
+function resetSelections() {
+    settingsElement.eventChainTarget.html("");
+    settingsElement.detailsTarget.html("");
+}
+
 function newSystem(name, uri) {
     if (name === undefined) {
         name = '';
@@ -97,12 +102,12 @@ function newSystem(name, uri) {
         '<div class="panel panel-default">' +
         '<div class="input-group">' +
         '<span class="input-group-addon">Name</span>' +
-        '<input id="systemName[' + count + ']" type="text" class="form-control" ' +
+        '<input id="systemName[' + count + ']"  class="form-control" ' +
         'placeholder="My system" value="' + name + '"/>' +
         '</div>' +
         '<div class="input-group">' +
         '<span class="input-group-addon">URI</span>' +
-        '<input id="systemUri[' + count + ']" type="text" class="form-control systemsUriInput" ' +
+        '<input id="systemUri[' + count + ']"  class="form-control systemsUriInput" ' +
         'placeholder="http://localhost:8081/events.json" value="' + uri + '"/>' +
         '</div>' +
         '</div>'
@@ -124,16 +129,15 @@ function storeCache(cacheName, value) {
         time: Date.now()
     };
     console.log('Stored cache for ' + cacheName);
-    // console.log(cache);
 }
 
 function invalidateCache(cacheName) {
     if (cacheName === undefined) {
         cache = {};
-        console.log('Invalidated cache for ' + cacheName)
+        console.log('Invalidated all cache')
     } else {
         cache[cacheName] = undefined;
-        console.log('Invalidated all cache')
+        console.log('Invalidated cache for ' + cacheName)
     }
 }
 
@@ -152,10 +156,6 @@ function getContentElements() {
             live: $('#live_wrapper'),
             settings: $('#settings'),
             help: $('#help'),
-        },
-        menu: {
-            detailsExtra: $('#menu-details-extra'),
-            eventChainExtra: $('#menu-eventChain-extra'),
         }
     };
 }
@@ -271,7 +271,7 @@ function load(stage) {
 
                                 content.datatableDetailsContainer.find('tbody').on('click', 'button', function () {
                                     let data = content.datatableDetails.row($(this).parents('tr')).data();
-                                    content.menu.eventChainExtra.html(data.id);
+                                    settingsElement.eventChainTarget.html(data.id);
                                     load("eventChain");
                                 });
 
@@ -743,6 +743,7 @@ $(document).ready(function () {
     });
 
     settingsElement.system.on('changed.bs.select', function () {
+        resetSelections();
         load('aggregation');
     });
 
