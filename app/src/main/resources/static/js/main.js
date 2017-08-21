@@ -156,24 +156,30 @@ function getContentElements() {
             live: $('#live_wrapper'),
             settings: $('#settings'),
             help: $('#help'),
+        },
+        menu: {
+            aggregation: $('#menu_aggregation'),
+            details: $('#menu_details'),
+            eventChain: $('#menu_eventChain'),
+            live: $('#menu_live'),
         }
     };
 }
 
 function disableMenuLevel(level) {
-    $('#menu_aggregation').addClass('disabled');
-    $('#menu_details').addClass('disabled');
-    $('#menu_eventChain').addClass('disabled');
-    $('#menu_live').addClass('disabled');
+    content.menu.aggregation.addClass('disabled');
+    content.menu.details.addClass('disabled');
+    content.menu.eventChain.addClass('disabled');
+    content.menu.live.addClass('disabled');
     switch (level) {
         case 4:
-            $('#menu_live').removeClass('disabled');
+            content.menu.live.removeClass('disabled');
         case 3:
-            $('#menu_eventChain').removeClass('disabled');
+            content.menu.eventChain.removeClass('disabled');
         case 2:
-            $('#menu_details').removeClass('disabled');
+            content.menu.details.removeClass('disabled');
         case 1:
-            $('#menu_aggregation').removeClass('disabled');
+            content.menu.aggregation.removeClass('disabled');
         default:
             break;
     }
