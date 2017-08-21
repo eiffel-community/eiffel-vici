@@ -85,6 +85,7 @@ function updateSystemSelector() {
     settingsElement.system.selectpicker('refresh');
 }
 
+
 function resetSelections() {
     settingsElement.eventChainTarget.html("");
     settingsElement.detailsTarget.html("");
@@ -102,12 +103,15 @@ function newSystem(name, uri) {
         '<div class="panel panel-default">' +
         '<div class="input-group">' +
         '<span class="input-group-addon">Name</span>' +
+
         '<input id="systemName[' + count + ']"  class="form-control" ' +
+
         'placeholder="My system" value="' + name + '"/>' +
         '</div>' +
         '<div class="input-group">' +
         '<span class="input-group-addon">URI</span>' +
         '<input id="systemUri[' + count + ']"  class="form-control systemsUriInput" ' +
+
         'placeholder="http://localhost:8081/events.json" value="' + uri + '"/>' +
         '</div>' +
         '</div>'
@@ -134,10 +138,12 @@ function storeCache(cacheName, value) {
 function invalidateCache(cacheName) {
     if (cacheName === undefined) {
         cache = {};
+
         console.log('Invalidated all cache')
     } else {
         cache[cacheName] = undefined;
         console.log('Invalidated cache for ' + cacheName)
+
     }
 }
 
@@ -158,15 +164,18 @@ function getContentElements() {
             help: $('#help'),
         },
         menu: {
+
             aggregation: $('#menu_aggregation'),
             details: $('#menu_details'),
             eventChain: $('#menu_eventChain'),
             live: $('#menu_live'),
+
         }
     };
 }
 
 function disableMenuLevel(level) {
+
     content.menu.aggregation.addClass('disabled');
     content.menu.details.addClass('disabled');
     content.menu.eventChain.addClass('disabled');
@@ -180,6 +189,7 @@ function disableMenuLevel(level) {
             content.menu.details.removeClass('disabled');
         case 1:
             content.menu.aggregation.removeClass('disabled');
+
         default:
             break;
     }
@@ -277,7 +287,9 @@ function load(stage) {
 
                                 content.datatableDetailsContainer.find('tbody').on('click', 'button', function () {
                                     let data = content.datatableDetails.row($(this).parents('tr')).data();
+
                                     settingsElement.eventChainTarget.html(data.id);
+
                                     load("eventChain");
                                 });
 
@@ -749,7 +761,9 @@ $(document).ready(function () {
     });
 
     settingsElement.system.on('changed.bs.select', function () {
+
         resetSelections();
+
         load('aggregation');
     });
 
