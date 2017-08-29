@@ -83,7 +83,6 @@ function getCurrentSettings() {
 function updateSystemSelector() {
     settingsElement.system.html('');
     let settings = getCurrentSettings();
-    console.log(settings);
     for (let key in settings.systems) {
         settingsElement.system.append('<option>' + key + '</option>');
     }
@@ -223,12 +222,6 @@ function showModal(content) {
 
 function load(stage) {
     let settings = getCurrentSettings();
-    console.log(settings);
-
-    if (!isUrlValid(settings.system.url)) {
-        showModal("Invalid URL: " + settings.system.url);
-        return;
-    }
 
     contentGlobal.loader.show();
     // $("#side-menu").find("a").removeClass("active");
@@ -250,7 +243,6 @@ function load(stage) {
                 contentGlobal.loader.hide();
             } else {
                 _.defer(function () {
-                    // console.log(settings);
                     $.ajax({
                         type: "POST",
                         contentType: 'application/json; charset=utf-8',
@@ -258,7 +250,6 @@ function load(stage) {
                         url: '/api/aggregationGraph',
                         data: JSON.stringify(settings),
                         success: function (data) {
-                            console.log(data);
                             renderCytoscape(contentGlobal.cyAggregation, data, settings, undefined);
                             storeCache('aggregation', systemUrl);
                         },
@@ -284,7 +275,6 @@ function load(stage) {
                         url: "/api/detailedEvents?name=" + detailsTarget,
                         data: JSON.stringify(settings),
                         success: function (data) {
-                            console.log(data);
                             if (contentGlobal.datatableDetails !== undefined) {
                                 contentGlobal.datatableDetails.destroy();
                                 contentGlobal.datatableDetailsContainer.empty();
@@ -344,7 +334,6 @@ function load(stage) {
                         url: '/api/eventChainGraph?id=' + eventTarget,
                         data: JSON.stringify(settings),
                         success: function (data) {
-                            console.log(data);
                             renderCytoscape(contentGlobal.cyEventChain, data.elements, settings, eventTarget);
                             storeCache('eventChain', systemUrl + eventTarget);
                         },
@@ -677,7 +666,6 @@ function renderCytoscape(container, data, settings, target) {
         }
 
         content = content + '</table>';
-
         return content;
     }
 
@@ -804,9 +792,13 @@ $(document).ready(function () {
     });
 
     settingsElement.system.on('changed.bs.select', function () {
-
+        let settings = getCurrentSettings();
         resetSelections();
-
+        disableMenuLevel(0);
+        if (!isUrlValid(settings.system.url)) {
+            showModal("Invalid URL: " + settings.system.url);
+            return;
+        }
         load('aggregation');
     });
 
