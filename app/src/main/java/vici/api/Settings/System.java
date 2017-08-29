@@ -2,7 +2,7 @@ package vici.api.Settings;
 
 public class System {
     private String name;
-    private String uri;
+    private String url;
 
     public System() {
     }
@@ -15,11 +15,11 @@ public class System {
         this.name = name;
     }
 
-    public String getUri() {
-        return uri;
+    public String getUrl() {
+        return url;
     }
 
-    public void setUri(String uri) {
-        this.uri = uri;
+    public void setUrl(String url) {
+        this.url = url;
     }
 }

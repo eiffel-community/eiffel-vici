@@ -1,6 +1,5 @@
 package vici.api;
 
-import org.json.JSONObject;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -131,7 +130,7 @@ public class ApiController {
 //        System.out.println(jsonObject.toString());
 
         Fetcher fetcher = new Fetcher();
-        Events eventsObject = fetcher.getEvents(settings.getSystem().getUri());
+        Events eventsObject = fetcher.getEvents(settings.getSystem().getUrl());
         HashMap<String, Event> events = eventsObject.getEvents();
 
         ArrayList<Element> elements = new ArrayList<>();
@@ -192,13 +191,8 @@ public class ApiController {
     @RequestMapping(value = "/api/detailedEvents", produces = "application/json; charset=UTF-8")
     public Source detailedEvents(@RequestBody Settings settings, @RequestParam(value = "name", defaultValue = "") String name) {
 
-        ArrayList<UrlProperty> urlProperties = new ArrayList<>();
-//        if (!name.equals("")) {
-//            urlProperties.add(new UrlProperty("name", name));
-//        }
-
         Fetcher fetcher = new Fetcher();
-        Events eventsObject = fetcher.getEvents(settings.getSystem().getUri(), urlProperties);
+        Events eventsObject = fetcher.getEvents(settings.getSystem().getUrl());
         HashMap<String, Event> events = eventsObject.getEvents();
 
         ArrayList<HashMap<String, String>> data = new ArrayList<>();
@@ -309,7 +303,7 @@ public class ApiController {
         }
 
         Fetcher fetcher = new Fetcher();
-        Events eventsObject = fetcher.getEvents(settings.getSystem().getUri());
+        Events eventsObject = fetcher.getEvents(settings.getSystem().getUrl());
         HashMap<String, Event> events = eventsObject.getEvents();
 
         if (!events.containsKey(id)) {

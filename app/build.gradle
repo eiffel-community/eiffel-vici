@@ -62,4 +62,7 @@ dependencies {
     compile 'com.fasterxml.jackson.core:jackson-databind'
 
     compile "org.springframework.boot:spring-boot-starter"
+
+    // https://mvnrepository.com/artifact/commons-validator/commons-validator
+    compile group: 'commons-validator', name: 'commons-validator', version: '1.4.0'
 }

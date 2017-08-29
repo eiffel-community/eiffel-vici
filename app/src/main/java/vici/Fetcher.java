@@ -1,5 +1,7 @@
 package vici;
 
+
+import org.apache.commons.validator.routines.UrlValidator;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,11 +26,8 @@ public class Fetcher {
     public Fetcher() {
     }
 
-    public Events getEvents(String url) {
-        return getEvents(url, new ArrayList<>());
-    }
 
-    public Events getEvents(String url, ArrayList<UrlProperty> properties) {
+    public Events getEvents(String url) {
         if (eventCaches.containsKey(url)) {
             EventCache eventCache = eventCaches.get(url);
             if (eventCache.getLastUpdate() > System.currentTimeMillis() - cacheLifetime) {
@@ -36,8 +35,12 @@ public class Fetcher {
             }
         }
 
-//        Url urlObject = new Url(url, properties);
-        Url urlObject = new Url(url, null);
+        UrlValidator urlValidator = new UrlValidator();
+        if (!urlValidator.isValid(url)) {
+            System.out.println("Invalid url: " + url);
+            return null;
+        }
+
 
         System.out.println("Downloading eiffel-events...");
 
