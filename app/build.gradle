@@ -11,8 +11,6 @@ buildscript {
     }
 }
 
-group = "ewahjon"
-
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'idea'
@@ -24,7 +22,7 @@ docker {
 }
 
 task buildDocker(type: Docker, dependsOn: build) {
-    push = true
+    push = false
     applicationName = "vici-eiffel"
     dockerfile = file('src/main/docker/Dockerfile')
     doFirst {

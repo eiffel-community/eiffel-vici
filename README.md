@@ -38,7 +38,7 @@ Linux:
 
 ## WIP: How to docker
 - Dockerfile is found at app\src\main\docker\Dockerfile
-- Docker image is created with a gradle docker plugin, found in app/src/build.gradle
+- Docker image is created with a gradle docker plugin, found in app/src/build.gradle (https://github.com/Transmode/gradle-docker)
 
 1: Make sure you have unzipped the events.json file like in the "How to Run" section.
 
@@ -49,7 +49,7 @@ Linux:
 
 3: Run docker image on http://localhost:8081/:
 ~~~~
-docker run -p 8080:8080 -t --name vici ewahjon/vici-eiffel:0.1
+docker run --rm -p 8080:8080 -t --name vici vici-eiffel:0.1
 ~~~~
 
 Stop running container:\
