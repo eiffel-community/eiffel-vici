@@ -6,17 +6,19 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import vici.Fetcher;
 import vici.api.Settings.Settings;
-import vici.entities.*;
+import vici.entities.ChildLink;
 import vici.entities.Cytoscape.*;
 import vici.entities.Eiffel.CustomData;
 import vici.entities.Eiffel.Outcome;
+import vici.entities.Event;
+import vici.entities.Events;
+import vici.entities.Link;
 import vici.entities.Table.Column;
 import vici.entities.Table.Source;
+import vici.entities.Vis.Item;
+import vici.entities.Vis.Plot;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 
 import static vici.Fetcher.*;
 import static vici.entities.Event.*;
@@ -264,13 +266,13 @@ public class ApiController {
                     columns.add(new Column("Time triggered", key));
                     break;
                 case "time-" + CANCELED:
-//                    columns.add(new Column("Time triggered", key));
+                    columns.add(new Column("Time canceled", key));
                     break;
                 case "time-" + STARTED:
-//                    columns.add(new Column("Time started", key));
+                    columns.add(new Column("Time started", key));
                     break;
                 case "time-" + FINISHED:
-//                    columns.add(new Column("Time finished", key));
+                    columns.add(new Column("Time finished", key));
                     break;
                 case "time-" + EXECUTION:
                     columns.add(new Column("Execution (ms)", key));
@@ -293,6 +295,128 @@ public class ApiController {
             }
             set.add(key);
         }
+    }
+
+    @RequestMapping(value = "/api/detailedPlot", produces = "application/json; charset=UTF-8")
+    public Plot detailedPlot(@RequestBody Settings settings, @RequestParam(value = "name", defaultValue = "") String name) {
+
+        System.out.println(name);
+
+        Fetcher fetcher = new Fetcher();
+        Events eventsObject = fetcher.getEvents(settings.getSystem().getUrl());
+        HashMap<String, Event> events = eventsObject.getEvents();
+
+        ArrayList<Event> eventsList = new ArrayList<>();
+        for (Event event : events.values()) {
+            if (!event.getType().equals(REDIRECT)) {
+                if (event.getAggregateOn().equals(name)) {
+                    eventsList.add(event);
+                }
+            }
+        }
+
+        if (eventsList.isEmpty()) {
+            return null;
+        }
+
+        eventsList.sort((o1, o2) -> (int) (o1.getTimes().get(TRIGGERED) - o2.getTimes().get(TRIGGERED)));
+
+        ArrayList<Item> items = new ArrayList<>();
+
+        long timeFirst = eventsList.get(0).getTimes().get(TRIGGERED);
+        long timeLast = eventsList.get(eventsList.size() - 1).getTimes().get(TRIGGERED);
+
+        int valueMin = 0;
+        int valueMax = 0;
+
+//        items.add(new Item(timeFirst, 0, 0, null));
+//        items.add(new Item(timeFirst, 0, 1, null));
+        items.add(new Item(timeFirst, 0, 2, null));
+        items.add(new Item(timeFirst, 0, 3, null));
+        items.add(new Item(timeFirst, 0, 4, null));
+
+
+        int lastGroup = -1;
+
+        for (Event event : eventsList) {
+
+            long x = event.getTimes().get(TRIGGERED);
+            int y = 1;
+            int group = 0;
+            String label = null;
+
+            switch (event.getType()) {
+                case TEST_CASE:
+                case ACTIVITY:
+                case TEST_SUITE:
+
+                    if (event.getTimes().containsKey(FINISHED)) {
+                        if (event.getTimes().containsKey(STARTED)) {
+                            y = (int) (event.getTimes().get(FINISHED) - event.getTimes().get(STARTED));
+                        } else if (event.getTimes().containsKey(TRIGGERED)) {
+                            y = (int) (event.getTimes().get(FINISHED) - event.getTimes().get(TRIGGERED));
+                        }
+                    }
+
+                    Outcome outcome = event.getEiffelEvents().get(FINISHED).getData().getOutcome();
+                    if (outcome.getVerdict() != null) {
+                        if (outcome.getVerdict().equals("PASSED")) {
+                            group = 3;
+                        } else if (outcome.getVerdict().equals("FAILED")) {
+                            group = 4;
+                        }
+                        // else stay 0
+                    }
+                    if (outcome.getConclusion() != null) {
+                        label = outcome.getConclusion();
+                    }
+
+
+                    break;
+                case "EiffelConfidenceLevelModifiedEvent":
+
+                    String result = event.getEiffelEvents().get(TRIGGERED).getData().getValue();
+                    if (result.equals("SUCCESS")) {
+                        group = 3;
+                    } else if (result.equals("FAILURE")) {
+                        group = 4;
+                    }
+
+                    label = event.getEiffelEvents().get(TRIGGERED).getData().getName();
+                    break;
+                default:
+                    break;
+            }
+            Random random = new Random();
+            y = (int) (y * ((float) 0.5 + (random.nextFloat() * 0.1)));
+
+
+            if (lastGroup == -1) {
+                items.add(new Item(x, 0, group, null));
+            } else if (group != lastGroup) {
+                items.add(new Item(x, y, lastGroup, null));
+                items.add(new Item(x, 0, lastGroup, null));
+
+                items.add(new Item(x, 0, group, null));
+            }
+
+            lastGroup = group;
+
+
+            items.add(new Item(x, y, group, null));
+            items.add(new Item(x, y, 1, label));
+
+            if (y > valueMax) {
+                valueMax = y;
+            }
+        }
+//        items.add(new Item(timeLast, 0, 0, null));
+//        items.add(new Item(timeLast, 0, 1, null));
+        items.add(new Item(timeLast, 0, 2, null));
+        items.add(new Item(timeLast, 0, 3, null));
+        items.add(new Item(timeLast, 0, 4, null));
+
+        return new Plot(items, timeFirst, timeLast, valueMin, valueMax);
     }
 
     @RequestMapping(value = "/api/eventChainGraph", produces = "application/json; charset=UTF-8")

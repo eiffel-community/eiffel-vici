@@ -158,7 +158,7 @@ function getContentElements() {
         datatableDetails: undefined,
         datatableDetailsContainer: $('#details_table_table'),
         detailsTable: $('#details_table'),
-        detailsPlot: $('#details_plot'),
+        detailsPlot: $('#details_plot_container'),
         cyEventChain: $('#event_chain'),
         loader: $('#loader_overlay'),
         detailsToggle: $('#details_toggle'),
@@ -220,6 +220,78 @@ function showModal(content) {
     contentGlobal.alertModal.modal('show');
 }
 
+/**
+ * this function fills the external legend with content using the getLegend() function.
+ */
+function populateExternalLegend(groups, graph2d) {
+    let groupsData = groups.get();
+    let legendDiv = document.getElementById("details_plot_legend");
+    legendDiv.innerHTML = "";
+
+    // get for all groups:
+    for (let i = 0; i < groupsData.length; i++) {
+        // create divs
+        let containerDiv = document.createElement("div");
+        let iconDiv = document.createElement("div");
+        let descriptionDiv = document.createElement("div");
+
+        // give divs classes and Ids where necessary
+        containerDiv.className = 'legend-element-container';
+        containerDiv.id = groupsData[i].id + "_legendContainer";
+        iconDiv.className = "legend-icon-container";
+        descriptionDiv.className = "legend-description-container";
+
+        // get the legend for this group.
+        let legend = graph2d.getLegend(groupsData[i].id, 30, 30);
+
+        // append class to icon. All styling classes from the vis.css/vis-timeline-graph2d.min.css have been copied over into the head here to be able to style the
+        // icons with the same classes if they are using the default ones.
+        legend.icon.setAttributeNS(null, "class", "legend-icon");
+
+        // append the legend to the corresponding divs
+        iconDiv.appendChild(legend.icon);
+        descriptionDiv.innerHTML = legend.label;
+
+        // determine the order for left and right orientation
+        if (legend.orientation === 'left') {
+            descriptionDiv.style.textAlign = "left";
+            containerDiv.appendChild(iconDiv);
+            containerDiv.appendChild(descriptionDiv);
+        }
+        else {
+            descriptionDiv.style.textAlign = "right";
+            containerDiv.appendChild(descriptionDiv);
+            containerDiv.appendChild(iconDiv);
+        }
+
+        // append to the legend container div
+        legendDiv.appendChild(containerDiv);
+
+        // bind click event to this legend element.
+        containerDiv.onclick = toggleGraph.bind(this, groupsData[i].id, groups, graph2d);
+    }
+}
+
+/**
+ * This function switchs the visible option of the selected group on an off.
+ * @param groups
+ * @param graph2d
+ * @param groupId
+ */
+function toggleGraph(groupId, groups, graph2d) {
+    // get the container that was clicked on.
+    let container = document.getElementById(groupId + "_legendContainer");
+    // if visible, hide
+    if (graph2d.isGroupVisible(groupId) === true) {
+        groups.update({id: groupId, visible: false});
+        container.className = container.className + " legend-hidden";
+    }
+    else { // if invisible, show
+        groups.update({id: groupId, visible: true});
+        container.className = container.className.replace("legend-hidden", "");
+    }
+}
+
 function load(stage) {
     let settings = getCurrentSettings();
 
@@ -262,62 +334,194 @@ function load(stage) {
         } else if (stage === 'details') {
             contentGlobal.menu.detailsToggle.show();
             contentGlobal.containers.details.show();
+
             let detailsTarget = settings.details.target;
-            if (usableCache('details', systemUrl + detailsTarget, settings.general.timeStoreCache)) {
-                console.log('Using cache for ' + detailsTarget + ' from system ' + systemUrl);
-                contentGlobal.loader.hide();
-            } else {
-                _.defer(function () {
-                    $.ajax({
-                        type: "POST",
-                        contentType: 'application/json; charset=utf-8',
-                        dataType: 'json',
-                        url: "/api/detailedEvents?name=" + detailsTarget,
-                        data: JSON.stringify(settings),
-                        success: function (data) {
-                            if (contentGlobal.datatableDetails !== undefined) {
-                                contentGlobal.datatableDetails.destroy();
-                                contentGlobal.datatableDetailsContainer.empty();
+
+            // Table
+            if (contentGlobal.detailsToggle.prop('checked')) {
+                contentGlobal.detailsTable.show();
+                contentGlobal.detailsPlot.hide();
+
+                if (usableCache('detailsTable', systemUrl + detailsTarget, settings.general.timeStoreCache)) {
+                    console.log('Using cache for ' + detailsTarget + ' from system ' + systemUrl);
+                    contentGlobal.loader.hide();
+                } else {
+                    _.defer(function () {
+                        $.ajax({
+                            type: "POST",
+                            contentType: 'application/json; charset=utf-8',
+                            dataType: 'json',
+                            url: "/api/detailedEvents?name=" + detailsTarget,
+                            data: JSON.stringify(settings),
+                            success: function (data) {
+                                if (contentGlobal.datatableDetails !== undefined) {
+                                    contentGlobal.datatableDetails.destroy();
+                                    contentGlobal.datatableDetailsContainer.empty();
+                                }
+                                if (data.data.length !== 0) {
+
+                                    let preDefColumns = [
+                                        {
+                                            title: 'Chain',
+                                            data: null,
+                                            defaultContent: '<button class="btn btn-default btn-xs row-button">Graph</button>'
+                                        }
+                                    ];
+                                    contentGlobal.datatableDetails = datatable = contentGlobal.datatableDetailsContainer.DataTable({
+                                        destroy: true,
+                                        data: data.data,
+                                        columns: preDefColumns.concat(data.columns),
+                                        scrollY: '80vh',
+                                        scrollCollapse: true,
+                                        lengthMenu: [[20, 200, -1], [20, 200, "All"]],
+                                        order: [4, 'asc'],
+
+                                    });
+
+                                    contentGlobal.datatableDetailsContainer.find('tbody').on('click', 'button', function () {
+                                        let data = contentGlobal.datatableDetails.row($(this).parents('tr')).data();
+
+                                        settingsElement.eventChainTarget.html(data.id);
+
+                                        load("eventChain");
+                                    });
+
+                                    storeCache('detailsTable', systemUrl + detailsTarget);
+                                } else {
+                                    console.log("No data");
+                                }
+                            },
+                            complete: function () {
+                                contentGlobal.loader.hide();
                             }
-                            if (data.data.length !== 0) {
-
-                                let preDefColumns = [
-                                    {
-                                        title: 'Chain',
-                                        data: null,
-                                        defaultContent: '<button class="btn btn-default btn-xs row-button">Graph</button>'
-                                    }
-                                ];
-                                contentGlobal.datatableDetails = datatable = contentGlobal.datatableDetailsContainer.DataTable({
-                                    destroy: true,
-                                    data: data.data,
-                                    columns: preDefColumns.concat(data.columns),
-                                    scrollY: '80vh',
-                                    scrollCollapse: true,
-                                    lengthMenu: [[20, 200, -1], [20, 200, "All"]],
-                                    order: [4, 'asc'],
-
-                                });
-
-                                contentGlobal.datatableDetailsContainer.find('tbody').on('click', 'button', function () {
-                                    let data = contentGlobal.datatableDetails.row($(this).parents('tr')).data();
-
-                                    settingsElement.eventChainTarget.html(data.id);
-
-                                    load("eventChain");
-                                });
-
-                                storeCache('details', systemUrl + detailsTarget);
-                            } else {
-                                console.log("No data");
-                            }
-                        },
-                        complete: function () {
-                            contentGlobal.loader.hide();
-                        }
+                        });
                     });
-                });
+                }
+
+            } else { // Plot
+                contentGlobal.detailsTable.hide();
+                contentGlobal.detailsPlot.show();
+
+                if (usableCache('detailsPlot', systemUrl + detailsTarget, settings.general.timeStoreCache)) {
+                    console.log('Using cache for ' + detailsTarget + ' from system ' + systemUrl);
+                    contentGlobal.loader.hide();
+                } else {
+                    _.defer(function () {
+                        $.ajax({
+                            type: "POST",
+                            contentType: 'application/json; charset=utf-8',
+                            dataType: 'json',
+                            url: "/api/detailedPlot?name=" + detailsTarget,
+                            data: JSON.stringify(settings),
+                            success: function (data) {
+                                console.log(data);
+                                if (data !== undefined && data.items.length !== 0) {
+                                    let borderWidth = 0;
+                                    let fillOpacity = 0.6;
+                                    let groups = new vis.DataSet();
+
+                                    // groups.add({
+                                    //     id: 0,
+                                    //     content: 'Ground',
+                                    //     className: 'vis-graph-ground',
+                                    //     options: {
+                                    //         drawPoints: false,
+                                    //     }
+                                    // });
+
+                                    groups.add({
+                                        id: 1,
+                                        content: 'Execution time (ms)',
+                                        className: 'vis-graph-result',
+                                        options: {
+                                            drawPoints: {
+                                                styles: 'stroke:black;fill:none;',
+                                                size: 4,
+                                            },
+                                            interpolation: true,
+                                        },
+                                    });
+
+                                    groups.add({
+                                        id: 2,
+                                        content: "Inconclusive",
+                                        className: 'vis-graph-inconclusive',
+                                        options: {
+                                            drawPoints: false,
+                                            shaded: {
+                                                orientation: 'zero',
+                                            }
+                                        }
+                                    });
+                                    groups.add({
+                                        id: 3,
+                                        content: "Success",
+                                        className: 'vis-graph-success',
+                                        style: 'stroke-width:' + borderWidth + ';',
+                                        options: {
+                                            drawPoints: false,
+                                            shaded: {
+                                                orientation: 'zero',
+                                            }
+                                        }
+                                    });
+                                    groups.add({
+                                        id: 4,
+                                        content: "Fail",
+                                        className: 'vis-graph-fail',
+                                        style: 'stroke-width:' + borderWidth + ';',
+                                        options: {
+                                            drawPoints: false,
+                                            shaded: {
+                                                orientation: 'zero',
+                                            }
+                                        }
+                                    });
+
+
+                                    let dataset = new vis.DataSet(data.items);
+                                    let options = {
+                                        sort: false,
+                                        interpolation: false,
+                                        graphHeight: '800px',
+                                        // legend: true,
+                                        dataAxis: {
+                                            left: {
+                                                // format: function (value) {
+                                                //     if (Math.floor(value) === value) {
+                                                //         return value;
+                                                //     }
+                                                //     return '';
+                                                // },
+                                                range: {
+                                                    max: (data.valueMax * 1.25),
+                                                    min: 0,
+                                                }
+                                            }
+                                        },
+                                    };
+
+                                    console.log(groups);
+                                    console.log(dataset);
+                                    console.log(options);
+                                    let plot = new vis.Graph2d(document.getElementById('details_plot'), dataset, groups, options);
+
+                                    populateExternalLegend(groups, plot);
+
+
+                                    storeCache('detailsPlot', systemUrl + detailsTarget);
+                                } else {
+                                    console.log("No data");
+                                }
+                            },
+                            complete: function () {
+                                contentGlobal.loader.hide();
+                            }
+                        });
+                    });
+                }
             }
+
 
         } else if (stage === 'eventChain') {
             contentGlobal.containers.eventChain.show();
@@ -730,16 +934,6 @@ function renderCytoscape(container, data, settings, target) {
     cy.minZoom(0.1); //same setting as panzoom for Krav 2
 }
 
-function toggleTable(showTable) {
-    if (showTable) {
-        contentGlobal.detailsTable.show();
-        contentGlobal.detailsPlot.hide();
-    } else {
-        contentGlobal.detailsTable.hide();
-        contentGlobal.detailsPlot.show();
-    }
-}
-
 $(document).ready(function () {
     settingsElement = getElementsSettings();
     setSettingsDefault(settingsElement);
@@ -750,7 +944,6 @@ $(document).ready(function () {
     contentGlobal.loader.hide();
 
     contentGlobal.detailsToggle.bootstrapToggle('on');
-    toggleTable(true);
     contentGlobal.menu.detailsToggle.hide();
 
 
@@ -761,7 +954,9 @@ $(document).ready(function () {
     });
 
     contentGlobal.detailsToggle.change(function () {
-        toggleTable($(this).prop('checked'));
+        _.defer(function () {
+            load("details");
+        });
     });
 
     // SETTINGS
@@ -780,7 +975,7 @@ $(document).ready(function () {
     });
 
     $('#settings-details').find('input').change(function () {
-        invalidateCache('details');
+        invalidateCache('detailsTable');
     });
 
     $('#settings-eventChain').find('input').change(function () {
@@ -809,3 +1004,4 @@ $(document).ready(function () {
     }
     setMenuActive(getCurrentSettings());
 });
+

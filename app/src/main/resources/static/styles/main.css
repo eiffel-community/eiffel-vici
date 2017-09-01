@@ -165,3 +165,135 @@ li.active {
     cursor: default;
 
 }
+
+/* Plot styles */
+
+/*.vis-graph-ground {*/
+/*stroke-width: 0;*/
+/*stroke: #bfbfbf;*/
+/*fill: none;*/
+/*fill-opacity: 0.6;*/
+/*}*/
+
+.vis-graph-result {
+    stroke-width: 1;
+    stroke: black;
+    fill: none;
+    fill-opacity: 0.6;
+}
+
+.vis-graph-inconclusive {
+    stroke-width: 0;
+    stroke: black;
+    fill: black;
+    fill-opacity: 0.6;
+}
+
+.vis-graph-success {
+    stroke-width: 1;
+    stroke: green;
+    fill: green;
+    fill-opacity: 0.6;
+}
+
+.vis-graph-fail {
+    stroke-width: 1;
+    stroke: red;
+    fill: red;
+    fill-opacity: 0.6;
+}
+
+/*.vis-graph-group2 {*/
+/*stroke-width: 1;*/
+/*stroke: black;*/
+/*}*/
+/*.vis-graph-group3 {*/
+/*stroke-width: 1;*/
+/*stroke: black;*/
+/*}*/
+/*.vis-graph-group4 {*/
+/*stroke-width: 1;*/
+/*stroke: black;*/
+/*}*/
+
+.vis-fill {
+    fill-opacity: 0.1;
+    stroke: none;
+}
+
+.vis-bar {
+    fill-opacity: 0.5;
+    stroke-width: 1px;
+}
+
+.vis-point {
+    stroke-width: 2px;
+    fill-opacity: 1.0;
+}
+
+.vis-legend-background {
+    stroke-width: 1px;
+    fill-opacity: 0.9;
+    fill: #ffffff;
+    stroke: #c2c2c2;
+}
+
+.vis-outline {
+    stroke-width: 1px;
+    fill-opacity: 1;
+    fill: #ffffff;
+    stroke: #e5e5e5;
+}
+
+.vis-icon-fill {
+    fill-opacity: 0.3;
+    stroke: none;
+}
+
+div.legend-description-container {
+    float: left;
+    height: 30px;
+    width: 160px;
+    padding-left: 5px;
+    padding-right: 5px;
+    line-height: 30px;
+}
+
+div.legend-icon-container {
+    float: left;
+}
+
+div.legend-element-container {
+    display: inline-block;
+    width: 200px;
+    height: 30px;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #e0e0e0;
+    background-color: #ffffff;
+    margin: 4px;
+    padding: 4px;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    cursor: pointer;
+}
+
+div.legend-element-container.legend-hidden {
+    background-color: #d3e6ff;
+}
+
+svg.legend-icon {
+    width: 30px;
+    height: 30px;
+}
+
+div.external-legend {
+    position: relative;
+    margin-left: -5px;
+    width: 900px;
+}
+
