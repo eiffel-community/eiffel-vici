@@ -228,67 +228,45 @@ function populateExternalLegend(groups, graph2d) {
     let legendDiv = document.getElementById("details_plot_legend");
     legendDiv.innerHTML = "";
 
+    let legendContainer = $('#details_plot_legend');
+
+    console.log(groupsData);
+
     // get for all groups:
     for (let i = 0; i < groupsData.length; i++) {
-        // create divs
-        let containerDiv = document.createElement("div");
-        let iconDiv = document.createElement("div");
-        let descriptionDiv = document.createElement("div");
 
-        // give divs classes and Ids where necessary
-        containerDiv.className = 'legend-element-container';
-        containerDiv.id = groupsData[i].id + "_legendContainer";
-        iconDiv.className = "legend-icon-container";
-        descriptionDiv.className = "legend-description-container";
+        let container = $('<div class="legend-toggle-container"></div>');
 
         // get the legend for this group.
         let legend = graph2d.getLegend(groupsData[i].id, 30, 30);
+        console.log(legend);
 
         // append class to icon. All styling classes from the vis.css/vis-timeline-graph2d.min.css have been copied over into the head here to be able to style the
         // icons with the same classes if they are using the default ones.
         legend.icon.setAttributeNS(null, "class", "legend-icon");
 
-        // append the legend to the corresponding divs
-        iconDiv.appendChild(legend.icon);
-        descriptionDiv.innerHTML = legend.label;
+        // iconDiv.append(legend.icon);
+        // legendContainer.append(iconDiv);
 
-        // determine the order for left and right orientation
-        if (legend.orientation === 'left') {
-            descriptionDiv.style.textAlign = "left";
-            containerDiv.appendChild(iconDiv);
-            containerDiv.appendChild(descriptionDiv);
-        }
-        else {
-            descriptionDiv.style.textAlign = "right";
-            containerDiv.appendChild(descriptionDiv);
-            containerDiv.appendChild(iconDiv);
-        }
+        // let label = $('<label id="legend-toggle-label-' + i + '" class="checkbox-inline"></label>');
+        let inputToggle = $('<input id="legend-toggle-' + i + '" checked="checked" type="checkbox" data-toggle="toggle" data-on="On" data-off="Off" data-onstyle="default" data-offstyle="default">');
+        container.append(inputToggle);
+        container.append(legend.icon);
+        container.append(legend.label);
 
-        // append to the legend container div
-        legendDiv.appendChild(containerDiv);
+        legendContainer.append(container);
 
-        // bind click event to this legend element.
-        containerDiv.onclick = toggleGraph.bind(this, groupsData[i].id, groups, graph2d);
-    }
-}
+        let toggle = $('#legend-toggle-' + i);
+        toggle.bootstrapToggle();
 
-/**
- * This function switchs the visible option of the selected group on an off.
- * @param groups
- * @param graph2d
- * @param groupId
- */
-function toggleGraph(groupId, groups, graph2d) {
-    // get the container that was clicked on.
-    let container = document.getElementById(groupId + "_legendContainer");
-    // if visible, hide
-    if (graph2d.isGroupVisible(groupId) === true) {
-        groups.update({id: groupId, visible: false});
-        container.className = container.className + " legend-hidden";
-    }
-    else { // if invisible, show
-        groups.update({id: groupId, visible: true});
-        container.className = container.className.replace("legend-hidden", "");
+        toggle.change(function () {
+            // _.defer(function () {
+
+            console.log(i + ' ' + $(this).prop('checked'));
+            groups.update({id: i, visible: $(this).prop('checked')});
+
+            // });
+        });
     }
 }
 
@@ -416,34 +394,23 @@ function load(stage) {
                             success: function (data) {
                                 console.log(data);
                                 if (data !== undefined && data.items.length !== 0) {
-                                    let borderWidth = 0;
-                                    let fillOpacity = 0.6;
                                     let groups = new vis.DataSet();
 
-                                    // groups.add({
-                                    //     id: 0,
-                                    //     content: 'Ground',
-                                    //     className: 'vis-graph-ground',
-                                    //     options: {
-                                    //         drawPoints: false,
-                                    //     }
-                                    // });
-
                                     groups.add({
-                                        id: 1,
+                                        id: 0,
                                         content: 'Execution time (ms)',
                                         className: 'vis-graph-result',
                                         options: {
                                             drawPoints: {
-                                                styles: 'stroke:black;fill:none;',
-                                                size: 4,
+                                                styles: 'stroke:black;fill:black;',
+                                                size: 2,
                                             },
                                             interpolation: true,
                                         },
                                     });
 
                                     groups.add({
-                                        id: 2,
+                                        id: 1,
                                         content: "Inconclusive",
                                         className: 'vis-graph-inconclusive',
                                         options: {
@@ -454,10 +421,9 @@ function load(stage) {
                                         }
                                     });
                                     groups.add({
-                                        id: 3,
+                                        id: 2,
                                         content: "Success",
                                         className: 'vis-graph-success',
-                                        style: 'stroke-width:' + borderWidth + ';',
                                         options: {
                                             drawPoints: false,
                                             shaded: {
@@ -466,10 +432,9 @@ function load(stage) {
                                         }
                                     });
                                     groups.add({
-                                        id: 4,
+                                        id: 3,
                                         content: "Fail",
                                         className: 'vis-graph-fail',
-                                        style: 'stroke-width:' + borderWidth + ';',
                                         options: {
                                             drawPoints: false,
                                             shaded: {
@@ -483,7 +448,7 @@ function load(stage) {
                                     let options = {
                                         sort: false,
                                         interpolation: false,
-                                        graphHeight: '800px',
+                                        graphHeight: '600px',
                                         // legend: true,
                                         dataAxis: {
                                             left: {
@@ -494,16 +459,20 @@ function load(stage) {
                                                 //     return '';
                                                 // },
                                                 range: {
-                                                    max: (data.valueMax * 1.25),
+                                                    // max: (data.valueMax * 1.25),
                                                     min: 0,
                                                 }
                                             }
                                         },
+                                        // TODO: settings for default start
+                                        start: data.timeLast - 345600000,
+                                        end: data.timeLast,
                                     };
 
                                     console.log(groups);
                                     console.log(dataset);
                                     console.log(options);
+                                    document.getElementById('details_plot').innerHTML = '';
                                     let plot = new vis.Graph2d(document.getElementById('details_plot'), dataset, groups, options);
 
                                     populateExternalLegend(groups, plot);

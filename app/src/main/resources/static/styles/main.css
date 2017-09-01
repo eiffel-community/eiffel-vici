@@ -168,13 +168,6 @@ li.active {
 
 /* Plot styles */
 
-/*.vis-graph-ground {*/
-/*stroke-width: 0;*/
-/*stroke: #bfbfbf;*/
-/*fill: none;*/
-/*fill-opacity: 0.6;*/
-/*}*/
-
 .vis-graph-result {
     stroke-width: 1;
     stroke: black;
@@ -190,31 +183,26 @@ li.active {
 }
 
 .vis-graph-success {
-    stroke-width: 1;
+    stroke-width: 0;
     stroke: green;
     fill: green;
     fill-opacity: 0.6;
 }
 
 .vis-graph-fail {
-    stroke-width: 1;
+    stroke-width: 0;
     stroke: red;
     fill: red;
     fill-opacity: 0.6;
 }
 
-/*.vis-graph-group2 {*/
-/*stroke-width: 1;*/
-/*stroke: black;*/
-/*}*/
-/*.vis-graph-group3 {*/
-/*stroke-width: 1;*/
-/*stroke: black;*/
-/*}*/
-/*.vis-graph-group4 {*/
-/*stroke-width: 1;*/
-/*stroke: black;*/
-/*}*/
+.legend-toggle-container {
+    /*margin: auto;*/
+    /*position: relative;*/
+    display: -webkit-flex; /* Safari */
+    -webkit-align-items: center; /* Safari 7.0+ */
+    display: flex;
+}
 
 .vis-fill {
     fill-opacity: 0.1;
@@ -250,50 +238,10 @@ li.active {
     stroke: none;
 }
 
-div.legend-description-container {
-    float: left;
-    height: 30px;
-    width: 160px;
-    padding-left: 5px;
-    padding-right: 5px;
-    line-height: 30px;
-}
-
-div.legend-icon-container {
-    float: left;
-}
-
-div.legend-element-container {
-    display: inline-block;
-    width: 200px;
-    height: 30px;
-    border-style: solid;
-    border-width: 1px;
-    border-color: #e0e0e0;
-    background-color: #ffffff;
-    margin: 4px;
-    padding: 4px;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-    cursor: pointer;
-}
-
-div.legend-element-container.legend-hidden {
-    background-color: #d3e6ff;
-}
-
 svg.legend-icon {
+    margin-left: 4px;
+    margin-right: 4px;
     width: 30px;
     height: 30px;
-}
-
-div.external-legend {
-    position: relative;
-    margin-left: -5px;
-    width: 900px;
 }
 

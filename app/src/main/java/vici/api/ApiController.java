@@ -329,20 +329,18 @@ public class ApiController {
         int valueMin = 0;
         int valueMax = 0;
 
-//        items.add(new Item(timeFirst, 0, 0, null));
-//        items.add(new Item(timeFirst, 0, 1, null));
+        items.add(new Item(timeFirst, 0, 1, null));
         items.add(new Item(timeFirst, 0, 2, null));
         items.add(new Item(timeFirst, 0, 3, null));
-        items.add(new Item(timeFirst, 0, 4, null));
 
 
-        int lastGroup = -1;
+        int lastGroup = -1; // none
 
         for (Event event : eventsList) {
 
             long x = event.getTimes().get(TRIGGERED);
-            int y = 1;
-            int group = 0;
+            int y = 1; // for event types without an execution time
+            int group = 1; // Inconclusive
             String label = null;
 
             switch (event.getType()) {
@@ -361,9 +359,9 @@ public class ApiController {
                     Outcome outcome = event.getEiffelEvents().get(FINISHED).getData().getOutcome();
                     if (outcome.getVerdict() != null) {
                         if (outcome.getVerdict().equals("PASSED")) {
-                            group = 3;
+                            group = 2;
                         } else if (outcome.getVerdict().equals("FAILED")) {
-                            group = 4;
+                            group = 3;
                         }
                         // else stay 0
                     }
@@ -377,9 +375,9 @@ public class ApiController {
 
                     String result = event.getEiffelEvents().get(TRIGGERED).getData().getValue();
                     if (result.equals("SUCCESS")) {
-                        group = 3;
+                        group = 2;
                     } else if (result.equals("FAILURE")) {
-                        group = 4;
+                        group = 3;
                     }
 
                     label = event.getEiffelEvents().get(TRIGGERED).getData().getName();
@@ -388,8 +386,9 @@ public class ApiController {
                     break;
             }
             Random random = new Random();
-            y = (int) (y * ((float) 0.5 + (random.nextFloat() * 0.1)));
+            y = (int) (y * ((float) 0.5 + (random.nextFloat() * 0.05)));
 
+            items.add(new Item(x, y, 0, label));
 
             if (lastGroup == -1) {
                 items.add(new Item(x, 0, group, null));
@@ -399,22 +398,17 @@ public class ApiController {
 
                 items.add(new Item(x, 0, group, null));
             }
-
             lastGroup = group;
 
-
             items.add(new Item(x, y, group, null));
-            items.add(new Item(x, y, 1, label));
 
             if (y > valueMax) {
                 valueMax = y;
             }
         }
-//        items.add(new Item(timeLast, 0, 0, null));
-//        items.add(new Item(timeLast, 0, 1, null));
+        items.add(new Item(timeLast, 0, 1, null));
         items.add(new Item(timeLast, 0, 2, null));
         items.add(new Item(timeLast, 0, 3, null));
-        items.add(new Item(timeLast, 0, 4, null));
 
         return new Plot(items, timeFirst, timeLast, valueMin, valueMax);
     }
