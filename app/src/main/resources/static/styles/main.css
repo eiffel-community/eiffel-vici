@@ -172,36 +172,35 @@ li.active {
     stroke-width: 1;
     stroke: black;
     fill: none;
-    fill-opacity: 0.6;
 }
 
 .vis-graph-inconclusive {
     stroke-width: 0;
-    stroke: black;
-    fill: black;
-    fill-opacity: 0.6;
+    fill: silver;
+    fill-opacity: 0.5;
 }
 
 .vis-graph-success {
     stroke-width: 0;
-    stroke: green;
     fill: green;
-    fill-opacity: 0.6;
+    fill-opacity: 0.5;
 }
 
 .vis-graph-fail {
     stroke-width: 0;
-    stroke: red;
     fill: red;
-    fill-opacity: 0.6;
+    fill-opacity: 0.5;
+}
+
+.legend-container {
+    margin: 0;
 }
 
 .legend-toggle-container {
-    /*margin: auto;*/
-    /*position: relative;*/
     display: -webkit-flex; /* Safari */
     -webkit-align-items: center; /* Safari 7.0+ */
     display: flex;
+    padding: 15px 0 0;
 }
 
 .vis-fill {
@@ -239,8 +238,8 @@ li.active {
 }
 
 svg.legend-icon {
-    margin-left: 4px;
-    margin-right: 4px;
+    margin-left: 8px;
+    margin-right: 8px;
     width: 30px;
     height: 30px;
 }

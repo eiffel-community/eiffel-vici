@@ -235,7 +235,8 @@ function populateExternalLegend(groups, graph2d) {
     // get for all groups:
     for (let i = 0; i < groupsData.length; i++) {
 
-        let container = $('<div class="legend-toggle-container"></div>');
+        // let container = $('<div class="legend-toggle-container"></div>');
+        let container = $('<div class="col col-lg-3 legend-toggle-container"></div>');
 
         // get the legend for this group.
         let legend = graph2d.getLegend(groupsData[i].id, 30, 30);

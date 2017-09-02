@@ -26,6 +26,11 @@ import static vici.entities.Event.*;
 @RestController
 public class ApiController {
 
+    public static final int PLOT_GROUP_RESULT = 0;
+    public static final int PLOT_GROUP_INCONCLUSIVE = 1;
+    public static final int PLOT_GROUP_PASS = 2;
+    public static final int PLOT_GROUP_FAIL = 3;
+
     private String getStandardAggregateValue(Event event) {
         switch (event.getType()) {
             case ACTIVITY:
@@ -319,7 +324,8 @@ public class ApiController {
             return null;
         }
 
-        eventsList.sort((o1, o2) -> (int) (o1.getTimes().get(TRIGGERED) - o2.getTimes().get(TRIGGERED)));
+//        eventsList.sort((o1, o2) -> (int) (o1.getTimes().get(TRIGGERED) - o2.getTimes().get(TRIGGERED)));
+        eventsList.sort(Comparator.comparingLong(o -> o.getTimes().get(TRIGGERED)));
 
         ArrayList<Item> items = new ArrayList<>();
 
@@ -329,9 +335,9 @@ public class ApiController {
         int valueMin = 0;
         int valueMax = 0;
 
-        items.add(new Item(timeFirst, 0, 1, null));
-        items.add(new Item(timeFirst, 0, 2, null));
-        items.add(new Item(timeFirst, 0, 3, null));
+        items.add(new Item(timeFirst, 0, PLOT_GROUP_INCONCLUSIVE, null));
+        items.add(new Item(timeFirst, 0, PLOT_GROUP_PASS, null));
+        items.add(new Item(timeFirst, 0, PLOT_GROUP_FAIL, null));
 
 
         int lastGroup = -1; // none
@@ -340,7 +346,7 @@ public class ApiController {
 
             long x = event.getTimes().get(TRIGGERED);
             int y = 1; // for event types without an execution time
-            int group = 1; // Inconclusive
+            int group = PLOT_GROUP_INCONCLUSIVE; // Inconclusive
             String label = null;
 
             switch (event.getType()) {
@@ -359,11 +365,23 @@ public class ApiController {
                     Outcome outcome = event.getEiffelEvents().get(FINISHED).getData().getOutcome();
                     if (outcome.getVerdict() != null) {
                         if (outcome.getVerdict().equals("PASSED")) {
-                            group = 2;
+                            group = PLOT_GROUP_PASS;
                         } else if (outcome.getVerdict().equals("FAILED")) {
-                            group = 3;
+                            group = PLOT_GROUP_FAIL;
                         }
                         // else stay 0
+                    } else if (outcome.getConclusion() != null) {
+                        switch (outcome.getConclusion()) {
+                            case "SUCCESSFUL":
+                                group = PLOT_GROUP_PASS;
+                                break;
+                            case "INCONCLUSIVE":
+                                group = PLOT_GROUP_INCONCLUSIVE;
+                                break;
+                            default:
+                                group = PLOT_GROUP_FAIL;
+                                break;
+                        }
                     }
                     if (outcome.getConclusion() != null) {
                         label = outcome.getConclusion();
@@ -375,9 +393,9 @@ public class ApiController {
 
                     String result = event.getEiffelEvents().get(TRIGGERED).getData().getValue();
                     if (result.equals("SUCCESS")) {
-                        group = 2;
+                        group = PLOT_GROUP_PASS;
                     } else if (result.equals("FAILURE")) {
-                        group = 3;
+                        group = PLOT_GROUP_FAIL;
                     }
 
                     label = event.getEiffelEvents().get(TRIGGERED).getData().getName();
@@ -388,7 +406,6 @@ public class ApiController {
             Random random = new Random();
             y = (int) (y * ((float) 0.5 + (random.nextFloat() * 0.05)));
 
-            items.add(new Item(x, y, 0, label));
 
             if (lastGroup == -1) {
                 items.add(new Item(x, 0, group, null));
@@ -405,10 +422,13 @@ public class ApiController {
             if (y > valueMax) {
                 valueMax = y;
             }
+
+            // Result
+            items.add(new Item(x, y, PLOT_GROUP_RESULT, label));
         }
-        items.add(new Item(timeLast, 0, 1, null));
-        items.add(new Item(timeLast, 0, 2, null));
-        items.add(new Item(timeLast, 0, 3, null));
+        items.add(new Item(timeLast, 0, PLOT_GROUP_INCONCLUSIVE, null));
+        items.add(new Item(timeLast, 0, PLOT_GROUP_PASS, null));
+        items.add(new Item(timeLast, 0, PLOT_GROUP_FAIL, null));
 
         return new Plot(items, timeFirst, timeLast, valueMin, valueMax);
     }
