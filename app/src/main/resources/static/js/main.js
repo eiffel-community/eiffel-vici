@@ -1,10 +1,15 @@
-let content = undefined;
+let contentGlobal = undefined;
 let settingsElement = undefined;
 let cache = {};
 
 // FORMATTING
 function formatTime(long) {
     return moment(long).format('YYYY-MM-DD, HH:mm:ss:SSS');
+}
+
+function isUrlValid(url) {
+    const re = /^(?:(?:(?:https?|ftp):)?\/\/)(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)(?:\.(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)*(?:\.(?:[a-z\\u00a1-\\uffff]{2,})).?)(?::\d{2,5})?(?:[\/?#]\S*)?$/;
+    return re.test(url);
 }
 
 // SETTINGS
@@ -44,14 +49,14 @@ function getCurrentSettings() {
     let systemCount = settingsElement.systems.find('.panel').length;
     let systems = {};
     for (let i = 0; i < systemCount; i++) {
-        systems[$('#systemName\\[' + i + '\\]').val()] = $('#systemUri\\[' + i + '\\]').val()
+        systems[$('#systemName\\[' + i + '\\]').val()] = $('#systemUrl\\[' + i + '\\]').val()
     }
     return {
         systems: systems,
 
         system: {
             name: settingsElement.system.val(),
-            uri: systems[settingsElement.system.val()],
+            url: systems[settingsElement.system.val()],
         },
         general: {
             timeStoreCache: parseInt(settingsElement.cacheKeepTime.val()),
@@ -78,7 +83,6 @@ function getCurrentSettings() {
 function updateSystemSelector() {
     settingsElement.system.html('');
     let settings = getCurrentSettings();
-    console.log(settings);
     for (let key in settings.systems) {
         settingsElement.system.append('<option>' + key + '</option>');
     }
@@ -91,12 +95,12 @@ function resetSelections() {
     settingsElement.detailsTarget.html("");
 }
 
-function newSystem(name, uri) {
+function newSystem(name, url) {
     if (name === undefined) {
         name = '';
     }
-    if (uri === undefined) {
-        uri = '';
+    if (url === undefined) {
+        url = '';
     }
     let count = _.size(getCurrentSettings().systems);
     settingsElement.systems.append(
@@ -109,10 +113,10 @@ function newSystem(name, uri) {
         'placeholder="My system" value="' + name + '"/>' +
         '</div>' +
         '<div class="input-group">' +
-        '<span class="input-group-addon">URI</span>' +
-        '<input id="systemUri[' + count + ']"  class="form-control systemsUriInput" ' +
+        '<span class="input-group-addon">URL</span>' +
+        '<input id="systemUrl[' + count + ']"  class="form-control systemsUrlInput" ' +
 
-        'placeholder="http://localhost:8081/events.json" value="' + uri + '"/>' +
+        'placeholder="http://localhost:8081/events.json" value="' + url + '"/>' +
         '</div>' +
         '</div>'
     );
@@ -154,10 +158,12 @@ function getContentElements() {
         datatableDetails: undefined,
         datatableDetailsContainer: $('#details_table_table'),
         detailsTable: $('#details_table'),
-        detailsPlot: $('#details_plot'),
+        detailsPlot: $('#details_plot_container'),
         cyEventChain: $('#event_chain'),
         loader: $('#loader_overlay'),
         detailsToggle: $('#details_toggle'),
+        alertModal: $('#alertModal'),
+        alertModalContent: $('#alertModalContent'),
         containers: {
             aggregation: $('#aggregation_wrapper'),
             details: $('#details'),
@@ -179,26 +185,26 @@ function getContentElements() {
 
 function disableMenuLevel(level) {
 
-    content.menu.aggregation.addClass('disabled');
-    content.menu.details.addClass('disabled');
-    content.menu.eventChain.addClass('disabled');
-    content.menu.live.addClass('disabled');
+    contentGlobal.menu.aggregation.addClass('disabled');
+    contentGlobal.menu.details.addClass('disabled');
+    contentGlobal.menu.eventChain.addClass('disabled');
+    contentGlobal.menu.live.addClass('disabled');
     switch (level) {
         case 4:
-            content.menu.live.removeClass('disabled');
+            contentGlobal.menu.live.removeClass('disabled');
         case 3:
-            content.menu.eventChain.removeClass('disabled');
+            contentGlobal.menu.eventChain.removeClass('disabled');
         case 2:
-            content.menu.details.removeClass('disabled');
+            contentGlobal.menu.details.removeClass('disabled');
         case 1:
-            content.menu.aggregation.removeClass('disabled');
+            contentGlobal.menu.aggregation.removeClass('disabled');
         default:
             break;
     }
 }
 
 function setMenuActive(settings) {
-    if (settings.system.uri === undefined) {
+    if (settings.system.url === undefined) {
         disableMenuLevel(0);
     } else if (settings.details.target === '') {
         disableMenuLevel(1);
@@ -209,29 +215,85 @@ function setMenuActive(settings) {
     }
 }
 
+function showModal(content) {
+    contentGlobal.alertModalContent.html(content);
+    contentGlobal.alertModal.modal('show');
+}
+
+/**
+ * this function fills the external legend with content using the getLegend() function.
+ */
+function populateExternalLegend(groups, graph2d) {
+    let groupsData = groups.get();
+    let legendDiv = document.getElementById("details_plot_legend");
+    legendDiv.innerHTML = "";
+
+    let legendContainer = $('#details_plot_legend');
+
+    console.log(groupsData);
+
+    // get for all groups:
+    for (let i = 0; i < groupsData.length; i++) {
+
+        // let container = $('<div class="legend-toggle-container"></div>');
+        let container = $('<div class="col col-lg-3 legend-toggle-container"></div>');
+
+        // get the legend for this group.
+        let legend = graph2d.getLegend(groupsData[i].id, 30, 30);
+        console.log(legend);
+
+        // append class to icon. All styling classes from the vis.css/vis-timeline-graph2d.min.css have been copied over into the head here to be able to style the
+        // icons with the same classes if they are using the default ones.
+        legend.icon.setAttributeNS(null, "class", "legend-icon");
+
+        // iconDiv.append(legend.icon);
+        // legendContainer.append(iconDiv);
+
+        // let label = $('<label id="legend-toggle-label-' + i + '" class="checkbox-inline"></label>');
+        let inputToggle = $('<input id="legend-toggle-' + i + '" checked="checked" type="checkbox" data-toggle="toggle" data-on="On" data-off="Off" data-onstyle="default" data-offstyle="default">');
+        container.append(inputToggle);
+        container.append(legend.icon);
+        container.append(legend.label);
+
+        legendContainer.append(container);
+
+        let toggle = $('#legend-toggle-' + i);
+        toggle.bootstrapToggle();
+
+        toggle.change(function () {
+            // _.defer(function () {
+
+            console.log(i + ' ' + $(this).prop('checked'));
+            groups.update({id: i, visible: $(this).prop('checked')});
+
+            // });
+        });
+    }
+}
+
 function load(stage) {
     let settings = getCurrentSettings();
-    content.loader.show();
+
+    contentGlobal.loader.show();
     // $("#side-menu").find("a").removeClass("active");
     // $('#menu_' + stage).addClass('active');
 
-    let systemUri = settings.system.uri;
+    let systemUrl = settings.system.url;
 
     setMenuActive(settings);
-    content.menu.detailsToggle.hide();
+    contentGlobal.menu.detailsToggle.hide();
     _.defer(function () {
-        for (let container in content.containers) {
-            content.containers[container].hide();
+        for (let container in contentGlobal.containers) {
+            contentGlobal.containers[container].hide();
         }
 
         if (stage === 'aggregation') {
-            content.containers.aggregation.show();
-            if (usableCache('aggregation', systemUri, settings.general.timeStoreCache) === true) {
-                console.log('Using cache for system ' + systemUri);
-                content.loader.hide();
+            contentGlobal.containers.aggregation.show();
+            if (usableCache('aggregation', systemUrl, settings.general.timeStoreCache) === true) {
+                console.log('Using cache for system ' + systemUrl);
+                contentGlobal.loader.hide();
             } else {
                 _.defer(function () {
-                    // console.log(settings);
                     $.ajax({
                         type: "POST",
                         contentType: 'application/json; charset=utf-8',
@@ -239,83 +301,204 @@ function load(stage) {
                         url: '/api/aggregationGraph',
                         data: JSON.stringify(settings),
                         success: function (data) {
-                            console.log(data);
-                            renderCytoscape(content.cyAggregation, data, settings, undefined);
-                            storeCache('aggregation', systemUri);
+                            renderCytoscape(contentGlobal.cyAggregation, data, settings, undefined);
+                            storeCache('aggregation', systemUrl);
                         },
                         complete: function () {
-                            content.loader.hide();
+                            contentGlobal.loader.hide();
                         }
                     });
                 });
             }
         } else if (stage === 'details') {
-            content.menu.detailsToggle.show();
-            content.containers.details.show();
+            contentGlobal.menu.detailsToggle.show();
+            contentGlobal.containers.details.show();
+
             let detailsTarget = settings.details.target;
-            if (usableCache('details', systemUri + detailsTarget, settings.general.timeStoreCache)) {
-                console.log('Using cache for ' + detailsTarget + ' from system ' + systemUri);
-                content.loader.hide();
-            } else {
-                _.defer(function () {
-                    $.ajax({
-                        type: "POST",
-                        contentType: 'application/json; charset=utf-8',
-                        dataType: 'json',
-                        url: "/api/detailedEvents?name=" + detailsTarget,
-                        data: JSON.stringify(settings),
-                        success: function (data) {
-                            console.log(data);
-                            if (content.datatableDetails !== undefined) {
-                                content.datatableDetails.destroy();
-                                content.datatableDetailsContainer.empty();
+
+            // Table
+            if (contentGlobal.detailsToggle.prop('checked')) {
+                contentGlobal.detailsTable.show();
+                contentGlobal.detailsPlot.hide();
+
+                if (usableCache('detailsTable', systemUrl + detailsTarget, settings.general.timeStoreCache)) {
+                    console.log('Using cache for ' + detailsTarget + ' from system ' + systemUrl);
+                    contentGlobal.loader.hide();
+                } else {
+                    _.defer(function () {
+                        $.ajax({
+                            type: "POST",
+                            contentType: 'application/json; charset=utf-8',
+                            dataType: 'json',
+                            url: "/api/detailedEvents?name=" + detailsTarget,
+                            data: JSON.stringify(settings),
+                            success: function (data) {
+                                if (contentGlobal.datatableDetails !== undefined) {
+                                    contentGlobal.datatableDetails.destroy();
+                                    contentGlobal.datatableDetailsContainer.empty();
+                                }
+                                if (data.data.length !== 0) {
+
+                                    let preDefColumns = [
+                                        {
+                                            title: 'Chain',
+                                            data: null,
+                                            defaultContent: '<button class="btn btn-default btn-xs row-button">Graph</button>'
+                                        }
+                                    ];
+                                    contentGlobal.datatableDetails = datatable = contentGlobal.datatableDetailsContainer.DataTable({
+                                        destroy: true,
+                                        data: data.data,
+                                        columns: preDefColumns.concat(data.columns),
+                                        scrollY: '80vh',
+                                        scrollCollapse: true,
+                                        lengthMenu: [[20, 200, -1], [20, 200, "All"]],
+                                        order: [4, 'asc'],
+
+                                    });
+
+                                    contentGlobal.datatableDetailsContainer.find('tbody').on('click', 'button', function () {
+                                        let data = contentGlobal.datatableDetails.row($(this).parents('tr')).data();
+
+                                        settingsElement.eventChainTarget.html(data.id);
+
+                                        load("eventChain");
+                                    });
+
+                                    storeCache('detailsTable', systemUrl + detailsTarget);
+                                } else {
+                                    console.log("No data");
+                                }
+                            },
+                            complete: function () {
+                                contentGlobal.loader.hide();
                             }
-                            if (data.data.length !== 0) {
-
-                                let preDefColumns = [
-                                    {
-                                        title: 'Chain',
-                                        data: null,
-                                        defaultContent: '<button class="btn btn-default btn-xs row-button">Graph</button>'
-                                    }
-                                ];
-                                content.datatableDetails = datatable = content.datatableDetailsContainer.DataTable({
-                                    destroy: true,
-                                    data: data.data,
-                                    columns: preDefColumns.concat(data.columns),
-                                    scrollY: '80vh',
-                                    scrollCollapse: true,
-                                    lengthMenu: [[20, 200, -1], [20, 200, "All"]],
-                                    order: [4, 'asc'],
-
-                                });
-
-                                content.datatableDetailsContainer.find('tbody').on('click', 'button', function () {
-                                    let data = content.datatableDetails.row($(this).parents('tr')).data();
-
-                                    settingsElement.eventChainTarget.html(data.id);
-
-                                    load("eventChain");
-                                });
-
-                                storeCache('details', systemUri + detailsTarget);
-                            } else {
-                                console.log("No data");
-                            }
-                        },
-                        complete: function () {
-                            content.loader.hide();
-                        }
+                        });
                     });
-                });
+                }
+
+            } else { // Plot
+                contentGlobal.detailsTable.hide();
+                contentGlobal.detailsPlot.show();
+
+                if (usableCache('detailsPlot', systemUrl + detailsTarget, settings.general.timeStoreCache)) {
+                    console.log('Using cache for ' + detailsTarget + ' from system ' + systemUrl);
+                    contentGlobal.loader.hide();
+                } else {
+                    _.defer(function () {
+                        $.ajax({
+                            type: "POST",
+                            contentType: 'application/json; charset=utf-8',
+                            dataType: 'json',
+                            url: "/api/detailedPlot?name=" + detailsTarget,
+                            data: JSON.stringify(settings),
+                            success: function (data) {
+                                console.log(data);
+                                if (data !== undefined && data.items.length !== 0) {
+                                    let groups = new vis.DataSet();
+
+                                    groups.add({
+                                        id: 0,
+                                        content: 'Execution time (ms)',
+                                        className: 'vis-graph-result',
+                                        options: {
+                                            drawPoints: {
+                                                styles: 'stroke:black;fill:black;',
+                                                size: 2,
+                                            },
+                                            interpolation: true,
+                                        },
+                                    });
+
+                                    groups.add({
+                                        id: 1,
+                                        content: "Inconclusive",
+                                        className: 'vis-graph-inconclusive',
+                                        options: {
+                                            drawPoints: false,
+                                            shaded: {
+                                                orientation: 'zero',
+                                            }
+                                        }
+                                    });
+                                    groups.add({
+                                        id: 2,
+                                        content: "Success",
+                                        className: 'vis-graph-success',
+                                        options: {
+                                            drawPoints: false,
+                                            shaded: {
+                                                orientation: 'zero',
+                                            }
+                                        }
+                                    });
+                                    groups.add({
+                                        id: 3,
+                                        content: "Fail",
+                                        className: 'vis-graph-fail',
+                                        options: {
+                                            drawPoints: false,
+                                            shaded: {
+                                                orientation: 'zero',
+                                            }
+                                        }
+                                    });
+
+
+                                    let dataset = new vis.DataSet(data.items);
+                                    let options = {
+                                        sort: false,
+                                        interpolation: false,
+                                        graphHeight: '600px',
+                                        // legend: true,
+                                        dataAxis: {
+                                            left: {
+                                                // format: function (value) {
+                                                //     if (Math.floor(value) === value) {
+                                                //         return value;
+                                                //     }
+                                                //     return '';
+                                                // },
+                                                range: {
+                                                    // max: (data.valueMax * 1.25),
+                                                    min: 0,
+                                                }
+                                            }
+                                        },
+                                        // TODO: settings for default start
+                                        start: data.timeLast - 345600000,
+                                        end: data.timeLast,
+                                    };
+
+                                    console.log(groups);
+                                    console.log(dataset);
+                                    console.log(options);
+                                    document.getElementById('details_plot').innerHTML = '';
+                                    let plot = new vis.Graph2d(document.getElementById('details_plot'), dataset, groups, options);
+
+                                    populateExternalLegend(groups, plot);
+
+
+                                    storeCache('detailsPlot', systemUrl + detailsTarget);
+                                } else {
+                                    console.log("No data");
+                                }
+                            },
+                            complete: function () {
+                                contentGlobal.loader.hide();
+                            }
+                        });
+                    });
+                }
             }
 
+
         } else if (stage === 'eventChain') {
-            content.containers.eventChain.show();
+            contentGlobal.containers.eventChain.show();
             let eventTarget = settings.eventChain.target;
-            if (usableCache('eventChain', systemUri + eventTarget, settings.general.timeStoreCache)) {
-                console.log('Using cache for ' + eventTarget + ' from system ' + systemUri);
-                content.loader.hide();
+            if (usableCache('eventChain', systemUrl + eventTarget, settings.general.timeStoreCache)) {
+                console.log('Using cache for ' + eventTarget + ' from system ' + systemUrl);
+                contentGlobal.loader.hide();
             } else {
                 _.defer(function () {
                     $.ajax({
@@ -325,25 +508,24 @@ function load(stage) {
                         url: '/api/eventChainGraph?id=' + eventTarget,
                         data: JSON.stringify(settings),
                         success: function (data) {
-                            console.log(data);
-                            renderCytoscape(content.cyEventChain, data.elements, settings, eventTarget);
-                            storeCache('eventChain', systemUri + eventTarget);
+                            renderCytoscape(contentGlobal.cyEventChain, data.elements, settings, eventTarget);
+                            storeCache('eventChain', systemUrl + eventTarget);
                         },
                         complete: function () {
-                            content.loader.hide();
+                            contentGlobal.loader.hide();
                         }
                     });
                 });
             }
         } else if (stage === 'live') {
-            content.containers.live.show();
-            content.loader.hide();
+            contentGlobal.containers.live.show();
+            contentGlobal.loader.hide();
         } else if (stage === 'settings') {
-            content.containers.settings.show();
-            content.loader.hide();
+            contentGlobal.containers.settings.show();
+            contentGlobal.loader.hide();
         } else if (stage === 'help') {
-            content.containers.help.show();
-            content.loader.hide();
+            contentGlobal.containers.help.show();
+            contentGlobal.loader.hide();
         } else {
             console.log("Error in mode switch: " + stage);
         }
@@ -658,7 +840,6 @@ function renderCytoscape(container, data, settings, target) {
         }
 
         content = content + '</table>';
-
         return content;
     }
 
@@ -723,28 +904,18 @@ function renderCytoscape(container, data, settings, target) {
     cy.minZoom(0.1); //same setting as panzoom for Krav 2
 }
 
-function toggleTable(showTable) {
-    if (showTable) {
-        content.detailsTable.show();
-        content.detailsPlot.hide();
-    } else {
-        content.detailsTable.hide();
-        content.detailsPlot.show();
-    }
-}
-
 $(document).ready(function () {
     settingsElement = getElementsSettings();
     setSettingsDefault(settingsElement);
-    newSystem('Local dummy', 'http://localhost:8080/events.json');
-    newSystem('Dummy', 'http://localhost:8081/events.json');
-    content = getContentElements();
+    newSystem('Local dummy', 'http://127.0.0.1:8080/events.json');
+    newSystem('Dummy er', 'http://127.0.0.1:8081/events.json');
+    newSystem('Dummy docker er', 'http://dummy-er:8081/events.json');
+    contentGlobal = getContentElements();
 
-    content.loader.hide();
+    contentGlobal.loader.hide();
 
-    content.detailsToggle.bootstrapToggle('on');
-    toggleTable(true);
-    content.menu.detailsToggle.hide();
+    contentGlobal.detailsToggle.bootstrapToggle('on');
+    contentGlobal.menu.detailsToggle.hide();
 
 
     // MENU
@@ -753,8 +924,10 @@ $(document).ready(function () {
         load($(this).data('value'));
     });
 
-    content.detailsToggle.change(function () {
-        toggleTable($(this).prop('checked'));
+    contentGlobal.detailsToggle.change(function () {
+        _.defer(function () {
+            load("details");
+        });
     });
 
     // SETTINGS
@@ -764,7 +937,7 @@ $(document).ready(function () {
     });
 
     // TODO
-    // $('#systemsUriInput').change(function () {
+    // $('#systemsUrlInput').change(function () {
     //     invalidateCache();
     // });
 
@@ -773,7 +946,7 @@ $(document).ready(function () {
     });
 
     $('#settings-details').find('input').change(function () {
-        invalidateCache('details');
+        invalidateCache('detailsTable');
     });
 
     $('#settings-eventChain').find('input').change(function () {
@@ -785,16 +958,22 @@ $(document).ready(function () {
     });
 
     settingsElement.system.on('changed.bs.select', function () {
-
+        let settings = getCurrentSettings();
         resetSelections();
-
+        disableMenuLevel(0);
+        // if (!isUrlValid(settings.system.url)) {
+        //     showModal("Invalid URL: " + settings.system.url);
+        //     console.log("Invalid URL: " + settings.system.url);
+        //     return;
+        // }
         load('aggregation');
     });
 
-    if (getCurrentSettings().system.uri !== undefined) {
+    if (getCurrentSettings().system.url !== undefined) {
         _.defer(function () {
             load('aggregation');
         });
     }
     setMenuActive(getCurrentSettings());
 });
+

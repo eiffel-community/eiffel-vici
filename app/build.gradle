@@ -37,7 +37,7 @@ jar {
     baseName = 'vici-eiffel'
 }
 
-version = '0.1'
+//version = '0.2'
 sourceCompatibility = 1.8
 
 repositories {
@@ -62,4 +62,7 @@ dependencies {
     compile 'com.fasterxml.jackson.core:jackson-databind'
 
     compile "org.springframework.boot:spring-boot-starter"
+
+    // https://mvnrepository.com/artifact/commons-validator/commons-validator
+    compile group: 'commons-validator', name: 'commons-validator', version: '1.4.0'
 }
