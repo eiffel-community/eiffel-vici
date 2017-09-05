@@ -35,11 +35,11 @@ public class Fetcher {
             }
         }
 
-        UrlValidator urlValidator = new UrlValidator();
-        if (!urlValidator.isValid(url)) {
-            System.out.println("Invalid url: " + url);
-            return null;
-        }
+//        UrlValidator urlValidator = new UrlValidator();
+//        if (!urlValidator.isValid(url)) {
+//            System.out.println("Invalid url: " + url);
+//            return null;
+//        }
 
 
         System.out.println("Downloading eiffel-events...");

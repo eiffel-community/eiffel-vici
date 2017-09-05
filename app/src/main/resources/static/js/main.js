@@ -908,7 +908,8 @@ $(document).ready(function () {
     settingsElement = getElementsSettings();
     setSettingsDefault(settingsElement);
     newSystem('Local dummy', 'http://127.0.0.1:8080/events.json');
-    newSystem('Dummy', 'http://127.0.0.1:8081/events.json');
+    newSystem('Dummy er', 'http://127.0.0.1:8081/events.json');
+    newSystem('Dummy docker er', 'http://dummy-er:8081/events.json');
     contentGlobal = getContentElements();
 
     contentGlobal.loader.hide();
@@ -960,10 +961,11 @@ $(document).ready(function () {
         let settings = getCurrentSettings();
         resetSelections();
         disableMenuLevel(0);
-        if (!isUrlValid(settings.system.url)) {
-            showModal("Invalid URL: " + settings.system.url);
-            return;
-        }
+        // if (!isUrlValid(settings.system.url)) {
+        //     showModal("Invalid URL: " + settings.system.url);
+        //     console.log("Invalid URL: " + settings.system.url);
+        //     return;
+        // }
         load('aggregation');
     });
 
