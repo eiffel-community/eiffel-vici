@@ -116,7 +116,7 @@ function newSystem(name, url) {
         '<span class="input-group-addon">URL</span>' +
         '<input id="systemUrl[' + count + ']"  class="form-control systemsUrlInput" ' +
 
-        'placeholder="http://localhost:8081/events.json" value="' + url + '"/>' +
+        'placeholder="http://127.0.0.1:8080/events.json" value="' + url + '"/>' +
         '</div>' +
         '</div>'
     );
@@ -189,6 +189,9 @@ function disableMenuLevel(level) {
     contentGlobal.menu.details.addClass('disabled');
     contentGlobal.menu.eventChain.addClass('disabled');
     contentGlobal.menu.live.addClass('disabled');
+    if (level === 0) {
+        settingsElement.system.selectpicker('val', undefined);
+    }
     switch (level) {
         case 4:
             contentGlobal.menu.live.removeClass('disabled');
@@ -302,6 +305,13 @@ function load(stage) {
                         data: JSON.stringify(settings),
                         success: function (data) {
                             renderCytoscape(contentGlobal.cyAggregation, data, settings, undefined);
+                            storeCache('aggregation', systemUrl);
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            showModal('<p>Wops! I could not fetch data from the given url :( check that the event repository server is running and the correct url is given in the settings.</p><div class="alert alert-danger" role="alert">' + jqXHR.responseText + '</div>');
+                            resetSelections();
+                            disableMenuLevel(0);
+                            renderCytoscape(contentGlobal.cyAggregation, undefined, settings, undefined);
                             storeCache('aggregation', systemUrl);
                         },
                         complete: function () {
@@ -958,14 +968,8 @@ $(document).ready(function () {
     });
 
     settingsElement.system.on('changed.bs.select', function () {
-        let settings = getCurrentSettings();
         resetSelections();
         disableMenuLevel(0);
-        // if (!isUrlValid(settings.system.url)) {
-        //     showModal("Invalid URL: " + settings.system.url);
-        //     console.log("Invalid URL: " + settings.system.url);
-        //     return;
-        // }
         load('aggregation');
     });
 
