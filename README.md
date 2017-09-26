@@ -28,6 +28,8 @@ During the development stage, please consider refreshing the app-webpage with cl
 For the local dummy event repository to work, you have to extract app\src\main\resources\static\events.zip into app\src\main\resources\static\events.json.
 This is not required if you intend to use the dummy eiffel-event-repository.
 
+To test your own set of eiffel-events, simply create a .json file that contains a list of eiffel-events and place it in the \app\src\main\resources\static\ directory. When the app is running, go to settings > Manage systems > add a new system with the url localFile[MY_FILE.json] where you replace MY_FILE with the actual file name. Example: \app\src\main\resources\static\events.json with url localFile[events.json]
+
 To run the app you need Java 8 and Gradle installed.
 
 Navigate to the /app/ directory in the repository root and execute one of the following commands in the terminal.

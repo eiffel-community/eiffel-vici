@@ -26,10 +26,10 @@ import static vici.entities.Event.*;
 @RestController
 public class ApiController {
 
-    public static final int PLOT_GROUP_RESULT = 0;
-    public static final int PLOT_GROUP_INCONCLUSIVE = 1;
-    public static final int PLOT_GROUP_PASS = 2;
-    public static final int PLOT_GROUP_FAIL = 3;
+    private static final int PLOT_GROUP_RESULT_EXEC = 0;
+    private static final int PLOT_GROUP_FILL_INCONCLUSIVE = 1;
+    private static final int PLOT_GROUP_FILL_PASS = 2;
+    private static final int PLOT_GROUP_FILL_FAIL = 3;
 
     private String getStandardAggregateValue(Event event) {
         switch (event.getType()) {
@@ -335,10 +335,9 @@ public class ApiController {
         int valueMin = 0;
         int valueMax = 0;
 
-        items.add(new Item(timeFirst, 0, PLOT_GROUP_INCONCLUSIVE, null));
-        items.add(new Item(timeFirst, 0, PLOT_GROUP_PASS, null));
-        items.add(new Item(timeFirst, 0, PLOT_GROUP_FAIL, null));
-
+        items.add(new Item(timeFirst, 0, PLOT_GROUP_FILL_INCONCLUSIVE, null));
+        items.add(new Item(timeFirst, 0, PLOT_GROUP_FILL_PASS, null));
+        items.add(new Item(timeFirst, 0, PLOT_GROUP_FILL_FAIL, null));
 
         int lastGroup = -1; // none
 
@@ -346,7 +345,7 @@ public class ApiController {
 
             long x = event.getTimes().get(TRIGGERED);
             int y = 1; // for event types without an execution time
-            int group = PLOT_GROUP_INCONCLUSIVE; // Inconclusive
+            int group = PLOT_GROUP_FILL_INCONCLUSIVE; // Inconclusive
             String label = null;
 
             switch (event.getType()) {
@@ -365,21 +364,21 @@ public class ApiController {
                     Outcome outcome = event.getEiffelEvents().get(FINISHED).getData().getOutcome();
                     if (outcome.getVerdict() != null) {
                         if (outcome.getVerdict().equals("PASSED")) {
-                            group = PLOT_GROUP_PASS;
+                            group = PLOT_GROUP_FILL_PASS;
                         } else if (outcome.getVerdict().equals("FAILED")) {
-                            group = PLOT_GROUP_FAIL;
+                            group = PLOT_GROUP_FILL_FAIL;
                         }
                         // else stay 0
                     } else if (outcome.getConclusion() != null) {
                         switch (outcome.getConclusion()) {
                             case "SUCCESSFUL":
-                                group = PLOT_GROUP_PASS;
+                                group = PLOT_GROUP_FILL_PASS;
                                 break;
                             case "INCONCLUSIVE":
-                                group = PLOT_GROUP_INCONCLUSIVE;
+                                group = PLOT_GROUP_FILL_INCONCLUSIVE;
                                 break;
                             default:
-                                group = PLOT_GROUP_FAIL;
+                                group = PLOT_GROUP_FILL_FAIL;
                                 break;
                         }
                     }
@@ -393,9 +392,9 @@ public class ApiController {
 
                     String result = event.getEiffelEvents().get(TRIGGERED).getData().getValue();
                     if (result.equals("SUCCESS")) {
-                        group = PLOT_GROUP_PASS;
+                        group = PLOT_GROUP_FILL_PASS;
                     } else if (result.equals("FAILURE")) {
-                        group = PLOT_GROUP_FAIL;
+                        group = PLOT_GROUP_FILL_FAIL;
                     }
 
                     label = event.getEiffelEvents().get(TRIGGERED).getData().getName();
@@ -408,12 +407,13 @@ public class ApiController {
 
 
             if (lastGroup == -1) {
-                items.add(new Item(x, 0, group, null));
+//                items.add(new Item(x, 0, group, null));
             } else if (group != lastGroup) {
                 items.add(new Item(x, y, lastGroup, null));
                 items.add(new Item(x, 0, lastGroup, null));
 
                 items.add(new Item(x, 0, group, null));
+
             }
             lastGroup = group;
 
@@ -424,11 +424,12 @@ public class ApiController {
             }
 
             // Result
-            items.add(new Item(x, y, PLOT_GROUP_RESULT, label));
+            items.add(new Item(x, y, PLOT_GROUP_RESULT_EXEC, label));
+
         }
-        items.add(new Item(timeLast, 0, PLOT_GROUP_INCONCLUSIVE, null));
-        items.add(new Item(timeLast, 0, PLOT_GROUP_PASS, null));
-        items.add(new Item(timeLast, 0, PLOT_GROUP_FAIL, null));
+        items.add(new Item(timeLast, 0, PLOT_GROUP_FILL_INCONCLUSIVE, null));
+        items.add(new Item(timeLast, 0, PLOT_GROUP_FILL_PASS, null));
+        items.add(new Item(timeLast, 0, PLOT_GROUP_FILL_FAIL, null));
 
         return new Plot(items, timeFirst, timeLast, valueMin, valueMax);
     }
@@ -488,7 +489,9 @@ public class ApiController {
                 nodes.put(event.getId(), node);
                 if (settings.getEventChain().isRelativeXAxis()) {
                     node.setPosition(new Position((int) (node.getData().getTimes().get(TRIGGERED) - graph.getTime().getStart()) / 1000, 0));
-                    nodesList.add(node);
+                    if (nodesList != null) {
+                        nodesList.add(node);
+                    }
                 }
             }
         }

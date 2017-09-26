@@ -314,7 +314,9 @@ function load(stage) {
                             renderCytoscape(contentGlobal.cyAggregation, undefined, settings, undefined);
                             storeCache('aggregation', systemUrl);
                         },
-                        complete: function () {
+                        complete: function (jqXHR, textStatus) {
+                            console.log(jqXHR);
+                            console.log(textStatus);
                             contentGlobal.loader.hide();
                         }
                     });
@@ -917,9 +919,9 @@ function renderCytoscape(container, data, settings, target) {
 $(document).ready(function () {
     settingsElement = getElementsSettings();
     setSettingsDefault(settingsElement);
-    newSystem('Local dummy', 'http://127.0.0.1:8080/events.json');
-    newSystem('Dummy er', 'http://127.0.0.1:8081/events.json');
-    newSystem('Dummy docker er', 'http://dummy-er:8081/events.json');
+    newSystem('Local events.json dummy file', 'localFile[events.json]');
+    newSystem('Eiffel-event-repository dummy', 'http://127.0.0.1:8081/reference-data-set');
+    newSystem('Docker eiffel-event-repository dummy', 'http://dummy-er:8081/reference-data-set');
     contentGlobal = getContentElements();
 
     contentGlobal.loader.hide();
