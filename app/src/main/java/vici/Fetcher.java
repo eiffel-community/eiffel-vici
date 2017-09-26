@@ -1,16 +1,19 @@
 package vici;
 
 
-import org.apache.commons.validator.routines.UrlValidator;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.json.JSONObject;
+import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
+import vici.api.query.Query;
 import vici.entities.*;
 import vici.entities.Eiffel.EiffelEvent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static vici.api.ApiController.getTarget;
 import static vici.entities.Event.*;
@@ -20,8 +23,8 @@ public class Fetcher {
     public static final String ACTIVITY = "Activity";
     public static final String TEST_SUITE = "TestSuite";
 
-    public static HashMap<String, EventCache> eventCaches = new HashMap<>();
-    public static long cacheLifetime = 86400000;
+    private static HashMap<String, EventCache> eventCaches = new HashMap<>();
+    private static long cacheLifetime = 86400000;
 
     public Fetcher() {
     }
@@ -35,21 +38,42 @@ public class Fetcher {
             }
         }
 
-//        UrlValidator urlValidator = new UrlValidator();
-//        if (!urlValidator.isValid(url)) {
-//            System.out.println("Invalid url: " + url);
-//            return null;
-//        }
-
-
         System.out.println("Downloading eiffel-events...");
 
         RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<EiffelEvent[]> responseEntity;
 
-        ResponseEntity<EiffelEvent[]> responseEntity = restTemplate.getForEntity(url, EiffelEvent[].class);
+        Pattern pattern = Pattern.compile("^localFile\\[(.+)]$");
+        Matcher matcher = pattern.matcher(url.trim());
+
+        if (matcher.find()) {
+            System.out.println("Request for local file " + matcher.group(1));
+            responseEntity = restTemplate.getForEntity("http://127.0.0.1:8080/" + matcher.group(1), EiffelEvent[].class);
+        } else {
+            Query query = new Query(null, null, 0, Integer.MAX_VALUE, false, null, true);
+            ObjectMapper mapper = new ObjectMapper();
+            JSONObject queryJson = null;
+            try {
+                queryJson = new JSONObject(mapper.writeValueAsString(query));
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            HttpEntity<String> entity = null;
+            if (queryJson != null) {
+                entity = new HttpEntity<>(queryJson.toString(), headers);
+            }
+
+            responseEntity = restTemplate.exchange(url, HttpMethod.POST, entity, EiffelEvent[].class);
+        }
+
+
         EiffelEvent[] eiffelEvents = responseEntity.getBody();
-        MediaType contentType = responseEntity.getHeaders().getContentType();
-        HttpStatus statusCode = responseEntity.getStatusCode();
+//        MediaType contentType = responseEntity.getHeaders().getContentType();
+//        HttpStatus statusCode = responseEntity.getStatusCode();
 
         System.out.println("Downloaded eiffel-events. Importing...");
 
