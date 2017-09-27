@@ -919,7 +919,7 @@ function renderCytoscape(container, data, settings, target) {
 $(document).ready(function () {
     settingsElement = getElementsSettings();
     setSettingsDefault(settingsElement);
-    newSystem('Local events.json dummy file', 'localFile[events.json]');
+    newSystem('Local events.json dummy file', 'localFile[reference-data-set]');
     newSystem('Eiffel-event-repository dummy', 'http://127.0.0.1:8081/reference-data-set');
     newSystem('Docker eiffel-event-repository dummy', 'http://dummy-er:8081/reference-data-set');
     contentGlobal = getContentElements();

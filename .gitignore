@@ -1,6 +1,5 @@
-.gradle
-/build/
-!gradle/wrapper/gradle-wrapper.jar
+/app/.gradle
+/app/build/
 
 ### STS ###
 .apt_generated
@@ -13,7 +12,6 @@
 ### IntelliJ IDEA ###
 .idea
 *.iws
-*.iml
 *.ipr
 
 ### NetBeans ###
@@ -47,7 +45,7 @@ cmake-build-debug/
 ## Plugin-specific files:
 
 # IntelliJ
-/out/
+/app/out/
 
 # mpeltonen/sbt-idea plugin
 .idea_modules/
@@ -65,4 +63,5 @@ crashlytics-build.properties
 fabric.properties
 
 ignored
-src/main/resources/static/events.json
+/app/src/main/resources/static/reference-data-set.json
+/app/gradle/

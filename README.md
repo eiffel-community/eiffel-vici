@@ -25,10 +25,10 @@ Eiffel Vici is licensed under the [Apache License 2.0](./LICENSE).
 ## How to Run
 During the development stage, please consider refreshing the app-webpage with clear cashe if something gets stuck and report the issue.
 
-For the local dummy event repository to work, you have to extract app\src\main\resources\static\events.zip into app\src\main\resources\static\events.json.
+For the local dummy event repository to work, you have to extract app\src\main\resources\static\reference-data-set.zip into app\src\main\resources\static\reference-data-set.json.
 This is not required if you intend to use the dummy eiffel-event-repository.
 
-To test your own set of eiffel-events, simply create a .json file that contains a list of eiffel-events and place it in the \app\src\main\resources\static\ directory. When the app is running, go to settings > Manage systems > add a new system with the url localFile[MY_FILE.json] where you replace MY_FILE with the actual file name. Example: \app\src\main\resources\static\events.json with url localFile[events.json]
+To test your own set of eiffel-events, simply create a .json file that contains a list of eiffel-events and place it in the \app\src\main\resources\static\ directory. When the app is running, go to settings > Manage systems > add a new system with the url localFile[MY_FILE] where you replace MY_FILE with the actual file name (without .json). Example: \app\src\main\resources\static\reference-data-set.json with url localFile[reference-data-set]
 
 To run the app you need Java 8 and Gradle installed.
 
@@ -52,7 +52,7 @@ To run Vici together with a separate dummy event repository docker container, go
 - Docker image is created with a gradle docker plugin with settings  found in app/src/build.gradle (https://github.com/Transmode/gradle-docker)
 - Consider increasing the allowed memory usage for the docker container if the app is getting stuck.
 
-1: To use the local built-in dummy event repository, make sure you have unzipped the events.json file like in the "How to Run" section.
+1: To use the local built-in dummy event repository, make sure you have unzipped the reference-data-set.json file like in the "How to Run" section.
 
 2: Build docker image:\
 Navigate to the /app/ folder in the repo root and use the following command:
