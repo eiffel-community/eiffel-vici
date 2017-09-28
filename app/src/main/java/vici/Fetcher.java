@@ -10,6 +10,7 @@ import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
 import vici.api.query.Query;
 import vici.entities.*;
+import vici.entities.Eiffel.CustomData;
 import vici.entities.Eiffel.EiffelEvent;
 
 import java.io.IOException;
@@ -32,6 +33,76 @@ public class Fetcher {
     public Fetcher() {
     }
 
+    private String getStandardAggregateValue(Event event) {
+        switch (event.getType()) {
+            case ACTIVITY:
+                return event.getThisEiffelEvent().getData().getName();
+            case "EiffelAnnouncementPublishedEvent":
+                return event.getThisEiffelEvent().getData().getHeading();
+            case "EiffelArtifactCreatedEvent":
+//            case "EiffelArtifactPublishedEvent": TODO
+            case "EiffelArtifactReusedEvent":
+                if (event.getThisEiffelEvent().getData().getGav() == null) {
+                    System.out.println(event.getThisEiffelEvent().getMeta().getType());
+                }
+//                return event.getThisEiffelEvent().getData().getGav().getGroupId() + "[" + event.getThisEiffelEvent().getData().getGav().getArtifactId() + "]";
+                return event.getThisEiffelEvent().getData().getGav().getArtifactId();
+            case "EiffelCompositionDefinedEvent":
+            case "EiffelConfidenceLevelModifiedEvent":
+            case "EiffelEnvironmentDefinedEvent":
+            case TEST_SUITE:
+                return event.getThisEiffelEvent().getData().getName();
+            case "EiffelFlowContextDefined":
+                return null;
+            case "EiffelIssueVerifiedEvent":
+                // TODO: -IV: data.issues (notera att detta är en array. Dvs det skulle vara snyggt om samma event kan dyka upp i flera objektrepresentationer i grafen)
+                return null;
+            case "EiffelSourceChangeCreatedEvent":
+            case "EiffelSourceChangeSubmittedEvent":
+                // TODO: möjlighet att välja identifier (git/svn/...)
+
+                String type;
+                if (event.getType().equals("EiffelSourceChangeCreatedEvent")) {
+                    type = "Created";
+                } else {
+                    type = "Submitted";
+                }
+                if (event.getThisEiffelEvent().getData().getGitIdentifier() != null) {
+//                    return event.getThisEiffelEvent().getData().getGitIdentifier().getRepoUri() + "[" + event.getThisEiffelEvent().getData().getGitIdentifier().getBranch() + "]";
+//                    return event.getThisEiffelEvent().getData().getGitIdentifier().getRepoUri();
+                    return type + "@" + event.getThisEiffelEvent().getData().getGitIdentifier().getRepoName();
+                }
+                return null;
+            case TEST_CASE:
+                return event.getThisEiffelEvent().getData().getTestCase().getId();
+            case "EiffelTestExecutionRecipeCollectionCreatedEvent":
+                return null;
+            default:
+                return null;
+        }
+    }
+
+    private String getAggregateValue(Event event, HashMap<String, String> aggregateKeys) {
+        if (aggregateKeys == null || !aggregateKeys.containsKey(event.getType())) {
+            String value = getStandardAggregateValue(event);
+
+            if (value == null) {
+                if (event.getThisEiffelEvent().getData().getCustomData() != null) {
+                    for (CustomData customData : event.getThisEiffelEvent().getData().getCustomData()) {
+                        if (customData.getKey().equals("name")) {
+                            return "Custom[" + customData.getValue() + "]";
+                        }
+                    }
+                }
+            }
+            return value;
+        }
+
+        String aggregateKey = aggregateKeys.get(event.getType());
+        String[] path = aggregateKeys.get(event.getType()).split("\\.");
+
+        return null;
+    }
 
     public Events getEvents(String url, boolean useCache, long cacheLifetimeMs) {
         if (useCache && eventCaches.containsKey(url)) {
@@ -211,6 +282,14 @@ public class Fetcher {
                     String target = getTarget(link.getTarget(), events);
                     events.get(target).getChildren().add(new ChildLink(event.getId(), link.getType()));
                 }
+            }
+        }
+
+        for (String key : events.keySet()) {
+            Event event = events.get(key);
+
+            if (!event.getType().equals(REDIRECT)) {
+                event.setAggregateOn(getAggregateValue(event, null));
             }
         }
 

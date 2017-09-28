@@ -1,7 +1,12 @@
+const COLOR_PASS = '#22b14c';
+const COLOR_FAIL = '#af0020';
+const COLOR_UNDEFINED = '#666';
+
 let contentGlobal = undefined;
 let settingsElement = undefined;
 let cache = {};
 let currentStage = undefined;
+let statusImages = undefined;
 
 // FORMATTING
 function formatTime(long) {
@@ -560,11 +565,35 @@ function newDetailsTarget(target,) {
     load("details");
 }
 
-function renderCytoscape(container, data, settings, target) {
-    const COLOR_PASS = '#22b14c';
-    const COLOR_FAIL = '#af0020';
-    const COLOR_UNDEFINED = '#666';
+function generateStatusImages() {
+    let canvas = document.createElement('canvas');
+    canvas.width = 100;
+    canvas.height = 1;
 
+    let ctx = canvas.getContext('2d');
+
+    statusImages = [];
+
+    for (let pass = 0; pass <= 100; pass++) {
+        statusImages[pass] = [];
+        for (let fail = 0; fail + pass <= 100; fail++) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = COLOR_PASS;
+            ctx.fillRect(0, 0, pass, 1);
+
+            ctx.fillStyle = COLOR_FAIL;
+            ctx.fillRect(pass, 0, fail, 1);
+
+            ctx.fillStyle = COLOR_UNDEFINED;
+            ctx.fillRect(pass + fail, 0, (100 - (pass + fail)), 1);
+
+            statusImages[pass][fail] = canvas.toDataURL('image/jpeg', 1.0);
+        }
+    }
+}
+
+function renderCytoscape(container, data, settings, target) {
     let style = [
         {
             selector: 'node',
@@ -599,16 +628,19 @@ function renderCytoscape(container, data, settings, target) {
                 'shape-polygon-points': '-0.95 -0.77 -0.9 -0.82 -0.85 -0.87 -0.8 -0.91 -0.74 -0.94 -0.68 -0.97 -0.62 -0.98 -0.56 -1 -0.5 -1 -0.44 -1 -0.38 -0.98 -0.32 -0.97 -0.26 -0.94 -0.2 -0.91 -0.15 -0.87 -0.1 -0.82 -0.05 -0.77 0.05 -0.67 0.1 -0.62 0.15 -0.57 0.2 -0.53 0.26 -0.5 0.32 -0.47 0.38 -0.46 0.44 -0.44 0.5 -0.44 0.56 -0.44 0.62 -0.46 0.68 -0.47 0.74 -0.5 0.8 -0.53 0.85 -0.57 0.9 -0.62 0.95 -0.67 0.95 0.77 0.9 0.82 0.85 0.87 0.8 0.91 0.74 0.94 0.68 0.97 0.62 0.98 0.56 1 0.5 1 0.44 1 0.38 0.98 0.32 0.97 0.26 0.94 0.2 0.91 0.15 0.87 0.1 0.82 0.05 0.77 -0.05 0.67 -0.1 0.62 -0.15 0.57 -0.2 0.53 -0.26 0.5 -0.32 0.47 -0.38 0.46 -0.44 0.44 -0.5 0.44 -0.56 0.44 -0.62 0.46 -0.68 0.47 -0.74 0.5 -0.8 0.53 -0.85 0.57 -0.9 0.62 -0.95 0.67',
                 'height': 60,
                 'width': 100,
-                'background-color': COLOR_FAIL,
+                'background-color': COLOR_UNDEFINED,
                 'background-position-x': '0px',
-                'background-image': '/images/green.png',
-                'background-height': '100%',
-                'background-width': function (ele) {
+                'background-image': function (ele) {
                     if (ele.data().quantities.SUCCESSFUL === undefined) {
                         ele.data().quantities.SUCCESSFUL = 0;
                     }
-                    return (ele.data().quantities.SUCCESSFUL * 100 / ele.data().quantity).toString() + '%';
-                }
+                    if (ele.data().quantities.UNSUCCESSFUL === undefined) {
+                        ele.data().quantities.UNSUCCESSFUL = 0;
+                    }
+                    return statusImages[Math.floor((ele.data().quantities.SUCCESSFUL / ele.data().quantity) * 100)][Math.floor((ele.data().quantities.UNSUCCESSFUL / ele.data().quantity) * 100)]
+                },
+                'background-height': '100%',
+                'background-width': '100%',
             }
         },
         {
@@ -726,18 +758,21 @@ function renderCytoscape(container, data, settings, target) {
         {
             selector: 'node[type ^= "TestCase"]',
             style: {
-                'background-color': COLOR_FAIL,
+                'background-color': COLOR_UNDEFINED,
                 'shape': 'rectangle',
                 'height': 50,
                 'width': 100,
-                'background-image': '/images/green.png',
-                'background-height': '100%',
-                'background-width': function (ele) {
+                'background-image': function (ele) {
                     if (ele.data().quantities.SUCCESSFUL === undefined) {
                         ele.data().quantities.SUCCESSFUL = 0;
                     }
-                    return (ele.data().quantities.SUCCESSFUL * 100 / ele.data().quantity).toString() + '%';
+                    if (ele.data().quantities.UNSUCCESSFUL === undefined) {
+                        ele.data().quantities.UNSUCCESSFUL = 0;
+                    }
+                    return statusImages[Math.floor((ele.data().quantities.SUCCESSFUL / ele.data().quantity) * 100)][Math.floor((ele.data().quantities.UNSUCCESSFUL / ele.data().quantity) * 100)]
                 },
+                'background-height': '100%',
+                'background-width': '100%',
                 'background-position-x': '0px'
             }
         },
@@ -749,17 +784,19 @@ function renderCytoscape(container, data, settings, target) {
                 'border-width': '6px', // The size of the node’s border.
                 'height': 50,
                 'width': 100,
-                'background-color': COLOR_FAIL,
+                'background-color': COLOR_UNDEFINED,
                 'background-position-x': '0px',
-                'background-image': '/images/green.png',
-                'background-height': '100%',
-                'background-width': function (ele) {
-                    let success = ele.data().quantities.SUCCESSFUL;
-                    if (success === undefined) {
-                        success = 0;
+                'background-image': function (ele) {
+                    if (ele.data().quantities.SUCCESSFUL === undefined) {
+                        ele.data().quantities.SUCCESSFUL = 0;
                     }
-                    return (success * 100 / ele.data().quantity).toString() + '%';
+                    if (ele.data().quantities.UNSUCCESSFUL === undefined) {
+                        ele.data().quantities.UNSUCCESSFUL = 0;
+                    }
+                    return statusImages[Math.floor((ele.data().quantities.SUCCESSFUL / ele.data().quantity) * 100)][Math.floor((ele.data().quantities.UNSUCCESSFUL / ele.data().quantity) * 100)]
                 },
+                'background-height': '100%',
+                'background-width': '100%',
             }
         },
     ];
@@ -929,6 +966,10 @@ function renderCytoscape(container, data, settings, target) {
 $(document).ready(function () {
     settingsElement = getElementsSettings();
     setSettingsDefault(settingsElement);
+
+    generateStatusImages();
+    console.log(statusImages);
+
     newSystem('Local dummy file', 'localFile[reference-data-set]');
     newSystem('ER dummy', 'http://127.0.0.1:8081/reference-data-set');
     newSystem('Docker ER dummy', 'http://dummy-er:8081/reference-data-set');

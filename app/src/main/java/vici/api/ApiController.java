@@ -8,7 +8,6 @@ import vici.Fetcher;
 import vici.api.Settings.Settings;
 import vici.entities.ChildLink;
 import vici.entities.Cytoscape.*;
-import vici.entities.Eiffel.CustomData;
 import vici.entities.Eiffel.Outcome;
 import vici.entities.Event;
 import vici.entities.Events;
@@ -30,77 +29,6 @@ public class ApiController {
     private static final int PLOT_GROUP_FILL_INCONCLUSIVE = 1;
     private static final int PLOT_GROUP_FILL_PASS = 2;
     private static final int PLOT_GROUP_FILL_FAIL = 3;
-
-    private String getStandardAggregateValue(Event event) {
-        switch (event.getType()) {
-            case ACTIVITY:
-                return event.getThisEiffelEvent().getData().getName();
-            case "EiffelAnnouncementPublishedEvent":
-                return event.getThisEiffelEvent().getData().getHeading();
-            case "EiffelArtifactCreatedEvent":
-//            case "EiffelArtifactPublishedEvent": TODO
-            case "EiffelArtifactReusedEvent":
-                if (event.getThisEiffelEvent().getData().getGav() == null) {
-                    System.out.println(event.getThisEiffelEvent().getMeta().getType());
-                }
-//                return event.getThisEiffelEvent().getData().getGav().getGroupId() + "[" + event.getThisEiffelEvent().getData().getGav().getArtifactId() + "]";
-                return event.getThisEiffelEvent().getData().getGav().getArtifactId();
-            case "EiffelCompositionDefinedEvent":
-            case "EiffelConfidenceLevelModifiedEvent":
-            case "EiffelEnvironmentDefinedEvent":
-            case TEST_SUITE:
-                return event.getThisEiffelEvent().getData().getName();
-            case "EiffelFlowContextDefined":
-                return null;
-            case "EiffelIssueVerifiedEvent":
-                // TODO: -IV: data.issues (notera att detta är en array. Dvs det skulle vara snyggt om samma event kan dyka upp i flera objektrepresentationer i grafen)
-                return null;
-            case "EiffelSourceChangeCreatedEvent":
-            case "EiffelSourceChangeSubmittedEvent":
-                // TODO: möjlighet att välja identifier (git/svn/...)
-
-                String type;
-                if (event.getType().equals("EiffelSourceChangeCreatedEvent")) {
-                    type = "Created";
-                } else {
-                    type = "Submitted";
-                }
-                if (event.getThisEiffelEvent().getData().getGitIdentifier() != null) {
-//                    return event.getThisEiffelEvent().getData().getGitIdentifier().getRepoUri() + "[" + event.getThisEiffelEvent().getData().getGitIdentifier().getBranch() + "]";
-//                    return event.getThisEiffelEvent().getData().getGitIdentifier().getRepoUri();
-                    return type + "@" + event.getThisEiffelEvent().getData().getGitIdentifier().getRepoName();
-                }
-                return null;
-            case TEST_CASE:
-                return event.getThisEiffelEvent().getData().getTestCase().getId();
-            case "EiffelTestExecutionRecipeCollectionCreatedEvent":
-                return null;
-            default:
-                return null;
-        }
-    }
-
-    private String getAggregateValue(Event event, HashMap<String, String> aggregateKeys) {
-        if (aggregateKeys == null || !aggregateKeys.containsKey(event.getType())) {
-            String value = getStandardAggregateValue(event);
-
-            if (value == null) {
-                if (event.getThisEiffelEvent().getData().getCustomData() != null) {
-                    for (CustomData customData : event.getThisEiffelEvent().getData().getCustomData()) {
-                        if (customData.getKey().equals("name")) {
-                            return "Custom[" + customData.getValue() + "]";
-                        }
-                    }
-                }
-            }
-            return value;
-        }
-
-        String aggregateKey = aggregateKeys.get(event.getType());
-        String[] path = aggregateKeys.get(event.getType()).split("\\.");
-
-        return null;
-    }
 
     private void setQuantities(Node node, Event event) {
         switch (node.getData().getType()) {
@@ -154,7 +82,6 @@ public class ApiController {
             Event event = events.get(key);
 
             if (!event.getType().equals(REDIRECT)) {
-                event.setAggregateOn(getAggregateValue(event, null));
                 Node node;
                 if (nodes.containsKey(event.getAggregateOn())) {
                     node = nodes.get(event.getAggregateOn());
@@ -233,12 +160,14 @@ public class ApiController {
                         case TEST_CASE:
                         case ACTIVITY:
                         case TEST_SUITE:
-                            Outcome outcome = event.getEiffelEvents().get(FINISHED).getData().getOutcome();
-                            if (outcome.getConclusion() != null) {
-                                addColumn(row, columns, cSet, "conclusion", outcome.getConclusion());
-                            }
-                            if (outcome.getVerdict() != null) {
-                                addColumn(row, columns, cSet, "verdict", outcome.getVerdict());
+                            if (event.getEiffelEvents().containsKey(FINISHED)) {
+                                Outcome outcome = event.getEiffelEvents().get(FINISHED).getData().getOutcome();
+                                if (outcome.getConclusion() != null) {
+                                    addColumn(row, columns, cSet, "conclusion", outcome.getConclusion());
+                                }
+                                if (outcome.getVerdict() != null) {
+                                    addColumn(row, columns, cSet, "verdict", outcome.getVerdict());
+                                }
                             }
 
                             break;
@@ -364,32 +293,32 @@ public class ApiController {
                         }
                     }
 
-                    Outcome outcome = event.getEiffelEvents().get(FINISHED).getData().getOutcome();
-                    if (outcome.getVerdict() != null) {
-                        if (outcome.getVerdict().equals("PASSED")) {
-                            group = PLOT_GROUP_FILL_PASS;
-                        } else if (outcome.getVerdict().equals("FAILED")) {
-                            group = PLOT_GROUP_FILL_FAIL;
-                        }
-                        // else stay 0
-                    } else if (outcome.getConclusion() != null) {
-                        switch (outcome.getConclusion()) {
-                            case "SUCCESSFUL":
+                    if (event.getEiffelEvents().containsKey(FINISHED)) {
+                        Outcome outcome = event.getEiffelEvents().get(FINISHED).getData().getOutcome();
+                        if (outcome.getVerdict() != null) {
+                            if (outcome.getVerdict().equals("PASSED")) {
                                 group = PLOT_GROUP_FILL_PASS;
-                                break;
-                            case "INCONCLUSIVE":
-                                group = PLOT_GROUP_FILL_INCONCLUSIVE;
-                                break;
-                            default:
+                            } else if (outcome.getVerdict().equals("FAILED")) {
                                 group = PLOT_GROUP_FILL_FAIL;
-                                break;
+                            }
+                            // else stay 0
+                        } else if (outcome.getConclusion() != null) {
+                            switch (outcome.getConclusion()) {
+                                case "SUCCESSFUL":
+                                    group = PLOT_GROUP_FILL_PASS;
+                                    break;
+                                case "INCONCLUSIVE":
+                                    group = PLOT_GROUP_FILL_INCONCLUSIVE;
+                                    break;
+                                default:
+                                    group = PLOT_GROUP_FILL_FAIL;
+                                    break;
+                            }
+                        }
+                        if (outcome.getConclusion() != null) {
+                            label = outcome.getConclusion();
                         }
                     }
-                    if (outcome.getConclusion() != null) {
-                        label = outcome.getConclusion();
-                    }
-
-
                     break;
                 case "EiffelConfidenceLevelModifiedEvent":
 
@@ -434,7 +363,7 @@ public class ApiController {
         items.add(new Item(timeLast, 0, PLOT_GROUP_FILL_PASS, null));
         items.add(new Item(timeLast, 0, PLOT_GROUP_FILL_FAIL, null));
 
-        return new Plot(items, timeFirst, timeLast, valueMin, valueMax);
+        return new Plot(items, timeFirst - 1000, timeLast + 1000, valueMin, valueMax);
     }
 
     @RequestMapping(value = "/api/eventChainGraph", produces = "application/json; charset=UTF-8")
