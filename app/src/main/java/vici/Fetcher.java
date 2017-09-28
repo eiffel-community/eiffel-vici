@@ -27,17 +27,16 @@ public class Fetcher {
     public static final String ACTIVITY = "Activity";
     public static final String TEST_SUITE = "TestSuite";
 
-    private static HashMap<String, EventCache> eventCaches = new HashMap<>();
-    private static long cacheLifetime = 86400000;
+    private static HashMap<String, EventCache> eventCaches = new HashMap<>(); // TODO: a job that removes very old caches
 
     public Fetcher() {
     }
 
 
-    public Events getEvents(String url) {
-        if (eventCaches.containsKey(url)) {
+    public Events getEvents(String url, boolean useCache, long cacheLifetimeMs) {
+        if (useCache && eventCaches.containsKey(url)) {
             EventCache eventCache = eventCaches.get(url);
-            if (eventCache.getLastUpdate() > System.currentTimeMillis() - cacheLifetime) {
+            if (eventCache.getLastUpdate() > System.currentTimeMillis() - cacheLifetimeMs) {
                 return eventCache.getEvents();
             }
         }

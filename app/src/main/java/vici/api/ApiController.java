@@ -107,10 +107,14 @@ public class ApiController {
             case TEST_CASE:
             case ACTIVITY:
             case TEST_SUITE:
-                Outcome outcome = event.getEiffelEvents().get(FINISHED).getData().getOutcome();
-                if (outcome.getConclusion() != null) {
+
+                Outcome outcome = null;
+                if (event.getEiffelEvents().containsKey(FINISHED)) {
+                    outcome = event.getEiffelEvents().get(FINISHED).getData().getOutcome();
+                }
+                if (outcome != null && outcome.getConclusion() != null) {
                     node.getData().increaseQuantity(outcome.getConclusion());
-                } else if (outcome.getVerdict() != null) {
+                } else if (outcome != null && outcome.getVerdict() != null) {
                     if (outcome.getVerdict().equals("PASSED")) {
                         node.getData().increaseQuantity("SUCCESSFUL");
                     } else {
@@ -137,7 +141,7 @@ public class ApiController {
 //        System.out.println(jsonObject.toString());
 
         Fetcher fetcher = new Fetcher();
-        Events eventsObject = fetcher.getEvents(settings.getSystem().getUrl());
+        Events eventsObject = fetcher.getEvents(settings.getSystem().getUrl(), settings.getSystem().isUseCache(), settings.getGeneral().getCacheLifetimeMs());
         HashMap<String, Event> events = eventsObject.getEvents();
 
         ArrayList<Element> elements = new ArrayList<>();
@@ -199,7 +203,7 @@ public class ApiController {
     public Source detailedEvents(@RequestBody Settings settings, @RequestParam(value = "name", defaultValue = "") String name) {
 
         Fetcher fetcher = new Fetcher();
-        Events eventsObject = fetcher.getEvents(settings.getSystem().getUrl());
+        Events eventsObject = fetcher.getEvents(settings.getSystem().getUrl(), settings.getSystem().isUseCache(), settings.getGeneral().getCacheLifetimeMs());
         HashMap<String, Event> events = eventsObject.getEvents();
 
         ArrayList<HashMap<String, String>> data = new ArrayList<>();
@@ -308,7 +312,7 @@ public class ApiController {
         System.out.println(name);
 
         Fetcher fetcher = new Fetcher();
-        Events eventsObject = fetcher.getEvents(settings.getSystem().getUrl());
+        Events eventsObject = fetcher.getEvents(settings.getSystem().getUrl(), settings.getSystem().isUseCache(), settings.getGeneral().getCacheLifetimeMs());
         HashMap<String, Event> events = eventsObject.getEvents();
 
         ArrayList<Event> eventsList = new ArrayList<>();
@@ -324,7 +328,6 @@ public class ApiController {
             return null;
         }
 
-//        eventsList.sort((o1, o2) -> (int) (o1.getTimes().get(TRIGGERED) - o2.getTimes().get(TRIGGERED)));
         eventsList.sort(Comparator.comparingLong(o -> o.getTimes().get(TRIGGERED)));
 
         ArrayList<Item> items = new ArrayList<>();
@@ -442,7 +445,7 @@ public class ApiController {
         }
 
         Fetcher fetcher = new Fetcher();
-        Events eventsObject = fetcher.getEvents(settings.getSystem().getUrl());
+        Events eventsObject = fetcher.getEvents(settings.getSystem().getUrl(), settings.getSystem().isUseCache(), settings.getGeneral().getCacheLifetimeMs());
         HashMap<String, Event> events = eventsObject.getEvents();
 
         if (!events.containsKey(id)) {

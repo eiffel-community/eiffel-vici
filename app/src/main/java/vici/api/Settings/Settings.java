@@ -2,6 +2,7 @@ package vici.api.Settings;
 
 public class Settings {
     private System system;
+    private General general;
     private Aggregation aggregation;
     private Details details;
     private EventChain eventChain;
@@ -16,6 +17,14 @@ public class Settings {
 
     public void setSystem(System system) {
         this.system = system;
+    }
+
+    public General getGeneral() {
+        return general;
+    }
+
+    public void setGeneral(General general) {
+        this.general = general;
     }
 
     public Aggregation getAggregation() {

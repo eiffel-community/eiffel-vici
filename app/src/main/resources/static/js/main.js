@@ -1,6 +1,7 @@
 let contentGlobal = undefined;
 let settingsElement = undefined;
 let cache = {};
+let currentStage = undefined;
 
 // FORMATTING
 function formatTime(long) {
@@ -57,9 +58,10 @@ function getCurrentSettings() {
         system: {
             name: settingsElement.system.val(),
             url: systems[settingsElement.system.val()],
+            useCache: true,
         },
         general: {
-            timeStoreCache: parseInt(settingsElement.cacheKeepTime.val()),
+            cacheLifetimeMs: parseInt(settingsElement.cacheKeepTime.val()),
         },
         aggregation: {},
         details: {
@@ -161,6 +163,7 @@ function getContentElements() {
         detailsPlot: $('#details_plot_container'),
         cyEventChain: $('#event_chain'),
         loader: $('#loader_overlay'),
+        systemForceUpdateButton: $('#button_system_force_fetch'),
         detailsToggle: $('#details_toggle'),
         alertModal: $('#alertModal'),
         alertModalContent: $('#alertModalContent'),
@@ -174,6 +177,7 @@ function getContentElements() {
         },
         menu: {
             aggregation: $('#menu_aggregation'),
+            systemForceUpdate: $('#menu_system_force_fetch'),
             details: $('#menu_details'),
             detailsToggle: $('#menu_details_toggle'),
             eventChain: $('#menu_eventChain'),
@@ -274,8 +278,11 @@ function populateExternalLegend(groups, graph2d) {
     }
 }
 
-function load(stage) {
+function load(stage, useCache) {
     let settings = getCurrentSettings();
+    if (useCache === false) {
+        settings.system.useCache = false;
+    }
 
     contentGlobal.loader.show();
     // $("#side-menu").find("a").removeClass("active");
@@ -283,6 +290,7 @@ function load(stage) {
 
     let systemUrl = settings.system.url;
 
+    currentStage = stage;
     setMenuActive(settings);
     contentGlobal.menu.detailsToggle.hide();
     _.defer(function () {
@@ -292,7 +300,7 @@ function load(stage) {
 
         if (stage === 'aggregation') {
             contentGlobal.containers.aggregation.show();
-            if (usableCache('aggregation', systemUrl, settings.general.timeStoreCache) === true) {
+            if (usableCache('aggregation', systemUrl, settings.general.cacheLifetimeMs) === true && useCache !== false) {
                 console.log('Using cache for system ' + systemUrl);
                 contentGlobal.loader.hide();
             } else {
@@ -306,6 +314,7 @@ function load(stage) {
                         success: function (data) {
                             renderCytoscape(contentGlobal.cyAggregation, data, settings, undefined);
                             storeCache('aggregation', systemUrl);
+                            contentGlobal.menu.systemForceUpdate.show();
                         },
                         error: function (jqXHR, textStatus, errorThrown) {
                             showModal('<p>Wops! I could not fetch data from the given url :( check that the event repository server is running and the correct url is given in the settings.</p><div class="alert alert-danger" role="alert">' + jqXHR.responseText + '</div>');
@@ -313,6 +322,7 @@ function load(stage) {
                             disableMenuLevel(0);
                             renderCytoscape(contentGlobal.cyAggregation, undefined, settings, undefined);
                             storeCache('aggregation', systemUrl);
+                            contentGlobal.menu.systemForceUpdate.hide();
                         },
                         complete: function (jqXHR, textStatus) {
                             console.log(jqXHR);
@@ -333,7 +343,7 @@ function load(stage) {
                 contentGlobal.detailsTable.show();
                 contentGlobal.detailsPlot.hide();
 
-                if (usableCache('detailsTable', systemUrl + detailsTarget, settings.general.timeStoreCache)) {
+                if (usableCache('detailsTable', systemUrl + detailsTarget, settings.general.cacheLifetimeMs) && useCache !== false) {
                     console.log('Using cache for ' + detailsTarget + ' from system ' + systemUrl);
                     contentGlobal.loader.hide();
                 } else {
@@ -393,7 +403,7 @@ function load(stage) {
                 contentGlobal.detailsTable.hide();
                 contentGlobal.detailsPlot.show();
 
-                if (usableCache('detailsPlot', systemUrl + detailsTarget, settings.general.timeStoreCache)) {
+                if (usableCache('detailsPlot', systemUrl + detailsTarget, settings.general.cacheLifetimeMs) && useCache !== false) {
                     console.log('Using cache for ' + detailsTarget + ' from system ' + systemUrl);
                     contentGlobal.loader.hide();
                 } else {
@@ -508,7 +518,7 @@ function load(stage) {
         } else if (stage === 'eventChain') {
             contentGlobal.containers.eventChain.show();
             let eventTarget = settings.eventChain.target;
-            if (usableCache('eventChain', systemUrl + eventTarget, settings.general.timeStoreCache)) {
+            if (usableCache('eventChain', systemUrl + eventTarget, settings.general.cacheLifetimeMs) && useCache !== false) {
                 console.log('Using cache for ' + eventTarget + ' from system ' + systemUrl);
                 contentGlobal.loader.hide();
             } else {
@@ -919,21 +929,32 @@ function renderCytoscape(container, data, settings, target) {
 $(document).ready(function () {
     settingsElement = getElementsSettings();
     setSettingsDefault(settingsElement);
-    newSystem('Local events.json dummy file', 'localFile[reference-data-set]');
-    newSystem('Eiffel-event-repository dummy', 'http://127.0.0.1:8081/reference-data-set');
-    newSystem('Docker eiffel-event-repository dummy', 'http://dummy-er:8081/reference-data-set');
+    newSystem('Local dummy file', 'localFile[reference-data-set]');
+    newSystem('ER dummy', 'http://127.0.0.1:8081/reference-data-set');
+    newSystem('Docker ER dummy', 'http://dummy-er:8081/reference-data-set');
+    newSystem('ER dummy live', 'http://127.0.0.1:8081/live[reference-data-set]');
     contentGlobal = getContentElements();
 
     contentGlobal.loader.hide();
 
     contentGlobal.detailsToggle.bootstrapToggle('on');
     contentGlobal.menu.detailsToggle.hide();
+    contentGlobal.menu.systemForceUpdate.hide();
 
 
     // MENU
     $('.list-group-item-action').on('click', function () {
         // e.preventDefault();
         load($(this).data('value'));
+    });
+
+    contentGlobal.systemForceUpdateButton.click(function () {
+        console.log("force update");
+
+        if (currentStage !== undefined) {
+            invalidateCache();
+            load(currentStage, false);
+        }
     });
 
     contentGlobal.detailsToggle.change(function () {
