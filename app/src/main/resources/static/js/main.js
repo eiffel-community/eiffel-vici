@@ -330,8 +330,8 @@ function load(stage, useCache) {
                             contentGlobal.menu.systemForceUpdate.hide();
                         },
                         complete: function (jqXHR, textStatus) {
-                            console.log(jqXHR);
-                            console.log(textStatus);
+                            // console.log(jqXHR);
+                            // console.log(textStatus);
                             contentGlobal.loader.hide();
                         }
                     });
@@ -360,6 +360,8 @@ function load(stage, useCache) {
                             url: "/api/detailedEvents?name=" + detailsTarget,
                             data: JSON.stringify(settings),
                             success: function (data) {
+                                console.log(data);
+
                                 if (contentGlobal.datatableDetails !== undefined) {
                                     contentGlobal.datatableDetails.destroy();
                                     contentGlobal.datatableDetailsContainer.empty();
@@ -964,11 +966,13 @@ function renderCytoscape(container, data, settings, target) {
 }
 
 $(document).ready(function () {
+    // Datatables errors now prints in console instead of alert
+    $.fn.dataTableExt.sErrMode = 'throw';
+
     settingsElement = getElementsSettings();
     setSettingsDefault(settingsElement);
 
     generateStatusImages();
-    console.log(statusImages);
 
     newSystem('Local dummy file', 'localFile[reference-data-set]');
     newSystem('ER dummy', 'http://127.0.0.1:8081/reference-data-set');
