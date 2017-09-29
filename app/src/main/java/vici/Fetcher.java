@@ -104,8 +104,8 @@ public class Fetcher {
         return null;
     }
 
-    public Events getEvents(String url, boolean useCache, long cacheLifetimeMs) {
-        if (useCache && eventCaches.containsKey(url)) {
+    public Events getEvents(String url, long cacheLifetimeMs) {
+        if (eventCaches.containsKey(url)) {
             EventCache eventCache = eventCaches.get(url);
             if (eventCache.getLastUpdate() > System.currentTimeMillis() - cacheLifetimeMs) {
                 return eventCache.getEvents();
@@ -120,6 +120,8 @@ public class Fetcher {
 
         Pattern pattern = Pattern.compile("^localFile\\[(.+)]$");
         Matcher matcher = pattern.matcher(url.trim());
+
+        long eventsFetchedAt = System.currentTimeMillis();
 
         if (matcher.find()) {
             System.out.println("Request for local file " + matcher.group(1) + ".json");
@@ -293,8 +295,8 @@ public class Fetcher {
             }
         }
 
-        Events eventsObject = new Events(events, timeStart, timeEnd);
-        eventCaches.put(url, new EventCache(eventsObject));
+        Events eventsObject = new Events(events, timeStart, timeEnd, eventsFetchedAt);
+        eventCaches.put(url, new EventCache(eventsObject, eventsFetchedAt));
 
         System.out.println("Events imported.");
         return eventsObject;

@@ -25,6 +25,7 @@
     <!-- JavaScript imports -->
 
     <script th:src="@{/js/jquery/jquery-3.2.1.min.js}"></script>
+    <script th:src="@{/js/jquery/jquery.timeago.js}"></script>
     <script th:src="@{/js/underscore/underscore-min.js}"></script>
 
     <script th:src="@{/js/bootstrap/bootstrap.min.js}"></script>
@@ -71,6 +72,7 @@
     </div>
 
     <article>
+        <!-- Content containers -->
         <div id="loader_overlay" class="overlay">
             <div id="loader" class="loader"></div>
         </div>
@@ -99,9 +101,10 @@
         </div>
 
         <div id="live_wrapper" class="content-container">
-            <div id="live" class="content-container cy"></div>
+            <div id="live_chain" class="content-container cy"></div>
         </div>
 
+        <!-- Setting page -->
         <div id="settings" class="content-container non-cy">
             <div class="container settings-container">
                 <div class="row">
@@ -114,7 +117,7 @@
                             <h3>General</h3>
 
                             <div class="input-group settings-row">
-                                <span class="input-group-addon">Time to keep caches</span>
+                                <span class="input-group-addon">Time to keep caches (ms)</span>
                                 <input id="cacheKeepTime" type="number" class="form-control"
                                        placeholder="Positive integer"/>
                             </div>
@@ -182,7 +185,17 @@
                         </div>
 
                         <div id="settings-live">
-                            <h3>Live</h3>
+                            <h4>Live</h4>
+                            <div class="input-group settings-row">
+                                <span class="input-group-addon">Number of base events (latest)</span>
+                                <input id="setting_live_amount_starting_event" type="number" class="form-control"
+                                       placeholder="Positive integer"/>
+                            </div>
+                            <div class="input-group settings-row">
+                                <span class="input-group-addon">Time between updates (ms)</span>
+                                <input id="setting_live_time_between_updates" type="number" class="form-control"
+                                       placeholder="Positive integer"/>
+                            </div>
                         </div>
 
                     </div>
@@ -190,6 +203,7 @@
             </div>
         </div>
 
+        <!-- Information and help page -->
         <div id=" help" class="content-container non-cy">
 
             <h2>Information</h2>
@@ -314,20 +328,22 @@
             <h3>Technical</h3>
             This section contains technical information about the application.
             <h4>Source</h4>
-            <!--<a target="_blank" href="https://github.com/Ericsson/eiffel-vici">Git repository</a>-->
+            <a target="_blank" href="https://github.com/Ericsson/eiffel-vici">Git repository</a>
             <h4>Contact</h4>
             <p>jonathan.wahlund@ericsson.com</p>
         </div>
     </article>
 
+    <!-- Navigation sidebar -->
     <nav>
-
         <div class="list-group" id="side-menu">
             <select class="selectpicker" title="Choose a system" id="systemSelect"
                     data-style="list-group-item"></select>
 
             <a id="menu_system_force_fetch" class="list-group-item ">
-                <button id="button_system_force_fetch" type="button" class="btn btn-default">Update data</button>
+                Events collected
+                <time id="data_updated_timeago" class="timeago"></time>
+                <button id="button_system_force_fetch" type="button" class="btn btn-default">Update events</button>
             </a>
 
             <a href="#" id="menu_aggregation" data-value="aggregation" class="list-group-item list-group-item-action">Aggregation</a>
@@ -349,7 +365,7 @@
                 chain
                 <span id="menu-eventChain-extra" class="menu-item-extra"></span></a>
             <a href="#" id="menu_live" data-value="live"
-               class="list-group-item list-group-item-action">Live</a>
+               class="list-group-item list-group-item-action">Event chain live stream</a>
             <a href="#" id="menu_settings" data-value="settings"
                class="list-group-item list-group-item-action"><span class="glyphicon glyphicon-cog"
                                                                     aria-hidden="true"></span></a>

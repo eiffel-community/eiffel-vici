@@ -8,6 +8,9 @@ let cache = {};
 let currentStage = undefined;
 let statusImages = undefined;
 
+let liveFetch = undefined;
+let lastLiveFetch = undefined;
+
 // FORMATTING
 function formatTime(long) {
     return moment(long).format('YYYY-MM-DD, HH:mm:ss:SSS');
@@ -32,8 +35,12 @@ function getElementsSettings() {
         maxConnections: $('#maxConnections'),
         relativeXAxis: $('#relativeXAxis'),
 
+        liveStartingEvents: $('#setting_live_amount_starting_event'),
+        liveTimeInterval: $('#setting_live_time_between_updates'),
+
         system: $('#systemSelect'),
-        systems: $('#systemsSettings'),
+        systems:
+            $('#systemsSettings'),
     };
 }
 
@@ -45,6 +52,9 @@ function setSettingsDefault(settingsElement) {
     settingsElement.steps.val(5);
     settingsElement.maxConnections.val(16);
     settingsElement.relativeXAxis.prop('checked', false).change();
+
+    settingsElement.liveStartingEvents.val(2);
+    settingsElement.liveTimeInterval.val(2000);
 
     settingsElement.systems.html('');
 
@@ -63,7 +73,6 @@ function getCurrentSettings() {
         system: {
             name: settingsElement.system.val(),
             url: systems[settingsElement.system.val()],
-            useCache: true,
         },
         general: {
             cacheLifetimeMs: parseInt(settingsElement.cacheKeepTime.val()),
@@ -83,7 +92,10 @@ function getCurrentSettings() {
                 "PREVIOUS_VERSION",
             ]
         },
-        live: {}
+        live: {
+            startingEvents: settingsElement.liveStartingEvents.val(),
+            timeInterval: settingsElement.liveTimeInterval.val(),
+        }
     };
 }
 
@@ -167,6 +179,7 @@ function getContentElements() {
         detailsTable: $('#details_table'),
         detailsPlot: $('#details_plot_container'),
         cyEventChain: $('#event_chain'),
+        cyLiveEventChain: $('#live_chain'),
         loader: $('#loader_overlay'),
         systemForceUpdateButton: $('#button_system_force_fetch'),
         detailsToggle: $('#details_toggle'),
@@ -187,6 +200,9 @@ function getContentElements() {
             detailsToggle: $('#menu_details_toggle'),
             eventChain: $('#menu_eventChain'),
             live: $('#menu_live'),
+        },
+        timeago: {
+            dataUpdated: $('time#data_updated_timeago'),
         }
     }
         ;
@@ -203,13 +219,13 @@ function disableMenuLevel(level) {
     }
     switch (level) {
         case 4:
-            contentGlobal.menu.live.removeClass('disabled');
         case 3:
             contentGlobal.menu.eventChain.removeClass('disabled');
         case 2:
             contentGlobal.menu.details.removeClass('disabled');
         case 1:
             contentGlobal.menu.aggregation.removeClass('disabled');
+            contentGlobal.menu.live.removeClass('disabled');
         default:
             break;
     }
@@ -283,21 +299,30 @@ function populateExternalLegend(groups, graph2d) {
     }
 }
 
+function updateEventsCollectedTime(lastDataCollectedAt) {
+    contentGlobal.timeago.dataUpdated.timeago("update", new Date(lastDataCollectedAt));
+}
+
 function load(stage, useCache) {
     let settings = getCurrentSettings();
     if (useCache === false) {
-        settings.system.useCache = false;
+        invalidateCache();
+        settings.general.cacheLifetimeMs = 0;
     }
 
-    contentGlobal.loader.show();
-    // $("#side-menu").find("a").removeClass("active");
-    // $('#menu_' + stage).addClass('active');
-
     let systemUrl = settings.system.url;
+
+    if (stage === 'live' && currentStage === 'live') {
+
+    } else {
+        contentGlobal.loader.show();
+    }
 
     currentStage = stage;
     setMenuActive(settings);
     contentGlobal.menu.detailsToggle.hide();
+
+    liveFetch = false;
     _.defer(function () {
         for (let container in contentGlobal.containers) {
             contentGlobal.containers[container].hide();
@@ -305,7 +330,7 @@ function load(stage, useCache) {
 
         if (stage === 'aggregation') {
             contentGlobal.containers.aggregation.show();
-            if (usableCache('aggregation', systemUrl, settings.general.cacheLifetimeMs) === true && useCache !== false) {
+            if (usableCache(stage, systemUrl, settings.general.cacheLifetimeMs) === true) {
                 console.log('Using cache for system ' + systemUrl);
                 contentGlobal.loader.hide();
             } else {
@@ -317,8 +342,11 @@ function load(stage, useCache) {
                         url: '/api/aggregationGraph',
                         data: JSON.stringify(settings),
                         success: function (data) {
-                            renderCytoscape(contentGlobal.cyAggregation, data, settings, undefined);
-                            storeCache('aggregation', systemUrl);
+                            let graphData = data.data;
+                            renderCytoscape(contentGlobal.cyAggregation, graphData, settings, undefined);
+                            storeCache(stage, systemUrl);
+                            /** @namespace data.timeCollected */
+                            updateEventsCollectedTime(data.timeCollected);
                             contentGlobal.menu.systemForceUpdate.show();
                         },
                         error: function (jqXHR, textStatus, errorThrown) {
@@ -326,7 +354,7 @@ function load(stage, useCache) {
                             resetSelections();
                             disableMenuLevel(0);
                             renderCytoscape(contentGlobal.cyAggregation, undefined, settings, undefined);
-                            storeCache('aggregation', systemUrl);
+                            storeCache(stage, systemUrl);
                             contentGlobal.menu.systemForceUpdate.hide();
                         },
                         complete: function (jqXHR, textStatus) {
@@ -348,7 +376,7 @@ function load(stage, useCache) {
                 contentGlobal.detailsTable.show();
                 contentGlobal.detailsPlot.hide();
 
-                if (usableCache('detailsTable', systemUrl + detailsTarget, settings.general.cacheLifetimeMs) && useCache !== false) {
+                if (usableCache('detailsTable', systemUrl + detailsTarget, settings.general.cacheLifetimeMs)) {
                     console.log('Using cache for ' + detailsTarget + ' from system ' + systemUrl);
                     contentGlobal.loader.hide();
                 } else {
@@ -360,13 +388,12 @@ function load(stage, useCache) {
                             url: "/api/detailedEvents?name=" + detailsTarget,
                             data: JSON.stringify(settings),
                             success: function (data) {
-                                console.log(data);
-
+                                let plotData = data.data;
                                 if (contentGlobal.datatableDetails !== undefined) {
                                     contentGlobal.datatableDetails.destroy();
                                     contentGlobal.datatableDetailsContainer.empty();
                                 }
-                                if (data.data.length !== 0) {
+                                if (plotData.data.length !== 0) {
 
                                     let preDefColumns = [
                                         {
@@ -377,8 +404,8 @@ function load(stage, useCache) {
                                     ];
                                     contentGlobal.datatableDetails = datatable = contentGlobal.datatableDetailsContainer.DataTable({
                                         destroy: true,
-                                        data: data.data,
-                                        columns: preDefColumns.concat(data.columns),
+                                        data: plotData.data,
+                                        columns: preDefColumns.concat(plotData.columns),
                                         scrollY: '80vh',
                                         scrollCollapse: true,
                                         lengthMenu: [[20, 200, -1], [20, 200, "All"]],
@@ -398,6 +425,8 @@ function load(stage, useCache) {
                                 } else {
                                     console.log("No data");
                                 }
+                                /** @namespace data.timeCollected */
+                                updateEventsCollectedTime(data.timeCollected);
                             },
                             complete: function () {
                                 contentGlobal.loader.hide();
@@ -410,7 +439,7 @@ function load(stage, useCache) {
                 contentGlobal.detailsTable.hide();
                 contentGlobal.detailsPlot.show();
 
-                if (usableCache('detailsPlot', systemUrl + detailsTarget, settings.general.cacheLifetimeMs) && useCache !== false) {
+                if (usableCache('detailsPlot', systemUrl + detailsTarget, settings.general.cacheLifetimeMs)) {
                     console.log('Using cache for ' + detailsTarget + ' from system ' + systemUrl);
                     contentGlobal.loader.hide();
                 } else {
@@ -422,8 +451,8 @@ function load(stage, useCache) {
                             url: "/api/detailedPlot?name=" + detailsTarget,
                             data: JSON.stringify(settings),
                             success: function (data) {
-                                console.log(data);
-                                if (data !== undefined && data.items.length !== 0) {
+                                let plotData = data.data;
+                                if (plotData !== undefined && plotData.items.length !== 0) {
                                     let groups = new vis.DataSet();
 
                                     groups.add({
@@ -474,7 +503,7 @@ function load(stage, useCache) {
                                     });
 
 
-                                    let dataset = new vis.DataSet(data.items);
+                                    let dataset = new vis.DataSet(plotData.items);
                                     let options = {
                                         sort: false,
                                         interpolation: false,
@@ -495,8 +524,8 @@ function load(stage, useCache) {
                                             }
                                         },
                                         // TODO: settings for default start
-                                        start: data.timeLast - 345600000,
-                                        end: data.timeLast,
+                                        start: plotData.timeLast - 345600000,
+                                        end: plotData.timeLast,
                                     };
 
                                     console.log(groups);
@@ -512,6 +541,8 @@ function load(stage, useCache) {
                                 } else {
                                     console.log("No data");
                                 }
+                                /** @namespace data.timeCollected */
+                                updateEventsCollectedTime(data.timeCollected);
                             },
                             complete: function () {
                                 contentGlobal.loader.hide();
@@ -525,7 +556,7 @@ function load(stage, useCache) {
         } else if (stage === 'eventChain') {
             contentGlobal.containers.eventChain.show();
             let eventTarget = settings.eventChain.target;
-            if (usableCache('eventChain', systemUrl + eventTarget, settings.general.cacheLifetimeMs) && useCache !== false) {
+            if (usableCache(stage, systemUrl + eventTarget, settings.general.cacheLifetimeMs)) {
                 console.log('Using cache for ' + eventTarget + ' from system ' + systemUrl);
                 contentGlobal.loader.hide();
             } else {
@@ -537,8 +568,11 @@ function load(stage, useCache) {
                         url: '/api/eventChainGraph?id=' + eventTarget,
                         data: JSON.stringify(settings),
                         success: function (data) {
-                            renderCytoscape(contentGlobal.cyEventChain, data.elements, settings, eventTarget);
-                            storeCache('eventChain', systemUrl + eventTarget);
+                            let graphData = data.data;
+                            renderCytoscape(contentGlobal.cyEventChain, graphData.elements, settings, eventTarget);
+                            storeCache(stage, systemUrl + eventTarget);
+                            /** @namespace data.timeCollected */
+                            updateEventsCollectedTime(data.timeCollected);
                         },
                         complete: function () {
                             contentGlobal.loader.hide();
@@ -547,8 +581,35 @@ function load(stage, useCache) {
                 });
             }
         } else if (stage === 'live') {
+            liveFetch = true;
             contentGlobal.containers.live.show();
-            contentGlobal.loader.hide();
+
+            if (!(lastLiveFetch === undefined || Date.now() - lastLiveFetch > settings.live.timeInterval) && usableCache(stage, systemUrl, settings.general.cacheLifetimeMs)) {
+                console.log('Using cache for live view from system ' + systemUrl);
+                contentGlobal.loader.hide();
+            } else {
+                _.defer(function () {
+                    $.ajax({
+                        type: "POST",
+                        contentType: 'application/json; charset=utf-8',
+                        dataType: 'json',
+                        url: '/api/liveEventChainGraph',
+                        data: JSON.stringify(settings),
+                        success: function (data) {
+                            console.log(data);
+                            let graphData = data.data;
+                            renderCytoscape(contentGlobal.cyLiveEventChain, graphData.elements, settings);
+                            storeCache(stage, systemUrl);
+                            /** @namespace data.timeCollected */
+                            updateEventsCollectedTime(data.timeCollected);
+                        },
+                        complete: function () {
+                            contentGlobal.loader.hide();
+                        }
+                    });
+                });
+                lastLiveFetch = Date.now();
+            }
         } else if (stage === 'settings') {
             contentGlobal.containers.settings.show();
             contentGlobal.loader.hide();
@@ -571,25 +632,18 @@ function generateStatusImages() {
     let canvas = document.createElement('canvas');
     canvas.width = 100;
     canvas.height = 1;
-
     let ctx = canvas.getContext('2d');
-
     statusImages = [];
-
     for (let pass = 0; pass <= 100; pass++) {
         statusImages[pass] = [];
         for (let fail = 0; fail + pass <= 100; fail++) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
             ctx.fillStyle = COLOR_PASS;
             ctx.fillRect(0, 0, pass, 1);
-
             ctx.fillStyle = COLOR_FAIL;
             ctx.fillRect(pass, 0, fail, 1);
-
             ctx.fillStyle = COLOR_UNDEFINED;
             ctx.fillRect(pass + fail, 0, (100 - (pass + fail)), 1);
-
             statusImages[pass][fail] = canvas.toDataURL('image/jpeg', 1.0);
         }
     }
@@ -792,10 +846,10 @@ function renderCytoscape(container, data, settings, target) {
                     if (ele.data().quantities.SUCCESSFUL === undefined) {
                         ele.data().quantities.SUCCESSFUL = 0;
                     }
-                    if (ele.data().quantities.UNSUCCESSFUL === undefined) {
-                        ele.data().quantities.UNSUCCESSFUL = 0;
+                    if (ele.data().quantities.FAILED === undefined) {
+                        ele.data().quantities.FAILED = 0;
                     }
-                    return statusImages[Math.floor((ele.data().quantities.SUCCESSFUL / ele.data().quantity) * 100)][Math.floor((ele.data().quantities.UNSUCCESSFUL / ele.data().quantity) * 100)]
+                    return statusImages[Math.floor((ele.data().quantities.SUCCESSFUL / ele.data().quantity) * 100)][Math.floor((ele.data().quantities.FAILED / ele.data().quantity) * 100)]
                 },
                 'background-height': '100%',
                 'background-width': '100%',
@@ -974,10 +1028,12 @@ $(document).ready(function () {
 
     generateStatusImages();
 
-    newSystem('Local dummy file', 'localFile[reference-data-set]');
-    newSystem('ER dummy', 'http://127.0.0.1:8081/reference-data-set');
-    newSystem('Docker ER dummy', 'http://dummy-er:8081/reference-data-set');
-    newSystem('ER dummy live', 'http://127.0.0.1:8081/live[reference-data-set]');
+    newSystem('Local static dummy file', 'localFile[reference-data-set]');
+    newSystem('EER static dummy file', 'http://127.0.0.1:8081/reference-data-set');
+    newSystem('EER [live] dummy event stream', 'http://127.0.0.1:8081/live[reference-data-set]');
+    newSystem('Docker EER static dummy file', 'http://dummy-er:8081/reference-data-set');
+    newSystem('Docker EER [live] dummy event stream', 'http://dummy-er:8081/live[reference-data-set]');
+
     contentGlobal = getContentElements();
 
     contentGlobal.loader.hide();
@@ -993,14 +1049,6 @@ $(document).ready(function () {
         load($(this).data('value'));
     });
 
-    contentGlobal.systemForceUpdateButton.click(function () {
-        console.log("force update");
-
-        if (currentStage !== undefined) {
-            invalidateCache();
-            load(currentStage, false);
-        }
-    });
 
     contentGlobal.detailsToggle.change(function () {
         _.defer(function () {
@@ -1041,11 +1089,28 @@ $(document).ready(function () {
         load('aggregation');
     });
 
+    contentGlobal.systemForceUpdateButton.click(function () {
+        if (currentStage !== undefined) {
+            load(currentStage, false);
+        }
+    });
+
     if (getCurrentSettings().system.url !== undefined) {
         _.defer(function () {
             load('aggregation');
         });
     }
     setMenuActive(getCurrentSettings());
+
+    jQuery("time.timeago").timeago();
+
+    let interval0 = window.setInterval(function () {
+        let settings = getCurrentSettings();
+        if (liveFetch === true) {
+            if (lastLiveFetch === undefined || Date.now() - lastLiveFetch > settings.live.timeInterval) {
+                load('live', false);
+            }
+        }
+    }, 1000);
 });
 
