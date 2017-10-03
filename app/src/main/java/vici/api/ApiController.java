@@ -5,7 +5,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import vici.Fetcher;
-import vici.api.Settings.Settings;
+import vici.api.entities.ReturnData;
+import vici.api.entities.settings.EiffelEventRepository;
+import vici.api.entities.settings.RepositorySettings;
+import vici.api.entities.settings.Settings;
 import vici.entities.ChildLink;
 import vici.entities.Cytoscape.*;
 import vici.entities.Eiffel.Outcome;
@@ -20,6 +23,7 @@ import vici.entities.Vis.Plot;
 import java.util.*;
 
 import static vici.Fetcher.*;
+import static vici.ViciApplication.settingsHandler;
 import static vici.entities.Event.*;
 
 @RestController
@@ -79,14 +83,39 @@ public class ApiController {
         return 0;
     }
 
+    @RequestMapping(value = "/api/saveSettings", produces = "application/json; charset=UTF-8")
+    public void saveSettings(@RequestBody Settings settings) {
+        settingsHandler.saveSettings(settings);
+    }
+
+    @RequestMapping(value = "/api/getSettings", produces = "application/json; charset=UTF-8")
+    public Settings getSettings() {
+        return settingsHandler.getSettings();
+    }
+
+    @RequestMapping(value = "/api/resetSettingsDefault", produces = "application/json; charset=UTF-8")
+    public Settings resetSettingsDefault() {
+        return settingsHandler.resetSettingsDefault();
+    }
+
+    @RequestMapping(value = "/api/getDefaultSettings", produces = "application/json; charset=UTF-8")
+    public Settings getDefaultSettings() {
+        return settingsHandler.getDefaultSettings();
+    }
+
+    @RequestMapping(value = "/api/getDefaultEiffelEventRepository", produces = "application/json; charset=UTF-8")
+    public EiffelEventRepository getDefaultEiffelEventRepository() {
+        return settingsHandler.getDefaultRepository();
+    }
+
     @RequestMapping(value = "/api/aggregationGraph", produces = "application/json; charset=UTF-8")
-    public ReturnData aggregationGraph(@RequestBody Settings settings) {
+    public ReturnData aggregationGraph(@RequestBody EiffelEventRepository eiffelEventRepository) {
 
 //        JSONObject jsonObject = new JSONObject(settings);
 //        System.out.println(jsonObject.toString());
 
         Fetcher fetcher = new Fetcher();
-        Events eventsObject = fetcher.getEvents(settings.getSystem().getUrl(), settings.getGeneral().getCacheLifetimeMs());
+        Events eventsObject = fetcher.getEvents(eiffelEventRepository.getUrl(), eiffelEventRepository.getRepositorySettings().getCacheLifeTimeMs());
         HashMap<String, Event> events = eventsObject.getEvents();
 
         ArrayList<Element> elements = new ArrayList<>();
@@ -144,10 +173,10 @@ public class ApiController {
     }
 
     @RequestMapping(value = "/api/detailedEvents", produces = "application/json; charset=UTF-8")
-    public ReturnData detailedEvents(@RequestBody Settings settings, @RequestParam(value = "name", defaultValue = "") String name) {
+    public ReturnData detailedEvents(@RequestBody EiffelEventRepository eiffelEventRepository) {
 
         Fetcher fetcher = new Fetcher();
-        Events eventsObject = fetcher.getEvents(settings.getSystem().getUrl(), settings.getGeneral().getCacheLifetimeMs());
+        Events eventsObject = fetcher.getEvents(eiffelEventRepository.getUrl(), eiffelEventRepository.getRepositorySettings().getCacheLifeTimeMs());
         HashMap<String, Event> events = eventsObject.getEvents();
 
         ArrayList<HashMap<String, String>> data = new ArrayList<>();
@@ -158,7 +187,7 @@ public class ApiController {
         for (String key : events.keySet()) {
             Event event = events.get(key);
             if (!event.getType().equals(REDIRECT)) {
-                if (event.getAggregateOn().equals(name)) {
+                if (event.getAggregateOn().equals(eiffelEventRepository.getRepositorySettings().getDetailsTargetId())) {
                     HashMap<String, String> row = new HashMap<>();
 
                     addColumn(row, columns, cSet, "id", event.getId());
@@ -253,12 +282,12 @@ public class ApiController {
     }
 
     @RequestMapping(value = "/api/detailedPlot", produces = "application/json; charset=UTF-8")
-    public ReturnData detailedPlot(@RequestBody Settings settings, @RequestParam(value = "name", defaultValue = "") String name) {
+    public ReturnData detailedPlot(@RequestBody EiffelEventRepository eiffelEventRepository, @RequestParam(value = "name", defaultValue = "") String name) {
 
         System.out.println(name);
 
         Fetcher fetcher = new Fetcher();
-        Events eventsObject = fetcher.getEvents(settings.getSystem().getUrl(), settings.getGeneral().getCacheLifetimeMs());
+        Events eventsObject = fetcher.getEvents(eiffelEventRepository.getUrl(), eiffelEventRepository.getRepositorySettings().getCacheLifeTimeMs());
         HashMap<String, Event> events = eventsObject.getEvents();
 
         ArrayList<Event> eventsList = new ArrayList<>();
@@ -383,20 +412,20 @@ public class ApiController {
         return new ReturnData(new Plot(items, timeFirst - 1000, timeLast + 1000, valueMin, valueMax), eventsObject.getTimeCollected());
     }
 
-    public Graph getChainGraph(Settings settings, ArrayList<Event> baseEvents, HashMap<String, Event> events) {
+    public Graph getChainGraph(RepositorySettings repositorySettings, ArrayList<Event> baseEvents, HashMap<String, Event> events) {
         Graph graph = new Graph();
 
         HashMap<String, Event> incEvents = new HashMap<>();
 
         for (Event baseEvent : baseEvents) {
-            step(settings, baseEvent, incEvents, events, settings.getEventChain().getSteps());
+            step(repositorySettings, baseEvent, incEvents, events, repositorySettings.getEventChainMaxSteps());
         }
 
         HashMap<String, Node> nodes = new HashMap<>();
         HashMap<String, Edge> edges = new HashMap<>();
 
         ArrayList<Node> nodesList = null;
-        if (settings.getEventChain().isRelativeXAxis()) {
+        if (repositorySettings.isEventChainTimeRelativeXAxis()) {
             nodesList = new ArrayList<>();
         }
 
@@ -424,7 +453,7 @@ public class ApiController {
                 graph.increaseInfo("nodeTypes", node.getData().getType());
                 setQuantities(node, event);
                 nodes.put(event.getId(), node);
-                if (settings.getEventChain().isRelativeXAxis()) {
+                if (repositorySettings.isEventChainTimeRelativeXAxis()) {
                     node.setPosition(new Position((int) (node.getData().getTimes().get(TRIGGERED) - graph.getTime().getStart()) / 1000, 0));
                     if (nodesList != null) {
                         nodesList.add(node);
@@ -437,13 +466,13 @@ public class ApiController {
         for (String key : incEvents.keySet()) {
             Event event = incEvents.get(key);
 
-            if (!event.getType().equals(REDIRECT) && event.getLinks().size() + event.getChildren().size() <= settings.getEventChain().getMaxConnections()) {
+            if (!event.getType().equals(REDIRECT) && event.getLinks().size() + event.getChildren().size() <= repositorySettings.getEventChainMaxConnections()) {
                 for (Link link : event.getLinks()) {
                     String target = getTarget(link.getTarget(), events);
                     if (!incEvents.containsKey(target)) {
                         Node node = new Node(new DataNode(target, "unknown", "unknown", null));
                         nodes.put(target, node);
-                        if (settings.getEventChain().isRelativeXAxis()) {
+                        if (repositorySettings.isEventChainTimeRelativeXAxis()) {
                             node.setPosition(new Position((int) (event.getTimes().get(TRIGGERED) - graph.getTime().getStart()) / 1000, 0));
                             nodesList.add(node);
                         }
@@ -464,7 +493,7 @@ public class ApiController {
                     if (!incEvents.containsKey(childId)) {
                         Node node = new Node(new DataNode(childId, "unknown", "unknown", null));
                         nodes.put(childId, node);
-                        if (settings.getEventChain().isRelativeXAxis()) {
+                        if (repositorySettings.isEventChainTimeRelativeXAxis()) {
                             node.setPosition(new Position((int) (event.getTimes().get(TRIGGERED) - graph.getTime().getStart()) / 1000, 0));
                             nodesList.add(node);
                         }
@@ -482,7 +511,7 @@ public class ApiController {
             }
         }
 
-        if (settings.getEventChain().isRelativeXAxis()) {
+        if (repositorySettings.isEventChainTimeRelativeXAxis()) {
             nodesList.sort(Comparator.comparingInt(o -> o.getPosition().getX()));
             HashMap<Integer, Integer> lastPositions = new HashMap<>();
 
@@ -520,36 +549,36 @@ public class ApiController {
         return graph;
     }
 
-    private void step(Settings settings, Event event, HashMap<String, Event> incEvents, HashMap<String, Event> events, int steps) {
+    private void step(RepositorySettings repositorySettings, Event event, HashMap<String, Event> incEvents, HashMap<String, Event> events, int steps) {
 
         incEvents.put(event.getId(), event);
-        if (event.getChildren().size() + event.getLinks().size() > settings.getEventChain().getMaxConnections()) {
+        if (event.getChildren().size() + event.getLinks().size() > repositorySettings.getEventChainMaxConnections()) {
             return;
         }
         if (steps <= 0) {
             return;
         }
-        if (settings.getEventChain().isDownStream()) {
+        if (repositorySettings.isEventChainGoDownStream()) {
             ArrayList<Link> links = event.getLinks();
             if (links != null) {
                 for (Link link : links) {
-                    if (!settings.getEventChain().getBannedLinks().contains(link.getType())) {
+                    if (!repositorySettings.getEventChainBannedLinks().contains(link.getType())) {
                         Event tmpEvent = events.get(getTarget(link.getTarget(), events));
                         int newSteps = steps - 1;
-                        step(settings, tmpEvent, incEvents, events, newSteps);
+                        step(repositorySettings, tmpEvent, incEvents, events, newSteps);
                     }
                 }
             }
         }
 
-        if (settings.getEventChain().isUpStream()) {
+        if (repositorySettings.isEventChainGoUpStream()) {
             ArrayList<ChildLink> children = event.getChildren();
             if (children != null) {
                 for (ChildLink child : children) {
-                    if (!settings.getEventChain().getBannedLinks().contains(child.getType())) {
+                    if (!repositorySettings.getEventChainBannedLinks().contains(child.getType())) {
                         Event tmpEvent = events.get(child.getChild());
                         int newSteps = steps - 1;
-                        step(settings, tmpEvent, incEvents, events, newSteps);
+                        step(repositorySettings, tmpEvent, incEvents, events, newSteps);
                     }
                 }
             }
@@ -568,32 +597,32 @@ public class ApiController {
     }
 
     @RequestMapping(value = "/api/eventChainGraph", produces = "application/json; charset=UTF-8")
-    public ReturnData eventChainGraph(@RequestBody Settings settings, @RequestParam(value = "id", defaultValue = "") String id) {
-        if (id.equals("")) {
+    public ReturnData eventChainGraph(@RequestBody EiffelEventRepository eiffelEventRepository) {
+        if (eiffelEventRepository.getRepositorySettings().getEventChainTargetId().equals("")) {
             return new ReturnData(new Graph());
         }
 
         Fetcher fetcher = new Fetcher();
-        Events eventsObject = fetcher.getEvents(settings.getSystem().getUrl(), settings.getGeneral().getCacheLifetimeMs());
+        Events eventsObject = fetcher.getEvents(eiffelEventRepository.getUrl(), eiffelEventRepository.getRepositorySettings().getCacheLifeTimeMs());
         HashMap<String, Event> events = eventsObject.getEvents();
 
-        if (!events.containsKey(id)) {
+        if (!events.containsKey(eiffelEventRepository.getRepositorySettings().getEventChainTargetId())) {
             return new ReturnData(new Graph(), eventsObject.getTimeCollected());
         }
 
-        Event mainEvent = events.get(id);
+        Event mainEvent = events.get(eiffelEventRepository.getRepositorySettings().getEventChainTargetId());
         ArrayList<Event> baseEvents = new ArrayList<>();
         baseEvents.add(mainEvent);
 
-        return new ReturnData(getChainGraph(settings, baseEvents, events), eventsObject.getTimeCollected());
+        return new ReturnData(getChainGraph(eiffelEventRepository.getRepositorySettings(), baseEvents, events), eventsObject.getTimeCollected());
     }
 
     @RequestMapping(value = "/api/liveEventChainGraph", produces = "application/json; charset=UTF-8")
-    public ReturnData liveEventChainGraph(@RequestBody Settings settings) {
+    public ReturnData liveEventChainGraph(@RequestBody EiffelEventRepository eiffelEventRepository) {
 
         Fetcher fetcher = new Fetcher();
         // TODO: fetch ony base events based on time added
-        Events eventsObject = fetcher.getEvents(settings.getSystem().getUrl(), settings.getGeneral().getCacheLifetimeMs());
+        Events eventsObject = fetcher.getEvents(eiffelEventRepository.getUrl(), eiffelEventRepository.getRepositorySettings().getCacheLifeTimeMs());
         HashMap<String, Event> events = eventsObject.getEvents();
 
         Collection<Event> eventsCollection = events.values();
@@ -605,7 +634,7 @@ public class ApiController {
 
         int i = eventsList.size() - 1;
         int count = 0;
-        while (count < settings.getLive().getStartingEvents() && i >= 0) {
+        while (count < eiffelEventRepository.getRepositorySettings().getStreamBaseEvents() && i >= 0) {
             Event tmpEvent = eventsList.get(i);
             if (!tmpEvent.getType().equals(REDIRECT)) {
                 baseEvents.add(tmpEvent);
@@ -614,6 +643,6 @@ public class ApiController {
             i--;
         }
 
-        return new ReturnData(getChainGraph(settings, baseEvents, events), eventsObject.getTimeCollected());
+        return new ReturnData(getChainGraph(eiffelEventRepository.getRepositorySettings(), baseEvents, events), eventsObject.getTimeCollected());
     }
 }

@@ -5,7 +5,6 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 
     <!-- Style Sheets -->
-
     <link rel="stylesheet" media="screen" th:href="@{/styles/bootstrap/bootstrap.min.css}"/>
     <link rel="stylesheet" media="screen" th:href="@{/styles/bootstrap/bootstrap-theme.min.css}"/>
     <link rel="stylesheet" media="screen" th:href="@{/styles/bootstrap/bootstrap-toggle.min.css}"/>
@@ -23,7 +22,6 @@
     <link rel="stylesheet" media="screen" th:href="@{/styles/main.css}"/>
 
     <!-- JavaScript imports -->
-
     <script th:src="@{/js/jquery/jquery-3.2.1.min.js}"></script>
     <script th:src="@{/js/jquery/jquery.timeago.js}"></script>
     <script th:src="@{/js/underscore/underscore-min.js}"></script>
@@ -113,6 +111,35 @@
                         <h2>Settings</h2>
                         When changing a setting, all caches relative to that settings will be invalidated automatically.
 
+                        <div class="settings-row">
+                            <button class="btn btn-default" type="button" data-toggle="collapse"
+                                    data-target="#systemCollapse" aria-expanded="false">
+                                Manage systems <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+                            </button>
+                        </div>
+                        <div class="collapse" id="systemCollapse">
+                            <div id="systemsSettings">
+
+                            </div>
+                            <button id="btnNewSystem" type="button" class="btn btn-success"><span
+                                    class="glyphicon glyphicon-plus"
+                                    aria-hidden="true"></span></button>
+                        </div>
+
+                        <select class="selectpicker" title="Choose a system to manage" id="settingsSystemSelect"
+                                data-style="list-group-item"></select>
+
+                        <div id="settings_content"></div>
+
+
+
+
+
+
+
+
+
+
                         <div id="settings-general">
                             <h3>General</h3>
 
@@ -122,21 +149,9 @@
                                        placeholder="Positive integer"/>
                             </div>
 
-                            <div class="settings-row">
-                                <button class="btn btn-default" type="button" data-toggle="collapse"
-                                        data-target="#systemCollapse" aria-expanded="false">
-                                    Manage systems <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
-                                </button>
-                            </div>
-                            <div class="collapse" id="systemCollapse">
-                                <div id="systemsSettings">
 
-                                </div>
-                                <button id="btnNewSystem" type="button" class="btn btn-success"><span
-                                        class="glyphicon glyphicon-plus"
-                                        aria-hidden="true"></span></button>
-                            </div>
                         </div>
+
 
                         <div id="settings-aggregation">
                             <h3>Aggregation</h3>

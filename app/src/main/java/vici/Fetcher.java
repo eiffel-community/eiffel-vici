@@ -8,7 +8,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
-import vici.api.query.Query;
+import vici.api.entities.Query;
 import vici.entities.*;
 import vici.entities.Eiffel.CustomData;
 import vici.entities.Eiffel.EiffelEvent;

@@ -142,7 +142,7 @@ li.active {
 }
 
 .panel {
-    margin-bottom: 0;
+    margin-bottom: 4px;
 }
 
 .bootstrap-select {

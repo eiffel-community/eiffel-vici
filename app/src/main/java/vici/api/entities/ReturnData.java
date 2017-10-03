@@ -1,4 +1,4 @@
-package vici.api;
+package vici.api.entities;
 
 public class ReturnData {
     private Object data;

@@ -38,10 +38,127 @@ function getElementsSettings() {
         liveStartingEvents: $('#setting_live_amount_starting_event'),
         liveTimeInterval: $('#setting_live_time_between_updates'),
 
+        settingsContent: $('#settings_content'),
         system: $('#systemSelect'),
+        systemSettingsSelect: $('#settingsSystemSelect'),
         systems:
             $('#systemsSettings'),
     };
+}
+
+function generateEiffelEventRepositorySettingsContent(eiffelEventRepository) {
+    let content = '<div id="eiffelEventRepositorySettings[' + eiffelEventRepository.id + ']">';
+
+    content += '';
+
+    content += '</div>';
+
+    console.log(content);
+    return content;
+}
+
+function removeSystemWithID(id) {
+    console.log(id);
+}
+
+function addSystemToUI(eiffelEventRepository) {
+    if (eiffelEventRepository.name === undefined) {
+        eiffelEventRepository.name = '';
+    }
+    if (eiffelEventRepository.url === undefined) {
+        eiffelEventRepository.url = '';
+    }
+
+    // let count = _.size(getCurrentSettings().systems);
+
+    settingsElement.systems.append(
+        '<div class="panel panel-default">' +
+        '<div class="input-group">' +
+        '<span class="input-group-addon">Name</span>' +
+
+        '<input id="systemName[' + eiffelEventRepository.id + ']"  class="form-control" ' +
+
+        'placeholder="My system" value="' + eiffelEventRepository.name + '"/>' +
+        '</div>' +
+        '<div class="input-group">' +
+        '<span class="input-group-addon">URL</span>' +
+        '<input id="systemUrl[' + eiffelEventRepository.id + ']"  class="form-control systemsUrlInput" ' +
+
+        'placeholder="http://127.0.0.1:8080/events.json" value="' + eiffelEventRepository.url + '"/>' +
+        '</div>' +
+        '<span class="input-group-addon"><button id="btnRemoveSystem[' + eiffelEventRepository.id + ']" type="button" class="btn btn-danger"><span\n' +
+        '                                    class="glyphicon glyphicon-minus"\n' +
+        '                                    aria-hidden="true"></span></button></span>' +
+        '</div>'
+    );
+
+    $('#btnRemoveSystem[' + eiffelEventRepository.id + ']').click(function () {
+        console.log("tatagfa");
+        removeSystemWithID(eiffelEventRepository.id);
+    });
+
+    settingsElement.settingsContent.append(generateEiffelEventRepositorySettingsContent(eiffelEventRepository));
+
+    $('#systemsSettings').find('input').change(function () {
+        updateSystemSelector();
+    });
+    updateSystemSelector();
+}
+
+function newSystem(eiffelEventRepository) {
+    if (eiffelEventRepository === undefined) {
+        contentGlobal.loader.show();
+        $.ajax({
+            type: "POST",
+            contentType: 'application/json; charset=utf-8',
+            dataType: 'json',
+            url: '/api/getDefaultEiffelEventRepository',
+            // async: false, // NOT asyncronous
+            success: function (data) {
+                addSystemToUI(data);
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                showModal('<p>Could not fetch a new repository from server, something is wrong, check that server is running or check server log.</p><div class="alert alert-danger" role="alert">' + jqXHR.responseText + '</div>');
+            },
+            complete: function (jqXHR, textStatus) {
+                contentGlobal.loader.hide();
+            }
+        });
+    } else {
+        addSystemToUI(eiffelEventRepository);
+    }
+}
+
+
+function getSettingsFromServer() {
+    contentGlobal.loader.show();
+
+    _.defer(function () {
+        $.ajax({
+            type: "POST",
+            contentType: 'application/json; charset=utf-8',
+            dataType: 'json',
+            url: '/api/getSettings',
+            // data: JSON.stringify(settings),
+            success: function (data) {
+                console.log(data);
+                /** @namespace data.eiffelEventRepositories */
+                data.eiffelEventRepositories.forEach(function (eiffelEventRepository) {
+                    newSystem(eiffelEventRepository);
+                });
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                showModal('<p>Could not fetch settings from server, something is wrong, check that server is running or check server log.</p><div class="alert alert-danger" role="alert">' + jqXHR.responseText + '</div>');
+            },
+            complete: function (jqXHR, textStatus) {
+                contentGlobal.loader.hide();
+            }
+        });
+    });
+}
+
+function saveSettings() {
+
 }
 
 function setSettingsDefault(settingsElement) {
@@ -101,11 +218,14 @@ function getCurrentSettings() {
 
 function updateSystemSelector() {
     settingsElement.system.html('');
+    settingsElement.systemSettingsSelect.html('');
     let settings = getCurrentSettings();
     for (let key in settings.systems) {
         settingsElement.system.append('<option>' + key + '</option>');
+        settingsElement.systemSettingsSelect.append('<option>' + key + '</option>');
     }
     settingsElement.system.selectpicker('refresh');
+    settingsElement.systemSettingsSelect.selectpicker('refresh');
 }
 
 
@@ -114,36 +234,6 @@ function resetSelections() {
     settingsElement.detailsTarget.html("");
 }
 
-function newSystem(name, url) {
-    if (name === undefined) {
-        name = '';
-    }
-    if (url === undefined) {
-        url = '';
-    }
-    let count = _.size(getCurrentSettings().systems);
-    settingsElement.systems.append(
-        '<div class="panel panel-default">' +
-        '<div class="input-group">' +
-        '<span class="input-group-addon">Name</span>' +
-
-        '<input id="systemName[' + count + ']"  class="form-control" ' +
-
-        'placeholder="My system" value="' + name + '"/>' +
-        '</div>' +
-        '<div class="input-group">' +
-        '<span class="input-group-addon">URL</span>' +
-        '<input id="systemUrl[' + count + ']"  class="form-control systemsUrlInput" ' +
-
-        'placeholder="http://127.0.0.1:8080/events.json" value="' + url + '"/>' +
-        '</div>' +
-        '</div>'
-    );
-    $('#systemsSettings').find('input').change(function () {
-        updateSystemSelector();
-    });
-    updateSystemSelector();
-}
 
 // CACHE
 function usableCache(cacheName, value, timeValid) {
@@ -385,7 +475,7 @@ function load(stage, useCache) {
                             type: "POST",
                             contentType: 'application/json; charset=utf-8',
                             dataType: 'json',
-                            url: "/api/detailedEvents?name=" + detailsTarget,
+                            url: "/api/detailedEvents",
                             data: JSON.stringify(settings),
                             success: function (data) {
                                 let plotData = data.data;
@@ -448,7 +538,7 @@ function load(stage, useCache) {
                             type: "POST",
                             contentType: 'application/json; charset=utf-8',
                             dataType: 'json',
-                            url: "/api/detailedPlot?name=" + detailsTarget,
+                            url: "/api/detailedPlot",
                             data: JSON.stringify(settings),
                             success: function (data) {
                                 let plotData = data.data;
@@ -565,7 +655,7 @@ function load(stage, useCache) {
                         type: "POST",
                         contentType: 'application/json; charset=utf-8',
                         dataType: 'json',
-                        url: '/api/eventChainGraph?id=' + eventTarget,
+                        url: '/api/eventChainGraph',
                         data: JSON.stringify(settings),
                         success: function (data) {
                             let graphData = data.data;
@@ -1023,17 +1113,6 @@ $(document).ready(function () {
     // Datatables errors now prints in console instead of alert
     $.fn.dataTableExt.sErrMode = 'throw';
 
-    settingsElement = getElementsSettings();
-    setSettingsDefault(settingsElement);
-
-    generateStatusImages();
-
-    newSystem('Local static dummy file', 'localFile[reference-data-set]');
-    newSystem('EER static dummy file', 'http://127.0.0.1:8081/reference-data-set');
-    newSystem('EER [live] dummy event stream', 'http://127.0.0.1:8081/live[reference-data-set]');
-    newSystem('Docker EER static dummy file', 'http://dummy-er:8081/reference-data-set');
-    newSystem('Docker EER [live] dummy event stream', 'http://dummy-er:8081/live[reference-data-set]');
-
     contentGlobal = getContentElements();
 
     contentGlobal.loader.hide();
@@ -1041,6 +1120,19 @@ $(document).ready(function () {
     contentGlobal.detailsToggle.bootstrapToggle('on');
     contentGlobal.menu.detailsToggle.hide();
     contentGlobal.menu.systemForceUpdate.hide();
+
+    getSettingsFromServer();
+
+    settingsElement = getElementsSettings();
+    setSettingsDefault(settingsElement);
+
+    generateStatusImages();
+
+    // newSystem('Local static dummy file', 'localFile[reference-data-set]');
+    // newSystem('EER static dummy file', 'http://127.0.0.1:8081/reference-data-set');
+    // newSystem('EER [live] dummy event stream', 'http://127.0.0.1:8081/live[reference-data-set]');
+    // newSystem('Docker EER static dummy file', 'http://dummy-er:8081/reference-data-set');
+    // newSystem('Docker EER [live] dummy event stream', 'http://dummy-er:8081/live[reference-data-set]');
 
 
     // MENU
@@ -1087,6 +1179,12 @@ $(document).ready(function () {
         resetSelections();
         disableMenuLevel(0);
         load('aggregation');
+        settingsElement.systemSettingsSelect.selectpicker('val', settingsElement.system.val());
+
+    });
+
+    settingsElement.system.on('changed.bs.select', function () {
+
     });
 
     contentGlobal.systemForceUpdateButton.click(function () {

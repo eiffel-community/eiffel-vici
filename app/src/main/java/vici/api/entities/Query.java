@@ -1,4 +1,4 @@
-package vici.api.query;
+package vici.api.entities;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
