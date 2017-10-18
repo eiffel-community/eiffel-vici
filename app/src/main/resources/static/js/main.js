@@ -180,11 +180,11 @@ function addSystemToUI(eiffelEventRepository) {
     setCurrentSettingsForEiffelEventRepository(eiffelEventRepository);
 
     // Applying functions
-    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_name').find('input').change(function () {
+    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_name').change(function () {
         updateSystemSelector();
     });
 
-    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_url').find('input').change(function () {
+    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_url').change(function () {
         invalidateCache();
     });
 
@@ -291,6 +291,7 @@ function setCurrentSettingsForEiffelEventRepository(eiffelEventRepository) {
 
 function getCurrentSettingsForId(repositoryLocalId) {
     return {
+        id: repositoryLocalId,
         name: $('#eiffelEventRepository\\[' + repositoryLocalId + '\\]_name').val(),
         url: $('#eiffelEventRepository\\[' + repositoryLocalId + '\\]_url').val(),
         repositorySettings: {
@@ -344,14 +345,11 @@ function getCurrentSettings() {
 
 function updateSystemSelector() {
     settingsElement.system.html('');
-    settingsElement.systemSettingsSelect.html('');
     let settings = getCurrentSettings();
     for (let key in settings.eiffelEventRepositories) {
         settingsElement.system.append('<option>' + key + '</option>');
-        settingsElement.systemSettingsSelect.append('<option>' + key + '</option>');
     }
     settingsElement.system.selectpicker('refresh');
-    settingsElement.systemSettingsSelect.selectpicker('refresh');
 }
 
 
@@ -505,7 +503,6 @@ function populateExternalLegend(groups, graph2d) {
         toggle.change(function () {
             // _.defer(function () {
 
-            console.log(i + ' ' + $(this).prop('checked'));
             groups.update({id: i, visible: $(this).prop('checked')});
 
             // });
@@ -822,6 +819,7 @@ function load(stage, useCache) {
                 lastLiveFetch = Date.now();
             }
         } else if (stage === STAGE_SETTINGS) {
+            settingsSelectRepository(repository);
             contentGlobal.containers.settings.show();
             contentGlobal.loader.hide();
         } else if (stage === STAGE_HELP) {
@@ -1230,6 +1228,16 @@ function renderCytoscape(container, data, repositorySettings, target) {
     cy.minZoom(0.1); //same setting as panzoom for Krav 2
 }
 
+function settingsSelectRepository(repository) {
+    $('#settings_content').children().hide();
+    if (repository === undefined) {
+        $('#settings_currentEiffelEventRepositoryHeader').html('Choose a repository to modify in the side menu');
+    } else {
+        $('#settings_currentEiffelEventRepositoryHeader').html(repository.name);
+        $('#eiffelEventRepositorySettings\\[' + repository.id + '\\]').show();
+    }
+}
+
 // This will run then DOM is completely loaded
 $(document).ready(function () {
     // Datatables errors now prints in console instead of alert
@@ -1268,17 +1276,19 @@ $(document).ready(function () {
         newSystem();
     });
 
+
     settingsElement.system.on('changed.bs.select', function () {
         resetSelections();
         disableMenuLevel(0);
         if (currentStage === STAGE_SETTINGS) {
-
+            let settings = getCurrentSettings();
+            settingsSelectRepository(settings.eiffelEventRepositories[settings.selectedEiffelEventRepository.name]);
+            setMenuActive(settings);
         } else {
             load(STAGE_AGGREGATION);
         }
 
         settingsElement.systemSettingsSelect.selectpicker('val', settingsElement.system.val());
-
     });
 
     settingsElement.system.on('changed.bs.select', function () {
