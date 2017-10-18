@@ -9,10 +9,14 @@ public class EiffelEventRepository {
     public EiffelEventRepository() {
     }
 
-    public EiffelEventRepository(String name, String url) {
+    public EiffelEventRepository(String name, String url, RepositorySettings repositorySettings) {
         this.name = name;
         this.url = url;
-        this.repositorySettings = new RepositorySettings();
+        if (repositorySettings == null) {
+            this.repositorySettings = new RepositorySettings();
+        } else {
+            this.repositorySettings = repositorySettings;
+        }
     }
 
     public String getName() {

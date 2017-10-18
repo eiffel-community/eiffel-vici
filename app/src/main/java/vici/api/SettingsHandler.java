@@ -67,6 +67,6 @@ public class SettingsHandler {
     }
 
     public EiffelEventRepository getDefaultRepository() {
-        return new EiffelEventRepository();
+        return new EiffelEventRepository(null, null, null);
     }
 }

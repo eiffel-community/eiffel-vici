@@ -1,7 +1,18 @@
+// Constants
 const COLOR_PASS = '#22b14c';
 const COLOR_FAIL = '#af0020';
 const COLOR_UNDEFINED = '#666';
 
+const STAGE_AGGREGATION = 'aggregation';
+const STAGE_DETAILS = 'details';
+const STAGE_DETAILS_TABLE = 'details_table';
+const STAGE_DETAILS_PLOT = 'details_plot';
+const STAGE_EVENTCHAIN = 'eventChain';
+const STAGE_LIVE = 'live';
+const STAGE_SETTINGS = 'settings';
+const STAGE_HELP = 'help';
+
+// Global variables
 let contentGlobal = undefined;
 let settingsElement = undefined;
 let cache = {};
@@ -42,7 +53,6 @@ function getElementsSettings() {
 }
 
 function removeSystemWithID(id) {
-    console.log('removing ' + id);
     $('#eiffelEventRepository\\[' + id + '\\]_panel').remove();
     $('#eiffelEventRepositorySettings\\[' + id + '\\]').remove();
 
@@ -78,8 +88,6 @@ function addSystemToUI(eiffelEventRepository) {
     if (eiffelEventRepository.url === undefined) {
         eiffelEventRepository.url = '';
     }
-
-    // let count = _.size(getCurrentSettings().systems);
 
     // Adding the system panel in manage systems
     settingsElement.systems.append(
@@ -172,9 +180,36 @@ function addSystemToUI(eiffelEventRepository) {
     setCurrentSettingsForEiffelEventRepository(eiffelEventRepository);
 
     // Applying functions
-    $('#systemsSettings').find('input').change(function () {
+    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_name').find('input').change(function () {
         updateSystemSelector();
     });
+
+    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_url').find('input').change(function () {
+        invalidateCache();
+    });
+
+    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_settingsGeneral').find('input').change(function () {
+        invalidateCache();
+    });
+
+    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_settingsAggregation').find('input').change(function () {
+        invalidateCache(STAGE_AGGREGATION);
+    });
+
+    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_settingsDetails').find('input').change(function () {
+        invalidateCache(STAGE_DETAILS_TABLE);
+        invalidateCache(STAGE_DETAILS_PLOT);
+    });
+
+    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_settingsEventChain').find('input').change(function () {
+        invalidateCache(STAGE_EVENTCHAIN);
+    });
+
+    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_settingsLive').find('input').change(function () {
+        invalidateCache(STAGE_LIVE);
+    });
+
+    // Refresh
     updateSystemSelector();
 
     return eiffelEventRepository;
@@ -216,7 +251,6 @@ function getSettingsFromServer() {
             url: '/api/getSettings',
             // data: JSON.stringify(settings),
             success: function (data) {
-                console.log(data);
                 /** @namespace data.eiffelEventRepositories */
                 data.eiffelEventRepositories.forEach(function (eiffelEventRepository) {
                     newSystem(eiffelEventRepository);
@@ -234,23 +268,6 @@ function getSettingsFromServer() {
 
 function saveSettings() {
 
-}
-
-function setSettingsDefault(settingsElement) {
-    settingsElement.cacheKeepTime.val(86400000);
-
-    settingsElement.upStream.prop('checked', true).change();
-    settingsElement.downStream.prop('checked', true).change();
-    settingsElement.steps.val(5);
-    settingsElement.maxConnections.val(16);
-    settingsElement.relativeXAxis.prop('checked', false).change();
-
-    settingsElement.liveStartingEvents.val(2);
-    settingsElement.liveTimeInterval.val(2000);
-
-    settingsElement.systems.html('');
-
-    settingsElement.system.selectpicker('val', undefined);
 }
 
 function setCurrentSettingsForEiffelEventRepository(eiffelEventRepository) {
@@ -352,7 +369,7 @@ function usableCache(cacheName, value, timeValid) {
 function storeCache(cacheName, value) {
     cache[cacheName] = {
         value: value,
-        time: Date.now()
+        time: Date.now(),
     };
     console.log('Stored cache for ' + cacheName);
 }
@@ -457,7 +474,6 @@ function populateExternalLegend(groups, graph2d) {
 
     let legendContainer = $('#details_plot_legend');
 
-    console.log(groupsData);
 
     // get for all groups:
     for (let i = 0; i < groupsData.length; i++) {
@@ -467,7 +483,6 @@ function populateExternalLegend(groups, graph2d) {
 
         // get the legend for this group.
         let legend = graph2d.getLegend(groupsData[i].id, 30, 30);
-        console.log(legend);
 
         // append class to icon. All styling classes from the vis.css/vis-timeline-graph2d.min.css have been copied over into the head here to be able to style the
         // icons with the same classes if they are using the default ones.
@@ -507,11 +522,11 @@ function load(stage, useCache) {
     let repository = settings.eiffelEventRepositories[settings.selectedEiffelEventRepository.name];
 
     if (useCache === false) {
-        invalidateCache();
-        repository.repositorySettings.cacheLifetimeMs = 0;
+        // invalidateCache();
+        repository.repositorySettings.cacheLifeTimeMs = -1;
     }
 
-    if (stage === 'live' && currentStage === 'live') {
+    if (stage === STAGE_LIVE && currentStage === STAGE_LIVE) {
 
     } else {
         contentGlobal.loader.show();
@@ -527,9 +542,9 @@ function load(stage, useCache) {
             contentGlobal.containers[container].hide();
         }
 
-        if (stage === 'aggregation') {
+        if (stage === STAGE_AGGREGATION) {
             contentGlobal.containers.aggregation.show();
-            if (usableCache(stage, repository.url, repository.repositorySettings.cacheLifetimeMs) === true) {
+            if (usableCache(stage, repository.url, repository.repositorySettings.cacheLifeTimeMs) === true) {
                 console.log('Using cache for system ' + repository.url);
                 contentGlobal.loader.hide();
             } else {
@@ -564,7 +579,7 @@ function load(stage, useCache) {
                     });
                 });
             }
-        } else if (stage === 'details') {
+        } else if (stage === STAGE_DETAILS) {
             contentGlobal.menu.detailsToggle.show();
             contentGlobal.containers.details.show();
 
@@ -575,7 +590,7 @@ function load(stage, useCache) {
                 contentGlobal.detailsTable.show();
                 contentGlobal.detailsPlot.hide();
 
-                if (usableCache('detailsTable', repository.url + detailsTarget, repository.repositorySettings.cacheLifetimeMs)) {
+                if (usableCache('detailsTable', repository.url + detailsTarget, repository.repositorySettings.cacheLifeTimeMs)) {
                     console.log('Using cache for ' + detailsTarget + ' from system ' + repository.url);
                     contentGlobal.loader.hide();
                 } else {
@@ -638,7 +653,7 @@ function load(stage, useCache) {
                 contentGlobal.detailsTable.hide();
                 contentGlobal.detailsPlot.show();
 
-                if (usableCache('detailsPlot', repository.url + detailsTarget, repository.repositorySettings.cacheLifetimeMs)) {
+                if (usableCache('detailsPlot', repository.url + detailsTarget, repository.repositorySettings.cacheLifeTimeMs)) {
                     console.log('Using cache for ' + detailsTarget + ' from system ' + repository.url);
                     contentGlobal.loader.hide();
                 } else {
@@ -750,12 +765,10 @@ function load(stage, useCache) {
                     });
                 }
             }
-
-
-        } else if (stage === 'eventChain') {
+        } else if (stage === STAGE_EVENTCHAIN) {
             contentGlobal.containers.eventChain.show();
             let eventTarget = repository.repositorySettings.eventChainTargetId;
-            if (usableCache(stage, repository.url + eventTarget, repository.repositorySettings.cacheLifetimeMs)) {
+            if (usableCache(stage, repository.url + eventTarget, repository.repositorySettings.cacheLifeTimeMs)) {
                 console.log('Using cache for ' + eventTarget + ' from system ' + repository.url);
                 contentGlobal.loader.hide();
             } else {
@@ -779,11 +792,11 @@ function load(stage, useCache) {
                     });
                 });
             }
-        } else if (stage === 'live') {
+        } else if (stage === STAGE_LIVE) {
             liveFetch = true;
             contentGlobal.containers.live.show();
 
-            if (!(lastLiveFetch === undefined || Date.now() - lastLiveFetch > repository.repositorySettings.streamRefreshIntervalMs) && usableCache(stage, systemUrl, settings.general.cacheLifetimeMs)) {
+            if (!(lastLiveFetch === undefined || Date.now() - lastLiveFetch > repository.repositorySettings.streamRefreshIntervalMs) && usableCache(stage, repository.url, repository.repositorySettings.cacheLifeTimeMs)) {
                 console.log('Using cache for live view from system ' + repository.url);
                 contentGlobal.loader.hide();
             } else {
@@ -795,7 +808,6 @@ function load(stage, useCache) {
                         url: '/api/liveEventChainGraph',
                         data: JSON.stringify(repository),
                         success: function (data) {
-                            console.log(data);
                             let graphData = data.data;
                             renderCytoscape(contentGlobal.cyLiveEventChain, graphData.elements, repository);
                             storeCache(stage, repository.url);
@@ -809,10 +821,10 @@ function load(stage, useCache) {
                 });
                 lastLiveFetch = Date.now();
             }
-        } else if (stage === 'settings') {
+        } else if (stage === STAGE_SETTINGS) {
             contentGlobal.containers.settings.show();
             contentGlobal.loader.hide();
-        } else if (stage === 'help') {
+        } else if (stage === STAGE_HELP) {
             contentGlobal.containers.help.show();
             contentGlobal.loader.hide();
         } else {
@@ -1218,6 +1230,7 @@ function renderCytoscape(container, data, repositorySettings, target) {
     cy.minZoom(0.1); //same setting as panzoom for Krav 2
 }
 
+// This will run then DOM is completely loaded
 $(document).ready(function () {
     // Datatables errors now prints in console instead of alert
     $.fn.dataTableExt.sErrMode = 'throw';
@@ -1233,27 +1246,19 @@ $(document).ready(function () {
     getSettingsFromServer();
 
     settingsElement = getElementsSettings();
-    setSettingsDefault(settingsElement);
 
     generateStatusImages();
 
-    // newSystem('Local static dummy file', 'localFile[reference-data-set]');
-    // newSystem('EER static dummy file', 'http://127.0.0.1:8081/reference-data-set');
-    // newSystem('EER [live] dummy event stream', 'http://127.0.0.1:8081/live[reference-data-set]');
-    // newSystem('Docker EER static dummy file', 'http://dummy-er:8081/reference-data-set');
-    // newSystem('Docker EER [live] dummy event stream', 'http://dummy-er:8081/live[reference-data-set]');
-
-
     // MENU
+
     $('.list-group-item-action').on('click', function () {
         // e.preventDefault();
         load($(this).data('value'));
     });
 
-
     contentGlobal.detailsToggle.change(function () {
         _.defer(function () {
-            load("details");
+            load(STAGE_DETAILS);
         });
     });
 
@@ -1263,31 +1268,15 @@ $(document).ready(function () {
         newSystem();
     });
 
-    // TODO
-    // $('#systemsUrlInput').change(function () {
-    //     invalidateCache();
-    // });
-
-    $('#settings-aggregation').find('input').change(function () {
-        invalidateCache('aggregation');
-    });
-
-    $('#settings-details').find('input').change(function () {
-        invalidateCache('detailsTable');
-    });
-
-    $('#settings-eventChain').find('input').change(function () {
-        invalidateCache('eventChain');
-    });
-
-    $('#settings-live').find('input').change(function () {
-        invalidateCache('live');
-    });
-
     settingsElement.system.on('changed.bs.select', function () {
         resetSelections();
         disableMenuLevel(0);
-        load('aggregation');
+        if (currentStage === STAGE_SETTINGS) {
+
+        } else {
+            load(STAGE_AGGREGATION);
+        }
+
         settingsElement.systemSettingsSelect.selectpicker('val', settingsElement.system.val());
 
     });
@@ -1298,13 +1287,14 @@ $(document).ready(function () {
 
     contentGlobal.systemForceUpdateButton.click(function () {
         if (currentStage !== undefined) {
+            invalidateCache();
             load(currentStage, false);
         }
     });
 
     if (getCurrentSettings().selectedEiffelEventRepository.url !== undefined) {
         _.defer(function () {
-            load('aggregation');
+            load(STAGE_AGGREGATION);
         });
     }
     setMenuActive(getCurrentSettings());

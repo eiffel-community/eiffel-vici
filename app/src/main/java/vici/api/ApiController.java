@@ -104,7 +104,6 @@ public class ApiController {
 
     @RequestMapping(value = "/api/getDefaultEiffelEventRepository", produces = "application/json; charset=UTF-8")
     public EiffelEventRepository getDefaultEiffelEventRepository() {
-        System.out.println("default");
         return settingsHandler.getDefaultRepository();
     }
 
