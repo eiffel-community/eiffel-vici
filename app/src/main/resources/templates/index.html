@@ -117,6 +117,7 @@
                                 Manage systems <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
                             </button>
                         </div>
+
                         <div class="collapse" id="systemCollapse">
                             <div id="systemsSettings">
 
@@ -126,93 +127,8 @@
                                     aria-hidden="true"></span></button>
                         </div>
 
-                        <select class="selectpicker" title="Choose a system to manage" id="settingsSystemSelect"
-                                data-style="list-group-item"></select>
 
                         <div id="settings_content"></div>
-
-
-
-
-
-
-
-
-
-
-                        <div id="settings-general">
-                            <h3>General</h3>
-
-                            <div class="input-group settings-row">
-                                <span class="input-group-addon">Time to keep caches (ms)</span>
-                                <input id="cacheKeepTime" type="number" class="form-control"
-                                       placeholder="Positive integer"/>
-                            </div>
-
-
-                        </div>
-
-
-                        <div id="settings-aggregation">
-                            <h3>Aggregation</h3>
-                        </div>
-
-                        <div id="settings-details">
-                            <h3>Details</h3>
-                        </div>
-
-                        <div id="settings-eventChain">
-
-                            <h3>Event Chain</h3>
-
-                            <div class="input-group settings-row">
-                                <span class="input-group-addon">Maximum jumps</span>
-                                <input id="steps" type="number" class="form-control" placeholder="Positive integer"/>
-                            </div>
-                            <div class="input-group settings-row">
-                                <span class="input-group-addon">Maximum connections/node</span>
-                                <input id="maxConnections" type="number" class="form-control"
-                                       placeholder="Positive integer"/>
-                            </div>
-
-                            <div class="input-group settings-row">
-                                <label class="checkbox-inline">
-                                    <input type="checkbox" data-toggle="toggle" id="upStream"/> Follow links <b>up</b>
-                                    stream
-                                </label>
-                            </div>
-
-                            <div class="input-group settings-row">
-                                <label class="checkbox-inline">
-                                    <input type="checkbox" data-toggle="toggle" id="downStream"/> Follow links
-                                    <b>down</b>
-                                    stream
-                                </label>
-                            </div>
-
-                            <div class="input-group settings-row">
-                                <label class="checkbox-inline">
-                                    <input type="checkbox" data-toggle="toggle" id="relativeXAxis"/> Node x-position
-                                    defined
-                                    by actual timestamp
-                                </label>
-                            </div>
-                        </div>
-
-                        <div id="settings-live">
-                            <h4>Live</h4>
-                            <div class="input-group settings-row">
-                                <span class="input-group-addon">Number of base events (latest)</span>
-                                <input id="setting_live_amount_starting_event" type="number" class="form-control"
-                                       placeholder="Positive integer"/>
-                            </div>
-                            <div class="input-group settings-row">
-                                <span class="input-group-addon">Time between updates (ms)</span>
-                                <input id="setting_live_time_between_updates" type="number" class="form-control"
-                                       placeholder="Positive integer"/>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
             </div>

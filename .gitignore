@@ -81,3 +81,6 @@ fabric.properties
 
 # -- CUSTOM
 !/app/src/main/resources/static/reference-data-set.zip
+/app/src/main/resources/static/reference-data-set.json
+/settings.json
+

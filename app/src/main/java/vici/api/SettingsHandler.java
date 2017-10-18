@@ -12,16 +12,19 @@ import java.io.IOException;
 
 public class SettingsHandler {
     private static final String propertiesFileName = "settings.json";
-    private int safeId;
+    private static final String propertiesVersion = "1.0";
 
     public SettingsHandler() {
-        resetSettingsDefault();
-
-        safeId = getSettings().getEiffelEventRepositories().size();
+        Settings settings = getSettings();
+        if (settings == null) {
+            resetSettingsDefault();
+        } else if (settings.getVersion() == null || !settings.getVersion().equals(propertiesVersion)) {
+            resetSettingsDefault();
+        }
     }
 
     public Settings getDefaultSettings() {
-        return new Settings();
+        return new Settings(propertiesVersion);
     }
 
     public void saveSettings(Settings settings) {
@@ -64,12 +67,6 @@ public class SettingsHandler {
     }
 
     public EiffelEventRepository getDefaultRepository() {
-        return new EiffelEventRepository(getNextUniqueId());
-    }
-
-    public int getNextUniqueId() {
-        int tmp = safeId;
-        safeId++;
-        return tmp;
+        return new EiffelEventRepository();
     }
 }

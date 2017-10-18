@@ -2,7 +2,6 @@ package vici.api;
 
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import vici.Fetcher;
 import vici.api.entities.ReturnData;
@@ -105,6 +104,7 @@ public class ApiController {
 
     @RequestMapping(value = "/api/getDefaultEiffelEventRepository", produces = "application/json; charset=UTF-8")
     public EiffelEventRepository getDefaultEiffelEventRepository() {
+        System.out.println("default");
         return settingsHandler.getDefaultRepository();
     }
 
@@ -282,9 +282,9 @@ public class ApiController {
     }
 
     @RequestMapping(value = "/api/detailedPlot", produces = "application/json; charset=UTF-8")
-    public ReturnData detailedPlot(@RequestBody EiffelEventRepository eiffelEventRepository, @RequestParam(value = "name", defaultValue = "") String name) {
+    public ReturnData detailedPlot(@RequestBody EiffelEventRepository eiffelEventRepository) {
 
-        System.out.println(name);
+//        System.out.println(name);
 
         Fetcher fetcher = new Fetcher();
         Events eventsObject = fetcher.getEvents(eiffelEventRepository.getUrl(), eiffelEventRepository.getRepositorySettings().getCacheLifeTimeMs());
@@ -293,7 +293,7 @@ public class ApiController {
         ArrayList<Event> eventsList = new ArrayList<>();
         for (Event event : events.values()) {
             if (!event.getType().equals(REDIRECT)) {
-                if (event.getAggregateOn().equals(name)) {
+                if (event.getAggregateOn().equals(eiffelEventRepository.getRepositorySettings().getDetailsTargetId())) {
                     eventsList.add(event);
                 }
             }
@@ -621,7 +621,7 @@ public class ApiController {
     public ReturnData liveEventChainGraph(@RequestBody EiffelEventRepository eiffelEventRepository) {
 
         Fetcher fetcher = new Fetcher();
-        // TODO: fetch ony base events based on time added
+        // TODO: fetch only base events based on time added
         Events eventsObject = fetcher.getEvents(eiffelEventRepository.getUrl(), eiffelEventRepository.getRepositorySettings().getCacheLifeTimeMs());
         HashMap<String, Event> events = eventsObject.getEvents();
 

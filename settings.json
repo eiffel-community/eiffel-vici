@@ -1,6 +1,6 @@
 {
+  "version" : "1.0",
   "eiffelEventRepositories" : [ {
-    "id" : 0,
     "name" : "Local static dummy file",
     "url" : "localFile[reference-data-set]",
     "repositorySettings" : {
@@ -17,7 +17,6 @@
       "streamRefreshIntervalMs" : 2000
     }
   }, {
-    "id" : 1,
     "name" : "EER static dummy file",
     "url" : "http://127.0.0.1:8081/reference-data-set",
     "repositorySettings" : {
@@ -34,7 +33,6 @@
       "streamRefreshIntervalMs" : 2000
     }
   }, {
-    "id" : 2,
     "name" : "EER [live] dummy event stream",
     "url" : "http://127.0.0.1:8081/live[reference-data-set]",
     "repositorySettings" : {
@@ -51,7 +49,6 @@
       "streamRefreshIntervalMs" : 2000
     }
   }, {
-    "id" : 3,
     "name" : "Docker EER static dummy file",
     "url" : "http://dummy-er:8081/reference-data-set",
     "repositorySettings" : {
@@ -68,7 +65,6 @@
       "streamRefreshIntervalMs" : 2000
     }
   }, {
-    "id" : 4,
     "name" : "Docker EER [live] dummy event stream",
     "url" : "http://dummy-er:8081/live[reference-data-set]",
     "repositorySettings" : {
