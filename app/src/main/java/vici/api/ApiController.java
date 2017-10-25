@@ -322,7 +322,7 @@ public class ApiController {
 
             long x = event.getTimes().get(TRIGGERED);
             int y = 1; // for event types without an execution time
-            int group = PLOT_GROUP_FILL_INCONCLUSIVE; // Inconclusive 
+            int group = PLOT_GROUP_FILL_INCONCLUSIVE; // Inconclusive
             String label = null;
 
             switch (event.getType()) {
