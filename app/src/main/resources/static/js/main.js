@@ -13,6 +13,8 @@ const STAGE_SETTINGS = 'settings';
 const STAGE_HELP = 'help';
 
 // Global variables
+let isFetching = false;
+
 let contentGlobal = undefined;
 let settingsElement = undefined;
 let cache = {};
@@ -218,6 +220,7 @@ function addSystemToUI(eiffelEventRepository) {
 function newSystem(eiffelEventRepository) {
     if (eiffelEventRepository === undefined) {
         contentGlobal.loader.show();
+
         $.ajax({
             type: "POST",
             contentType: 'application/json; charset=utf-8',
@@ -798,23 +801,27 @@ function load(stage, useCache) {
                 contentGlobal.loader.hide();
             } else {
                 _.defer(function () {
-                    $.ajax({
-                        type: "POST",
-                        contentType: 'application/json; charset=utf-8',
-                        dataType: 'json',
-                        url: '/api/liveEventChainGraph',
-                        data: JSON.stringify(repository),
-                        success: function (data) {
-                            let graphData = data.data;
-                            renderCytoscape(contentGlobal.cyLiveEventChain, graphData.elements, repository);
-                            storeCache(stage, repository.url);
-                            /** @namespace data.timeCollected */
-                            updateEventsCollectedTime(data.timeCollected);
-                        },
-                        complete: function () {
-                            contentGlobal.loader.hide();
-                        }
-                    });
+                    if (!isFetching) {
+                        isFetching = true;
+                        $.ajax({
+                            type: "POST",
+                            contentType: 'application/json; charset=utf-8',
+                            dataType: 'json',
+                            url: '/api/liveEventChainGraph',
+                            data: JSON.stringify(repository),
+                            success: function (data) {
+                                let graphData = data.data;
+                                renderCytoscape(contentGlobal.cyLiveEventChain, graphData.elements, repository);
+                                storeCache(stage, repository.url);
+                                /** @namespace data.timeCollected */
+                                updateEventsCollectedTime(data.timeCollected);
+                            },
+                            complete: function () {
+                                contentGlobal.loader.hide();
+                                isFetching = false;
+                            }
+                        });
+                    }
                 });
                 lastLiveFetch = Date.now();
             }
