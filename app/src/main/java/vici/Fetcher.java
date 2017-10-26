@@ -4,12 +4,17 @@ package vici;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONObject;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
-import vici.api.query.Query;
+import vici.api.entities.Query;
 import vici.entities.*;
+import vici.entities.Eiffel.CustomData;
 import vici.entities.Eiffel.EiffelEvent;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Matcher;
@@ -23,17 +28,86 @@ public class Fetcher {
     public static final String ACTIVITY = "Activity";
     public static final String TEST_SUITE = "TestSuite";
 
-    private static HashMap<String, EventCache> eventCaches = new HashMap<>();
-    private static long cacheLifetime = 86400000;
+    private static HashMap<String, EventCache> eventCaches = new HashMap<>(); // TODO: a job that removes very old caches
 
     public Fetcher() {
     }
 
+    private String getStandardAggregateValue(Event event) {
+        switch (event.getType()) {
+            case ACTIVITY:
+                return event.getThisEiffelEvent().getData().getName();
+            case "EiffelAnnouncementPublishedEvent":
+                return event.getThisEiffelEvent().getData().getHeading();
+            case "EiffelArtifactCreatedEvent":
+//            case "EiffelArtifactPublishedEvent": TODO
+            case "EiffelArtifactReusedEvent":
+                if (event.getThisEiffelEvent().getData().getGav() == null) {
+                    System.out.println(event.getThisEiffelEvent().getMeta().getType());
+                }
+//                return event.getThisEiffelEvent().getData().getGav().getGroupId() + "[" + event.getThisEiffelEvent().getData().getGav().getArtifactId() + "]";
+                return event.getThisEiffelEvent().getData().getGav().getArtifactId();
+            case "EiffelCompositionDefinedEvent":
+            case "EiffelConfidenceLevelModifiedEvent":
+            case "EiffelEnvironmentDefinedEvent":
+            case TEST_SUITE:
+                return event.getThisEiffelEvent().getData().getName();
+            case "EiffelFlowContextDefined":
+                return null;
+            case "EiffelIssueVerifiedEvent":
+                // TODO: -IV: data.issues (notera att detta är en array. Dvs det skulle vara snyggt om samma event kan dyka upp i flera objektrepresentationer i grafen)
+                return null;
+            case "EiffelSourceChangeCreatedEvent":
+            case "EiffelSourceChangeSubmittedEvent":
+                // TODO: möjlighet att välja identifier (git/svn/...)
 
-    public Events getEvents(String url) {
+                String type;
+                if (event.getType().equals("EiffelSourceChangeCreatedEvent")) {
+                    type = "Created";
+                } else {
+                    type = "Submitted";
+                }
+                if (event.getThisEiffelEvent().getData().getGitIdentifier() != null) {
+//                    return event.getThisEiffelEvent().getData().getGitIdentifier().getRepoUri() + "[" + event.getThisEiffelEvent().getData().getGitIdentifier().getBranch() + "]";
+//                    return event.getThisEiffelEvent().getData().getGitIdentifier().getRepoUri();
+                    return type + "@" + event.getThisEiffelEvent().getData().getGitIdentifier().getRepoName();
+                }
+                return null;
+            case TEST_CASE:
+                return event.getThisEiffelEvent().getData().getTestCase().getId();
+            case "EiffelTestExecutionRecipeCollectionCreatedEvent":
+                return null;
+            default:
+                return null;
+        }
+    }
+
+    private String getAggregateValue(Event event, HashMap<String, String> aggregateKeys) {
+        if (aggregateKeys == null || !aggregateKeys.containsKey(event.getType())) {
+            String value = getStandardAggregateValue(event);
+
+            if (value == null) {
+                if (event.getThisEiffelEvent().getData().getCustomData() != null) {
+                    for (CustomData customData : event.getThisEiffelEvent().getData().getCustomData()) {
+                        if (customData.getKey().equals("name")) {
+                            return "Custom[" + customData.getValue() + "]";
+                        }
+                    }
+                }
+            }
+            return value;
+        }
+
+        String aggregateKey = aggregateKeys.get(event.getType());
+        String[] path = aggregateKeys.get(event.getType()).split("\\.");
+
+        return null;
+    }
+
+    public Events getEvents(String url, long cacheLifetimeMs) {
         if (eventCaches.containsKey(url)) {
             EventCache eventCache = eventCaches.get(url);
-            if (eventCache.getLastUpdate() > System.currentTimeMillis() - cacheLifetime) {
+            if (eventCache.getLastUpdate() > System.currentTimeMillis() - cacheLifetimeMs) {
                 return eventCache.getEvents();
             }
         }
@@ -42,13 +116,26 @@ public class Fetcher {
 
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<EiffelEvent[]> responseEntity;
+        EiffelEvent[] eiffelEvents = null;
 
         Pattern pattern = Pattern.compile("^localFile\\[(.+)]$");
         Matcher matcher = pattern.matcher(url.trim());
 
+        long eventsFetchedAt = System.currentTimeMillis();
+
         if (matcher.find()) {
-            System.out.println("Request for local file " + matcher.group(1));
-            responseEntity = restTemplate.getForEntity("http://127.0.0.1:8080/" + matcher.group(1), EiffelEvent[].class);
+            System.out.println("Request for local file " + matcher.group(1) + ".json");
+//            responseEntity = restTemplate.getForEntity("http://127.0.0.1:8080/" + matcher.group(1), EiffelEvent[].class);
+
+            ObjectMapper mapper = new ObjectMapper();
+            Resource resource = new ClassPathResource("static/" + matcher.group(1) + ".json");
+            InputStream jsonFileStream;
+            try {
+                jsonFileStream = resource.getInputStream();
+                eiffelEvents = mapper.readValue(jsonFileStream, EiffelEvent[].class);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         } else {
             Query query = new Query(null, null, 0, Integer.MAX_VALUE, false, null, true);
             ObjectMapper mapper = new ObjectMapper();
@@ -68,12 +155,15 @@ public class Fetcher {
             }
 
             responseEntity = restTemplate.exchange(url, HttpMethod.POST, entity, EiffelEvent[].class);
+            eiffelEvents = responseEntity.getBody();
+
+//            MediaType contentType = responseEntity.getHeaders().getContentType();
+//            HttpStatus statusCode = responseEntity.getStatusCode();
         }
 
-
-        EiffelEvent[] eiffelEvents = responseEntity.getBody();
-//        MediaType contentType = responseEntity.getHeaders().getContentType();
-//        HttpStatus statusCode = responseEntity.getStatusCode();
+        if (eiffelEvents == null) {
+            return null;
+        }
 
         System.out.println("Downloaded eiffel-events. Importing...");
 
@@ -197,8 +287,16 @@ public class Fetcher {
             }
         }
 
-        Events eventsObject = new Events(events, timeStart, timeEnd);
-        eventCaches.put(url, new EventCache(eventsObject));
+        for (String key : events.keySet()) {
+            Event event = events.get(key);
+
+            if (!event.getType().equals(REDIRECT)) {
+                event.setAggregateOn(getAggregateValue(event, null));
+            }
+        }
+
+        Events eventsObject = new Events(events, timeStart, timeEnd, eventsFetchedAt);
+        eventCaches.put(url, new EventCache(eventsObject, eventsFetchedAt));
 
         System.out.println("Events imported.");
         return eventsObject;

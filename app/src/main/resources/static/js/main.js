@@ -1,15 +1,32 @@
+// Constants
+const COLOR_PASS = '#22b14c';
+const COLOR_FAIL = '#af0020';
+const COLOR_UNDEFINED = '#666';
+
+const STAGE_AGGREGATION = 'aggregation';
+const STAGE_DETAILS = 'details';
+const STAGE_DETAILS_TABLE = 'details_table';
+const STAGE_DETAILS_PLOT = 'details_plot';
+const STAGE_EVENTCHAIN = 'eventChain';
+const STAGE_LIVE = 'live';
+const STAGE_SETTINGS = 'settings';
+const STAGE_HELP = 'help';
+
+// Global variables
+let isFetching = false;
+
 let contentGlobal = undefined;
 let settingsElement = undefined;
 let cache = {};
+let currentStage = undefined;
+let statusImages = undefined;
+
+let liveFetch = undefined;
+let lastLiveFetch = undefined;
 
 // FORMATTING
 function formatTime(long) {
     return moment(long).format('YYYY-MM-DD, HH:mm:ss:SSS');
-}
-
-function isUrlValid(url) {
-    const re = /^(?:(?:(?:https?|ftp):)?\/\/)(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)(?:\.(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)*(?:\.(?:[a-z\\u00a1-\\uffff]{2,})).?)(?::\d{2,5})?(?:[\/?#]\S*)?$/;
-    return re.test(url);
 }
 
 // SETTINGS
@@ -26,64 +43,313 @@ function getElementsSettings() {
         maxConnections: $('#maxConnections'),
         relativeXAxis: $('#relativeXAxis'),
 
+        liveStartingEvents: $('#setting_live_amount_starting_event'),
+        liveTimeInterval: $('#setting_live_time_between_updates'),
+
+        settingsContent: $('#settings_content'),
         system: $('#systemSelect'),
-        systems: $('#systemsSettings'),
+        systemSettingsSelect: $('#settingsSystemSelect'),
+        systems:
+            $('#systemsSettings'),
     };
 }
 
-function setSettingsDefault(settingsElement) {
-    settingsElement.cacheKeepTime.val(86400000);
+function removeSystemWithID(id) {
+    $('#eiffelEventRepository\\[' + id + '\\]_panel').remove();
+    $('#eiffelEventRepositorySettings\\[' + id + '\\]').remove();
 
-    settingsElement.upStream.prop('checked', true).change();
-    settingsElement.downStream.prop('checked', true).change();
-    settingsElement.steps.val(5);
-    settingsElement.maxConnections.val(16);
-    settingsElement.relativeXAxis.prop('checked', false).change();
+    updateSystemSelector();
+}
 
-    settingsElement.systems.html('');
+function addSystemToUI(eiffelEventRepository) {
 
-    settingsElement.system.selectpicker('val', undefined);
+    let settings = getCurrentSettings();
+
+    if (eiffelEventRepository.id === undefined) {
+        let repositoryAmount = Object.keys(settings.eiffelEventRepositories).length;
+        let i = 0;
+        let count = 0;
+        while (count < repositoryAmount) {
+            let potentialSystem = $('#eiffelEventRepository\\[' + i + '\\]_name');
+            if (potentialSystem.length) {
+                count++;
+            }
+            i++;
+        }
+        eiffelEventRepository.id = i;
+    }
+
+
+    if (eiffelEventRepository.name === undefined) {
+        let tmpName = eiffelEventRepository.id;
+        while (settings.eiffelEventRepositories[tmpName] !== undefined) {
+            tmpName++;
+        }
+        eiffelEventRepository.name = tmpName;
+    }
+    if (eiffelEventRepository.url === undefined) {
+        eiffelEventRepository.url = '';
+    }
+
+    // Adding the system panel in manage systems
+    settingsElement.systems.append(
+        '<div class="panel panel-default" id="eiffelEventRepository[' + eiffelEventRepository.id + ']_panel">' +
+        '<div class="input-group">' +
+        '<span class="input-group-addon">' + eiffelEventRepository.id + '</span><span class="input-group-addon">Name</span>' +
+        '<input id="eiffelEventRepository[' + eiffelEventRepository.id + ']_name"  class="form-control" placeholder="My system" value="' + eiffelEventRepository.name + '"/>' +
+        '</div>' +
+        '<div class="input-group">' +
+        '<span class="input-group-addon">URL</span>' +
+        '<input id="eiffelEventRepository[' + eiffelEventRepository.id + ']_url"  class="form-control systemsUrlInput" placeholder="http://127.0.0.1:8080/events.json" value="' + eiffelEventRepository.url + '"/>' +
+        '</div>' +
+        '<span class="input-group-addon"><button id="eiffelEventRepository[' + eiffelEventRepository.id + ']_btmRemove" type="button" class="btn btn-danger">' +
+        '<span class="glyphicon glyphicon-minus" aria-hidden="true"></span></button></span>' +
+        '</div>'
+    );
+
+    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_btmRemove').click(function () {
+        removeSystemWithID(eiffelEventRepository.id);
+    });
+
+    // Adding the settings content
+    let eersc = '<div id="eiffelEventRepositorySettings[' + eiffelEventRepository.id + ']">';
+
+    // General settings
+    eersc += '<div id="eiffelEventRepository[' + eiffelEventRepository.id + ']_settingsGeneral">' +
+        '<h4>General</h4>';
+
+    eersc += '<div class="input-group settings-row">' +
+        '<span class="input-group-addon">Time to keep caches (ms)</span><input id="eiffelEventRepository[' + eiffelEventRepository.id + ']_cacheLifeTimeMs" type="number" class="form-control" placeholder="Positive integer"/>' +
+        '</div>';
+
+    eersc += '</div>';
+    // Aggregation node graph settings
+    eersc += '<div id="eiffelEventRepository[' + eiffelEventRepository.id + ']_settingsAggregation">' +
+        '<h4>Aggregation</h4>';
+
+    eersc += '</div>';
+    // Details view settings
+    eersc += '<div id="eiffelEventRepository[' + eiffelEventRepository.id + ']_settingsDetails">' +
+        '<h4>Details</h4>';
+
+    eersc += '</div>';
+    // Event chain settings
+    eersc += '<div id="eiffelEventRepository[' + eiffelEventRepository.id + ']_settingsEventChain">' +
+        '<h4>Event Chain</h4>';
+
+    eersc += '<div class="input-group settings-row">' +
+        '<span class="input-group-addon">Maximum jumps</span><input id="eiffelEventRepository[' + eiffelEventRepository.id + ']_eventChainMaxSteps" type="number" class="form-control" placeholder="Positive integer"/>' +
+        '</div>';
+
+    eersc += '<div class="input-group settings-row">' +
+        '<span class="input-group-addon">Maximum connections/node</span><input id="eiffelEventRepository[' + eiffelEventRepository.id + ']_eventChainMaxConnections" type="number" class="form-control" placeholder="Positive integer"/>' +
+        '</div>';
+
+    eersc += '<div class="input-group settings-row"><label class="checkbox-inline">' +
+        '<input class="set-bootstraptoggle" type="checkbox" data-toggle="toggle" id="eiffelEventRepository[' + eiffelEventRepository.id + ']_eventChainGoUpStream"/> Follow links <b>up</b> stream</label>' +
+        '</div>';
+
+    eersc += '<div class="input-group settings-row"><label class="checkbox-inline">' +
+        '<input class="set-bootstraptoggle" type="checkbox" data-toggle="toggle" id="eiffelEventRepository[' + eiffelEventRepository.id + ']_eventChainGoDownStream"/> Follow links <b>down</b> stream</label>' +
+        '</div>';
+
+    eersc += '<div class="input-group settings-row"><label class="checkbox-inline">' +
+        '<input class="set-bootstraptoggle" type="checkbox" data-toggle="toggle" id="eiffelEventRepository[' + eiffelEventRepository.id + ']_eventChainTimeRelativeXAxis"/> Node x-position defined by actual timestamp</label>' +
+        '</div>';
+
+    eersc += '</div>';
+    // Live stream settings
+    eersc += '<div id="eiffelEventRepository[' + eiffelEventRepository.id + ']_settingsLive">' +
+        '<h5>Live</h5>';
+
+    eersc += '<div class="input-group settings-row">' +
+        '<span class="input-group-addon">Number of base events (latest)</span><input id="eiffelEventRepository[' + eiffelEventRepository.id + ']_streamBaseEvents" type="number" class="form-control" placeholder="Positive integer"/>' +
+        '</div>';
+
+    eersc += '<div class="input-group settings-row">' +
+        '<span class="input-group-addon">Time between updates (ms)</span><input id="eiffelEventRepository[' + eiffelEventRepository.id + ']_streamRefreshIntervalMs" type="number" class="form-control" placeholder="Positive integer"/>' +
+        '</div>';
+
+    eersc += '</div>';
+
+    eersc += '</div>';
+    settingsElement.settingsContent.append(eersc);
+
+    // Apply bootstrap
+    $('.set-bootstraptoggle').bootstrapToggle();
+
+    // Apply correct settings
+    setCurrentSettingsForEiffelEventRepository(eiffelEventRepository);
+
+    // Applying functions
+    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_name').change(function () {
+        updateSystemSelector();
+    });
+
+    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_url').change(function () {
+        invalidateCache();
+    });
+
+    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_settingsGeneral').find('input').change(function () {
+        invalidateCache();
+    });
+
+    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_settingsAggregation').find('input').change(function () {
+        invalidateCache(STAGE_AGGREGATION);
+    });
+
+    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_settingsDetails').find('input').change(function () {
+        invalidateCache(STAGE_DETAILS_TABLE);
+        invalidateCache(STAGE_DETAILS_PLOT);
+    });
+
+    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_settingsEventChain').find('input').change(function () {
+        invalidateCache(STAGE_EVENTCHAIN);
+    });
+
+    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_settingsLive').find('input').change(function () {
+        invalidateCache(STAGE_LIVE);
+    });
+
+    // Refresh
+    updateSystemSelector();
+
+    return eiffelEventRepository;
+}
+
+function newSystem(eiffelEventRepository) {
+    if (eiffelEventRepository === undefined) {
+        contentGlobal.loader.show();
+
+        $.ajax({
+            type: "POST",
+            contentType: 'application/json; charset=utf-8',
+            dataType: 'json',
+            url: '/api/getDefaultEiffelEventRepository',
+            // async: false, // NOT asyncronous
+            success: function (data) {
+                addSystemToUI(data);
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                showModal('<p>Could not fetch a new repository from server, something is wrong, check that server is running or check server log.</p><div class="alert alert-danger" role="alert">' + jqXHR.responseText + '</div>');
+            },
+            complete: function (jqXHR, textStatus) {
+                contentGlobal.loader.hide();
+            }
+        });
+    } else {
+        addSystemToUI(eiffelEventRepository);
+    }
+}
+
+
+function getSettingsFromServer() {
+    contentGlobal.loader.show();
+
+    _.defer(function () {
+        $.ajax({
+            type: "POST",
+            contentType: 'application/json; charset=utf-8',
+            dataType: 'json',
+            url: '/api/getSettings',
+            // data: JSON.stringify(settings),
+            success: function (data) {
+                /** @namespace data.eiffelEventRepositories */
+                data.eiffelEventRepositories.forEach(function (eiffelEventRepository) {
+                    newSystem(eiffelEventRepository);
+                });
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                showModal('<p>Could not fetch settings from server, something is wrong, check that server is running or check server log.</p><div class="alert alert-danger" role="alert">' + jqXHR.responseText + '</div>');
+            },
+            complete: function (jqXHR, textStatus) {
+                contentGlobal.loader.hide();
+            }
+        });
+    });
+}
+
+function saveSettings() {
+
+}
+
+function setCurrentSettingsForEiffelEventRepository(eiffelEventRepository) {
+    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_cacheLifeTimeMs').val(eiffelEventRepository.repositorySettings.cacheLifeTimeMs);
+    // TODO previous links
+    if (eiffelEventRepository.repositorySettings.eventChainGoUpStream) {
+        $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_eventChainGoUpStream').bootstrapToggle('on');
+    }
+    if (eiffelEventRepository.repositorySettings.eventChainGoDownStream) {
+        $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_eventChainGoDownStream').bootstrapToggle('on');
+    }
+    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_eventChainMaxSteps').val(eiffelEventRepository.repositorySettings.eventChainMaxSteps);
+    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_eventChainMaxConnections').val(eiffelEventRepository.repositorySettings.eventChainMaxConnections);
+    if (eiffelEventRepository.repositorySettings.eventChainTimeRelativeXAxis) {
+        $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_eventChainTimeRelativeXAxis').bootstrapToggle('on');
+    }
+
+    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_streamBaseEvents').val(eiffelEventRepository.repositorySettings.streamBaseEvents);
+    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_streamRefreshIntervalMs').val(eiffelEventRepository.repositorySettings.streamRefreshIntervalMs);
+}
+
+function getCurrentSettingsForId(repositoryLocalId) {
+    return {
+        id: repositoryLocalId,
+        name: $('#eiffelEventRepository\\[' + repositoryLocalId + '\\]_name').val(),
+        url: $('#eiffelEventRepository\\[' + repositoryLocalId + '\\]_url').val(),
+        repositorySettings: {
+            cacheLifeTimeMs: parseInt($('#eiffelEventRepository\\[' + repositoryLocalId + '\\]_cacheLifeTimeMs').val()),
+
+            detailsTargetId: settingsElement.detailsTarget.html(),
+
+            eventChainTargetId: settingsElement.eventChainTarget.html(),
+
+            eventChainBannedLinks: [
+                "PREVIOUS_VERSION",
+            ],
+
+            eventChainGoUpStream: $('#eiffelEventRepository\\[' + repositoryLocalId + '\\]_eventChainGoUpStream').prop('checked'),
+            eventChainGoDownStream: $('#eiffelEventRepository\\[' + repositoryLocalId + '\\]_eventChainGoDownStream').prop('checked'),
+            eventChainMaxSteps: parseInt($('#eiffelEventRepository\\[' + repositoryLocalId + '\\]_eventChainMaxSteps').val()),
+            eventChainMaxConnections: parseInt($('#eiffelEventRepository\\[' + repositoryLocalId + '\\]_eventChainMaxConnections').val()),
+            eventChainTimeRelativeXAxis: $('#eiffelEventRepository\\[' + repositoryLocalId + '\\]_eventChainTimeRelativeXAxis').prop('checked'),
+
+            streamBaseEvents: parseInt($('#eiffelEventRepository\\[' + repositoryLocalId + '\\]_streamBaseEvents').val()),
+            streamRefreshIntervalMs: parseInt($('#eiffelEventRepository\\[' + repositoryLocalId + '\\]_streamRefreshIntervalMs').val()),
+        },
+    };
 }
 
 function getCurrentSettings() {
+    // Find systems
+    let repositories = {};
     let systemCount = settingsElement.systems.find('.panel').length;
-    let systems = {};
-    for (let i = 0; i < systemCount; i++) {
-        systems[$('#systemName\\[' + i + '\\]').val()] = $('#systemUrl\\[' + i + '\\]').val()
+    let i = 0;
+    let count = 0;
+    while (count < systemCount) {
+        let potentialSystemObject = $('#eiffelEventRepository\\[' + i + '\\]_name');
+        // Check if jQuery object exists
+        if (potentialSystemObject.length) {
+            repositories[potentialSystemObject.val()] = getCurrentSettingsForId(i);
+            count++;
+        }
+        i++;
     }
-    return {
-        systems: systems,
 
-        system: {
+    // return settings object
+    return {
+        eiffelEventRepositories: repositories,
+        selectedEiffelEventRepository: {
             name: settingsElement.system.val(),
-            url: systems[settingsElement.system.val()],
+            url: repositories[settingsElement.system.val()],
         },
-        general: {
-            timeStoreCache: parseInt(settingsElement.cacheKeepTime.val()),
-        },
-        aggregation: {},
-        details: {
-            target: settingsElement.detailsTarget.html(),
-        },
-        eventChain: {
-            target: settingsElement.eventChainTarget.html(),
-            steps: settingsElement.steps.val(),
-            maxConnections: settingsElement.maxConnections.val(),
-            upStream: settingsElement.upStream.prop('checked'),
-            downStream: settingsElement.downStream.prop('checked'),
-            relativeXAxis: settingsElement.relativeXAxis.prop('checked'),
-            bannedLinks: [
-                "PREVIOUS_VERSION",
-            ]
-        },
-        live: {}
     };
 }
 
 function updateSystemSelector() {
     settingsElement.system.html('');
     let settings = getCurrentSettings();
-    for (let key in settings.systems) {
+    for (let key in settings.eiffelEventRepositories) {
         settingsElement.system.append('<option>' + key + '</option>');
     }
     settingsElement.system.selectpicker('refresh');
@@ -95,36 +361,6 @@ function resetSelections() {
     settingsElement.detailsTarget.html("");
 }
 
-function newSystem(name, url) {
-    if (name === undefined) {
-        name = '';
-    }
-    if (url === undefined) {
-        url = '';
-    }
-    let count = _.size(getCurrentSettings().systems);
-    settingsElement.systems.append(
-        '<div class="panel panel-default">' +
-        '<div class="input-group">' +
-        '<span class="input-group-addon">Name</span>' +
-
-        '<input id="systemName[' + count + ']"  class="form-control" ' +
-
-        'placeholder="My system" value="' + name + '"/>' +
-        '</div>' +
-        '<div class="input-group">' +
-        '<span class="input-group-addon">URL</span>' +
-        '<input id="systemUrl[' + count + ']"  class="form-control systemsUrlInput" ' +
-
-        'placeholder="http://127.0.0.1:8080/events.json" value="' + url + '"/>' +
-        '</div>' +
-        '</div>'
-    );
-    $('#systemsSettings').find('input').change(function () {
-        updateSystemSelector();
-    });
-    updateSystemSelector();
-}
 
 // CACHE
 function usableCache(cacheName, value, timeValid) {
@@ -134,7 +370,7 @@ function usableCache(cacheName, value, timeValid) {
 function storeCache(cacheName, value) {
     cache[cacheName] = {
         value: value,
-        time: Date.now()
+        time: Date.now(),
     };
     console.log('Stored cache for ' + cacheName);
 }
@@ -160,7 +396,9 @@ function getContentElements() {
         detailsTable: $('#details_table'),
         detailsPlot: $('#details_plot_container'),
         cyEventChain: $('#event_chain'),
+        cyLiveEventChain: $('#live_chain'),
         loader: $('#loader_overlay'),
+        systemForceUpdateButton: $('#button_system_force_fetch'),
         detailsToggle: $('#details_toggle'),
         alertModal: $('#alertModal'),
         alertModalContent: $('#alertModalContent'),
@@ -174,10 +412,14 @@ function getContentElements() {
         },
         menu: {
             aggregation: $('#menu_aggregation'),
+            systemForceUpdate: $('#menu_system_force_fetch'),
             details: $('#menu_details'),
             detailsToggle: $('#menu_details_toggle'),
             eventChain: $('#menu_eventChain'),
             live: $('#menu_live'),
+        },
+        timeago: {
+            dataUpdated: $('time#data_updated_timeago'),
         }
     }
         ;
@@ -194,24 +436,24 @@ function disableMenuLevel(level) {
     }
     switch (level) {
         case 4:
-            contentGlobal.menu.live.removeClass('disabled');
         case 3:
             contentGlobal.menu.eventChain.removeClass('disabled');
         case 2:
             contentGlobal.menu.details.removeClass('disabled');
         case 1:
             contentGlobal.menu.aggregation.removeClass('disabled');
+            contentGlobal.menu.live.removeClass('disabled');
         default:
             break;
     }
 }
 
 function setMenuActive(settings) {
-    if (settings.system.url === undefined) {
+    if (settings.selectedEiffelEventRepository.url === undefined) {
         disableMenuLevel(0);
-    } else if (settings.details.target === '') {
+    } else if (settings.eiffelEventRepositories[settings.selectedEiffelEventRepository.name].repositorySettings.detailsTargetId === '') {
         disableMenuLevel(1);
-    } else if (settings.eventChain.target === '') {
+    } else if (settings.eiffelEventRepositories[settings.selectedEiffelEventRepository.name].repositorySettings.eventChainTargetId === '') {
         disableMenuLevel(2);
     } else {
         disableMenuLevel(3);
@@ -233,7 +475,6 @@ function populateExternalLegend(groups, graph2d) {
 
     let legendContainer = $('#details_plot_legend');
 
-    console.log(groupsData);
 
     // get for all groups:
     for (let i = 0; i < groupsData.length; i++) {
@@ -243,7 +484,6 @@ function populateExternalLegend(groups, graph2d) {
 
         // get the legend for this group.
         let legend = graph2d.getLegend(groupsData[i].id, 30, 30);
-        console.log(legend);
 
         // append class to icon. All styling classes from the vis.css/vis-timeline-graph2d.min.css have been copied over into the head here to be able to style the
         // icons with the same classes if they are using the default ones.
@@ -266,7 +506,6 @@ function populateExternalLegend(groups, graph2d) {
         toggle.change(function () {
             // _.defer(function () {
 
-            console.log(i + ' ' + $(this).prop('checked'));
             groups.update({id: i, visible: $(this).prop('checked')});
 
             // });
@@ -274,26 +513,39 @@ function populateExternalLegend(groups, graph2d) {
     }
 }
 
-function load(stage) {
+function updateEventsCollectedTime(lastDataCollectedAt) {
+    contentGlobal.timeago.dataUpdated.timeago("update", new Date(lastDataCollectedAt));
+}
+
+function load(stage, useCache) {
     let settings = getCurrentSettings();
+    let repository = settings.eiffelEventRepositories[settings.selectedEiffelEventRepository.name];
 
-    contentGlobal.loader.show();
-    // $("#side-menu").find("a").removeClass("active");
-    // $('#menu_' + stage).addClass('active');
+    if (useCache === false) {
+        // invalidateCache();
+        repository.repositorySettings.cacheLifeTimeMs = -1;
+    }
 
-    let systemUrl = settings.system.url;
+    if (stage === STAGE_LIVE && currentStage === STAGE_LIVE) {
 
+    } else {
+        contentGlobal.loader.show();
+    }
+
+    currentStage = stage;
     setMenuActive(settings);
     contentGlobal.menu.detailsToggle.hide();
+
+    liveFetch = false;
     _.defer(function () {
         for (let container in contentGlobal.containers) {
             contentGlobal.containers[container].hide();
         }
 
-        if (stage === 'aggregation') {
+        if (stage === STAGE_AGGREGATION) {
             contentGlobal.containers.aggregation.show();
-            if (usableCache('aggregation', systemUrl, settings.general.timeStoreCache) === true) {
-                console.log('Using cache for system ' + systemUrl);
+            if (usableCache(stage, repository.url, repository.repositorySettings.cacheLifeTimeMs) === true) {
+                console.log('Using cache for system ' + repository.url);
                 contentGlobal.loader.hide();
             } else {
                 _.defer(function () {
@@ -302,39 +554,44 @@ function load(stage) {
                         contentType: 'application/json; charset=utf-8',
                         dataType: 'json',
                         url: '/api/aggregationGraph',
-                        data: JSON.stringify(settings),
+                        data: JSON.stringify(repository),
                         success: function (data) {
-                            renderCytoscape(contentGlobal.cyAggregation, data, settings, undefined);
-                            storeCache('aggregation', systemUrl);
+                            let graphData = data.data;
+                            renderCytoscape(contentGlobal.cyAggregation, graphData, repository.repositorySettings, undefined);
+                            storeCache(stage, repository.url);
+                            /** @namespace data.timeCollected */
+                            updateEventsCollectedTime(data.timeCollected);
+                            contentGlobal.menu.systemForceUpdate.show();
                         },
                         error: function (jqXHR, textStatus, errorThrown) {
                             showModal('<p>Wops! I could not fetch data from the given url :( check that the event repository server is running and the correct url is given in the settings.</p><div class="alert alert-danger" role="alert">' + jqXHR.responseText + '</div>');
                             resetSelections();
                             disableMenuLevel(0);
-                            renderCytoscape(contentGlobal.cyAggregation, undefined, settings, undefined);
-                            storeCache('aggregation', systemUrl);
+                            renderCytoscape(contentGlobal.cyAggregation, undefined, repository.repositorySettings, undefined);
+                            storeCache(stage, repository.url);
+                            contentGlobal.menu.systemForceUpdate.hide();
                         },
                         complete: function (jqXHR, textStatus) {
-                            console.log(jqXHR);
-                            console.log(textStatus);
+                            // console.log(jqXHR);
+                            // console.log(textStatus);
                             contentGlobal.loader.hide();
                         }
                     });
                 });
             }
-        } else if (stage === 'details') {
+        } else if (stage === STAGE_DETAILS) {
             contentGlobal.menu.detailsToggle.show();
             contentGlobal.containers.details.show();
 
-            let detailsTarget = settings.details.target;
+            let detailsTarget = repository.repositorySettings.detailsTargetId;
 
             // Table
             if (contentGlobal.detailsToggle.prop('checked')) {
                 contentGlobal.detailsTable.show();
                 contentGlobal.detailsPlot.hide();
 
-                if (usableCache('detailsTable', systemUrl + detailsTarget, settings.general.timeStoreCache)) {
-                    console.log('Using cache for ' + detailsTarget + ' from system ' + systemUrl);
+                if (usableCache('detailsTable', repository.url + detailsTarget, repository.repositorySettings.cacheLifeTimeMs)) {
+                    console.log('Using cache for ' + detailsTarget + ' from system ' + repository.url);
                     contentGlobal.loader.hide();
                 } else {
                     _.defer(function () {
@@ -342,14 +599,15 @@ function load(stage) {
                             type: "POST",
                             contentType: 'application/json; charset=utf-8',
                             dataType: 'json',
-                            url: "/api/detailedEvents?name=" + detailsTarget,
-                            data: JSON.stringify(settings),
+                            url: "/api/detailedEvents",
+                            data: JSON.stringify(repository),
                             success: function (data) {
+                                let plotData = data.data;
                                 if (contentGlobal.datatableDetails !== undefined) {
                                     contentGlobal.datatableDetails.destroy();
                                     contentGlobal.datatableDetailsContainer.empty();
                                 }
-                                if (data.data.length !== 0) {
+                                if (plotData.data.length !== 0) {
 
                                     let preDefColumns = [
                                         {
@@ -360,8 +618,8 @@ function load(stage) {
                                     ];
                                     contentGlobal.datatableDetails = datatable = contentGlobal.datatableDetailsContainer.DataTable({
                                         destroy: true,
-                                        data: data.data,
-                                        columns: preDefColumns.concat(data.columns),
+                                        data: plotData.data,
+                                        columns: preDefColumns.concat(plotData.columns),
                                         scrollY: '80vh',
                                         scrollCollapse: true,
                                         lengthMenu: [[20, 200, -1], [20, 200, "All"]],
@@ -377,10 +635,12 @@ function load(stage) {
                                         load("eventChain");
                                     });
 
-                                    storeCache('detailsTable', systemUrl + detailsTarget);
+                                    storeCache('detailsTable', repository.url + detailsTarget);
                                 } else {
                                     console.log("No data");
                                 }
+                                /** @namespace data.timeCollected */
+                                updateEventsCollectedTime(data.timeCollected);
                             },
                             complete: function () {
                                 contentGlobal.loader.hide();
@@ -393,8 +653,8 @@ function load(stage) {
                 contentGlobal.detailsTable.hide();
                 contentGlobal.detailsPlot.show();
 
-                if (usableCache('detailsPlot', systemUrl + detailsTarget, settings.general.timeStoreCache)) {
-                    console.log('Using cache for ' + detailsTarget + ' from system ' + systemUrl);
+                if (usableCache('detailsPlot', repository.url + detailsTarget, repository.repositorySettings.cacheLifeTimeMs)) {
+                    console.log('Using cache for ' + detailsTarget + ' from system ' + repository.url);
                     contentGlobal.loader.hide();
                 } else {
                     _.defer(function () {
@@ -402,11 +662,11 @@ function load(stage) {
                             type: "POST",
                             contentType: 'application/json; charset=utf-8',
                             dataType: 'json',
-                            url: "/api/detailedPlot?name=" + detailsTarget,
-                            data: JSON.stringify(settings),
+                            url: "/api/detailedPlot",
+                            data: JSON.stringify(repository),
                             success: function (data) {
-                                console.log(data);
-                                if (data !== undefined && data.items.length !== 0) {
+                                let plotData = data.data;
+                                if (plotData !== undefined && plotData.items.length !== 0) {
                                     let groups = new vis.DataSet();
 
                                     groups.add({
@@ -457,7 +717,7 @@ function load(stage) {
                                     });
 
 
-                                    let dataset = new vis.DataSet(data.items);
+                                    let dataset = new vis.DataSet(plotData.items);
                                     let options = {
                                         sort: false,
                                         interpolation: false,
@@ -478,8 +738,8 @@ function load(stage) {
                                             }
                                         },
                                         // TODO: settings for default start
-                                        start: data.timeLast - 345600000,
-                                        end: data.timeLast,
+                                        start: plotData.timeLast - 345600000,
+                                        end: plotData.timeLast,
                                     };
 
                                     console.log(groups);
@@ -491,10 +751,12 @@ function load(stage) {
                                     populateExternalLegend(groups, plot);
 
 
-                                    storeCache('detailsPlot', systemUrl + detailsTarget);
+                                    storeCache('detailsPlot', repository.url + detailsTarget);
                                 } else {
                                     console.log("No data");
                                 }
+                                /** @namespace data.timeCollected */
+                                updateEventsCollectedTime(data.timeCollected);
                             },
                             complete: function () {
                                 contentGlobal.loader.hide();
@@ -503,13 +765,11 @@ function load(stage) {
                     });
                 }
             }
-
-
-        } else if (stage === 'eventChain') {
+        } else if (stage === STAGE_EVENTCHAIN) {
             contentGlobal.containers.eventChain.show();
-            let eventTarget = settings.eventChain.target;
-            if (usableCache('eventChain', systemUrl + eventTarget, settings.general.timeStoreCache)) {
-                console.log('Using cache for ' + eventTarget + ' from system ' + systemUrl);
+            let eventTarget = repository.repositorySettings.eventChainTargetId;
+            if (usableCache(stage, repository.url + eventTarget, repository.repositorySettings.cacheLifeTimeMs)) {
+                console.log('Using cache for ' + eventTarget + ' from system ' + repository.url);
                 contentGlobal.loader.hide();
             } else {
                 _.defer(function () {
@@ -517,11 +777,14 @@ function load(stage) {
                         type: "POST",
                         contentType: 'application/json; charset=utf-8',
                         dataType: 'json',
-                        url: '/api/eventChainGraph?id=' + eventTarget,
-                        data: JSON.stringify(settings),
+                        url: '/api/eventChainGraph',
+                        data: JSON.stringify(repository),
                         success: function (data) {
-                            renderCytoscape(contentGlobal.cyEventChain, data.elements, settings, eventTarget);
-                            storeCache('eventChain', systemUrl + eventTarget);
+                            let graphData = data.data;
+                            renderCytoscape(contentGlobal.cyEventChain, graphData.elements, repository.repositorySettings, eventTarget);
+                            storeCache(stage, repository.url + eventTarget);
+                            /** @namespace data.timeCollected */
+                            updateEventsCollectedTime(data.timeCollected);
                         },
                         complete: function () {
                             contentGlobal.loader.hide();
@@ -529,13 +792,44 @@ function load(stage) {
                     });
                 });
             }
-        } else if (stage === 'live') {
+        } else if (stage === STAGE_LIVE) {
+            liveFetch = true;
             contentGlobal.containers.live.show();
-            contentGlobal.loader.hide();
-        } else if (stage === 'settings') {
+
+            if (!(lastLiveFetch === undefined || Date.now() - lastLiveFetch > repository.repositorySettings.streamRefreshIntervalMs) && usableCache(stage, repository.url, repository.repositorySettings.cacheLifeTimeMs)) {
+                console.log('Using cache for live view from system ' + repository.url);
+                contentGlobal.loader.hide();
+            } else {
+                _.defer(function () {
+                    if (!isFetching) {
+                        isFetching = true;
+                        $.ajax({
+                            type: "POST",
+                            contentType: 'application/json; charset=utf-8',
+                            dataType: 'json',
+                            url: '/api/liveEventChainGraph',
+                            data: JSON.stringify(repository),
+                            success: function (data) {
+                                let graphData = data.data;
+                                renderCytoscape(contentGlobal.cyLiveEventChain, graphData.elements, repository);
+                                storeCache(stage, repository.url);
+                                /** @namespace data.timeCollected */
+                                updateEventsCollectedTime(data.timeCollected);
+                            },
+                            complete: function () {
+                                contentGlobal.loader.hide();
+                                isFetching = false;
+                            }
+                        });
+                    }
+                });
+                lastLiveFetch = Date.now();
+            }
+        } else if (stage === STAGE_SETTINGS) {
+            settingsSelectRepository(repository);
             contentGlobal.containers.settings.show();
             contentGlobal.loader.hide();
-        } else if (stage === 'help') {
+        } else if (stage === STAGE_HELP) {
             contentGlobal.containers.help.show();
             contentGlobal.loader.hide();
         } else {
@@ -550,11 +844,28 @@ function newDetailsTarget(target,) {
     load("details");
 }
 
-function renderCytoscape(container, data, settings, target) {
-    const COLOR_PASS = '#22b14c';
-    const COLOR_FAIL = '#af0020';
-    const COLOR_UNDEFINED = '#666';
+function generateStatusImages() {
+    let canvas = document.createElement('canvas');
+    canvas.width = 100;
+    canvas.height = 1;
+    let ctx = canvas.getContext('2d');
+    statusImages = [];
+    for (let pass = 0; pass <= 100; pass++) {
+        statusImages[pass] = [];
+        for (let fail = 0; fail + pass <= 100; fail++) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = COLOR_PASS;
+            ctx.fillRect(0, 0, pass, 1);
+            ctx.fillStyle = COLOR_FAIL;
+            ctx.fillRect(pass, 0, fail, 1);
+            ctx.fillStyle = COLOR_UNDEFINED;
+            ctx.fillRect(pass + fail, 0, (100 - (pass + fail)), 1);
+            statusImages[pass][fail] = canvas.toDataURL('image/jpeg', 1.0);
+        }
+    }
+}
 
+function renderCytoscape(container, data, repositorySettings, target) {
     let style = [
         {
             selector: 'node',
@@ -589,16 +900,19 @@ function renderCytoscape(container, data, settings, target) {
                 'shape-polygon-points': '-0.95 -0.77 -0.9 -0.82 -0.85 -0.87 -0.8 -0.91 -0.74 -0.94 -0.68 -0.97 -0.62 -0.98 -0.56 -1 -0.5 -1 -0.44 -1 -0.38 -0.98 -0.32 -0.97 -0.26 -0.94 -0.2 -0.91 -0.15 -0.87 -0.1 -0.82 -0.05 -0.77 0.05 -0.67 0.1 -0.62 0.15 -0.57 0.2 -0.53 0.26 -0.5 0.32 -0.47 0.38 -0.46 0.44 -0.44 0.5 -0.44 0.56 -0.44 0.62 -0.46 0.68 -0.47 0.74 -0.5 0.8 -0.53 0.85 -0.57 0.9 -0.62 0.95 -0.67 0.95 0.77 0.9 0.82 0.85 0.87 0.8 0.91 0.74 0.94 0.68 0.97 0.62 0.98 0.56 1 0.5 1 0.44 1 0.38 0.98 0.32 0.97 0.26 0.94 0.2 0.91 0.15 0.87 0.1 0.82 0.05 0.77 -0.05 0.67 -0.1 0.62 -0.15 0.57 -0.2 0.53 -0.26 0.5 -0.32 0.47 -0.38 0.46 -0.44 0.44 -0.5 0.44 -0.56 0.44 -0.62 0.46 -0.68 0.47 -0.74 0.5 -0.8 0.53 -0.85 0.57 -0.9 0.62 -0.95 0.67',
                 'height': 60,
                 'width': 100,
-                'background-color': COLOR_FAIL,
+                'background-color': COLOR_UNDEFINED,
                 'background-position-x': '0px',
-                'background-image': '/images/green.png',
-                'background-height': '100%',
-                'background-width': function (ele) {
+                'background-image': function (ele) {
                     if (ele.data().quantities.SUCCESSFUL === undefined) {
                         ele.data().quantities.SUCCESSFUL = 0;
                     }
-                    return (ele.data().quantities.SUCCESSFUL * 100 / ele.data().quantity).toString() + '%';
-                }
+                    if (ele.data().quantities.UNSUCCESSFUL === undefined) {
+                        ele.data().quantities.UNSUCCESSFUL = 0;
+                    }
+                    return statusImages[Math.floor((ele.data().quantities.SUCCESSFUL / ele.data().quantity) * 100)][Math.floor((ele.data().quantities.UNSUCCESSFUL / ele.data().quantity) * 100)]
+                },
+                'background-height': '100%',
+                'background-width': '100%',
             }
         },
         {
@@ -716,18 +1030,21 @@ function renderCytoscape(container, data, settings, target) {
         {
             selector: 'node[type ^= "TestCase"]',
             style: {
-                'background-color': COLOR_FAIL,
+                'background-color': COLOR_UNDEFINED,
                 'shape': 'rectangle',
                 'height': 50,
                 'width': 100,
-                'background-image': '/images/green.png',
-                'background-height': '100%',
-                'background-width': function (ele) {
+                'background-image': function (ele) {
                     if (ele.data().quantities.SUCCESSFUL === undefined) {
                         ele.data().quantities.SUCCESSFUL = 0;
                     }
-                    return (ele.data().quantities.SUCCESSFUL * 100 / ele.data().quantity).toString() + '%';
+                    if (ele.data().quantities.UNSUCCESSFUL === undefined) {
+                        ele.data().quantities.UNSUCCESSFUL = 0;
+                    }
+                    return statusImages[Math.floor((ele.data().quantities.SUCCESSFUL / ele.data().quantity) * 100)][Math.floor((ele.data().quantities.UNSUCCESSFUL / ele.data().quantity) * 100)]
                 },
+                'background-height': '100%',
+                'background-width': '100%',
                 'background-position-x': '0px'
             }
         },
@@ -739,17 +1056,19 @@ function renderCytoscape(container, data, settings, target) {
                 'border-width': '6px', // The size of the node’s border.
                 'height': 50,
                 'width': 100,
-                'background-color': COLOR_FAIL,
+                'background-color': COLOR_UNDEFINED,
                 'background-position-x': '0px',
-                'background-image': '/images/green.png',
-                'background-height': '100%',
-                'background-width': function (ele) {
-                    let success = ele.data().quantities.SUCCESSFUL;
-                    if (success === undefined) {
-                        success = 0;
+                'background-image': function (ele) {
+                    if (ele.data().quantities.SUCCESSFUL === undefined) {
+                        ele.data().quantities.SUCCESSFUL = 0;
                     }
-                    return (success * 100 / ele.data().quantity).toString() + '%';
+                    if (ele.data().quantities.FAILED === undefined) {
+                        ele.data().quantities.FAILED = 0;
+                    }
+                    return statusImages[Math.floor((ele.data().quantities.SUCCESSFUL / ele.data().quantity) * 100)][Math.floor((ele.data().quantities.FAILED / ele.data().quantity) * 100)]
                 },
+                'background-height': '100%',
+                'background-width': '100%',
             }
         },
     ];
@@ -766,7 +1085,7 @@ function renderCytoscape(container, data, settings, target) {
                 'border-color': '#ffea22',
             }
         });
-        if (settings.eventChain.relativeXAxis) {
+        if (repositorySettings.eventChainTimeRelativeXAxis) {
             layout = {
                 name: 'preset',
             }
@@ -916,21 +1235,37 @@ function renderCytoscape(container, data, settings, target) {
     cy.minZoom(0.1); //same setting as panzoom for Krav 2
 }
 
+function settingsSelectRepository(repository) {
+    $('#settings_content').children().hide();
+    if (repository === undefined) {
+        $('#settings_currentEiffelEventRepositoryHeader').html('Choose a repository to modify in the side menu');
+    } else {
+        $('#settings_currentEiffelEventRepositoryHeader').html(repository.name);
+        $('#eiffelEventRepositorySettings\\[' + repository.id + '\\]').show();
+    }
+}
+
+// This will run then DOM is completely loaded
 $(document).ready(function () {
-    settingsElement = getElementsSettings();
-    setSettingsDefault(settingsElement);
-    newSystem('Local events.json dummy file', 'localFile[events.json]');
-    newSystem('Eiffel-event-repository dummy', 'http://127.0.0.1:8081/reference-data-set');
-    newSystem('Docker eiffel-event-repository dummy', 'http://dummy-er:8081/reference-data-set');
+    // Datatables errors now prints in console instead of alert
+    $.fn.dataTableExt.sErrMode = 'throw';
+
     contentGlobal = getContentElements();
 
     contentGlobal.loader.hide();
 
     contentGlobal.detailsToggle.bootstrapToggle('on');
     contentGlobal.menu.detailsToggle.hide();
+    contentGlobal.menu.systemForceUpdate.hide();
 
+    getSettingsFromServer();
+
+    settingsElement = getElementsSettings();
+
+    generateStatusImages();
 
     // MENU
+
     $('.list-group-item-action').on('click', function () {
         // e.preventDefault();
         load($(this).data('value'));
@@ -938,7 +1273,7 @@ $(document).ready(function () {
 
     contentGlobal.detailsToggle.change(function () {
         _.defer(function () {
-            load("details");
+            load(STAGE_DETAILS);
         });
     });
 
@@ -948,38 +1283,48 @@ $(document).ready(function () {
         newSystem();
     });
 
-    // TODO
-    // $('#systemsUrlInput').change(function () {
-    //     invalidateCache();
-    // });
-
-    $('#settings-aggregation').find('input').change(function () {
-        invalidateCache('aggregation');
-    });
-
-    $('#settings-details').find('input').change(function () {
-        invalidateCache('detailsTable');
-    });
-
-    $('#settings-eventChain').find('input').change(function () {
-        invalidateCache('eventChain');
-    });
-
-    $('#settings-live').find('input').change(function () {
-        invalidateCache('live');
-    });
 
     settingsElement.system.on('changed.bs.select', function () {
         resetSelections();
         disableMenuLevel(0);
-        load('aggregation');
+        if (currentStage === STAGE_SETTINGS) {
+            let settings = getCurrentSettings();
+            settingsSelectRepository(settings.eiffelEventRepositories[settings.selectedEiffelEventRepository.name]);
+            setMenuActive(settings);
+        } else {
+            load(STAGE_AGGREGATION);
+        }
+
+        settingsElement.systemSettingsSelect.selectpicker('val', settingsElement.system.val());
     });
 
-    if (getCurrentSettings().system.url !== undefined) {
+    settingsElement.system.on('changed.bs.select', function () {
+
+    });
+
+    contentGlobal.systemForceUpdateButton.click(function () {
+        if (currentStage !== undefined) {
+            invalidateCache();
+            load(currentStage, false);
+        }
+    });
+
+    if (getCurrentSettings().selectedEiffelEventRepository.url !== undefined) {
         _.defer(function () {
-            load('aggregation');
+            load(STAGE_AGGREGATION);
         });
     }
     setMenuActive(getCurrentSettings());
+
+    jQuery("time.timeago").timeago();
+
+    let interval0 = window.setInterval(function () {
+        if (liveFetch === true) {
+            let settings = getCurrentSettings();
+            if (lastLiveFetch === undefined || Date.now() - lastLiveFetch > settings.eiffelEventRepositories[settings.selectedEiffelEventRepository.name].repositorySettings.streamRefreshIntervalMs) {
+                load('live', false);
+            }
+        }
+    }, 1000);
 });
 

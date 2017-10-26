@@ -2,13 +2,14 @@ package vici.api;
 
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import vici.Fetcher;
-import vici.api.Settings.Settings;
+import vici.api.entities.ReturnData;
+import vici.api.entities.settings.EiffelEventRepository;
+import vici.api.entities.settings.RepositorySettings;
+import vici.api.entities.settings.Settings;
 import vici.entities.ChildLink;
 import vici.entities.Cytoscape.*;
-import vici.entities.Eiffel.CustomData;
 import vici.entities.Eiffel.Outcome;
 import vici.entities.Event;
 import vici.entities.Events;
@@ -21,6 +22,7 @@ import vici.entities.Vis.Plot;
 import java.util.*;
 
 import static vici.Fetcher.*;
+import static vici.ViciApplication.settingsHandler;
 import static vici.entities.Event.*;
 
 @RestController
@@ -31,86 +33,19 @@ public class ApiController {
     private static final int PLOT_GROUP_FILL_PASS = 2;
     private static final int PLOT_GROUP_FILL_FAIL = 3;
 
-    private String getStandardAggregateValue(Event event) {
-        switch (event.getType()) {
-            case ACTIVITY:
-                return event.getThisEiffelEvent().getData().getName();
-            case "EiffelAnnouncementPublishedEvent":
-                return event.getThisEiffelEvent().getData().getHeading();
-            case "EiffelArtifactCreatedEvent":
-//            case "EiffelArtifactPublishedEvent": TODO
-            case "EiffelArtifactReusedEvent":
-                if (event.getThisEiffelEvent().getData().getGav() == null) {
-                    System.out.println(event.getThisEiffelEvent().getMeta().getType());
-                }
-//                return event.getThisEiffelEvent().getData().getGav().getGroupId() + "[" + event.getThisEiffelEvent().getData().getGav().getArtifactId() + "]";
-                return event.getThisEiffelEvent().getData().getGav().getArtifactId();
-            case "EiffelCompositionDefinedEvent":
-            case "EiffelConfidenceLevelModifiedEvent":
-            case "EiffelEnvironmentDefinedEvent":
-            case TEST_SUITE:
-                return event.getThisEiffelEvent().getData().getName();
-            case "EiffelFlowContextDefined":
-                return null;
-            case "EiffelIssueVerifiedEvent":
-                // TODO: -IV: data.issues (notera att detta är en array. Dvs det skulle vara snyggt om samma event kan dyka upp i flera objektrepresentationer i grafen)
-                return null;
-            case "EiffelSourceChangeCreatedEvent":
-            case "EiffelSourceChangeSubmittedEvent":
-                // TODO: möjlighet att välja identifier (git/svn/...)
-
-                String type;
-                if (event.getType().equals("EiffelSourceChangeCreatedEvent")) {
-                    type = "Created";
-                } else {
-                    type = "Submitted";
-                }
-                if (event.getThisEiffelEvent().getData().getGitIdentifier() != null) {
-//                    return event.getThisEiffelEvent().getData().getGitIdentifier().getRepoUri() + "[" + event.getThisEiffelEvent().getData().getGitIdentifier().getBranch() + "]";
-//                    return event.getThisEiffelEvent().getData().getGitIdentifier().getRepoUri();
-                    return type + "@" + event.getThisEiffelEvent().getData().getGitIdentifier().getRepoName();
-                }
-                return null;
-            case TEST_CASE:
-                return event.getThisEiffelEvent().getData().getTestCase().getId();
-            case "EiffelTestExecutionRecipeCollectionCreatedEvent":
-                return null;
-            default:
-                return null;
-        }
-    }
-
-    private String getAggregateValue(Event event, HashMap<String, String> aggregateKeys) {
-        if (aggregateKeys == null || !aggregateKeys.containsKey(event.getType())) {
-            String value = getStandardAggregateValue(event);
-
-            if (value == null) {
-                if (event.getThisEiffelEvent().getData().getCustomData() != null) {
-                    for (CustomData customData : event.getThisEiffelEvent().getData().getCustomData()) {
-                        if (customData.getKey().equals("name")) {
-                            return "Custom[" + customData.getValue() + "]";
-                        }
-                    }
-                }
-            }
-            return value;
-        }
-
-        String aggregateKey = aggregateKeys.get(event.getType());
-        String[] path = aggregateKeys.get(event.getType()).split("\\.");
-
-        return null;
-    }
-
     private void setQuantities(Node node, Event event) {
         switch (node.getData().getType()) {
             case TEST_CASE:
             case ACTIVITY:
             case TEST_SUITE:
-                Outcome outcome = event.getEiffelEvents().get(FINISHED).getData().getOutcome();
-                if (outcome.getConclusion() != null) {
+
+                Outcome outcome = null;
+                if (event.getEiffelEvents().containsKey(FINISHED)) {
+                    outcome = event.getEiffelEvents().get(FINISHED).getData().getOutcome();
+                }
+                if (outcome != null && outcome.getConclusion() != null) {
                     node.getData().increaseQuantity(outcome.getConclusion());
-                } else if (outcome.getVerdict() != null) {
+                } else if (outcome != null && outcome.getVerdict() != null) {
                     if (outcome.getVerdict().equals("PASSED")) {
                         node.getData().increaseQuantity("SUCCESSFUL");
                     } else {
@@ -130,14 +65,56 @@ public class ApiController {
         }
     }
 
+    private long getSortTime(Event event) {
+        if (event.getType().equals(REDIRECT)) {
+            return 0;
+        }
+        if (event.getTimes().containsKey(TRIGGERED)) {
+            return event.getTimes().get(TRIGGERED);
+        } else if (event.getTimes().containsKey(STARTED)) {
+            return event.getTimes().get(STARTED);
+        } else if (event.getTimes().containsKey(FINISHED)) {
+            return event.getTimes().get(FINISHED);
+        } else if (event.getTimes().containsKey(CANCELED)) {
+            return event.getTimes().get(CANCELED);
+        }
+        System.out.println("Error: no time found for event " + event.getId());
+        return 0;
+    }
+
+    @RequestMapping(value = "/api/saveSettings", produces = "application/json; charset=UTF-8")
+    public void saveSettings(@RequestBody Settings settings) {
+        settingsHandler.saveSettings(settings);
+    }
+
+    @RequestMapping(value = "/api/getSettings", produces = "application/json; charset=UTF-8")
+    public Settings getSettings() {
+        return settingsHandler.getSettings();
+    }
+
+    @RequestMapping(value = "/api/resetSettingsDefault", produces = "application/json; charset=UTF-8")
+    public Settings resetSettingsDefault() {
+        return settingsHandler.resetSettingsDefault();
+    }
+
+    @RequestMapping(value = "/api/getDefaultSettings", produces = "application/json; charset=UTF-8")
+    public Settings getDefaultSettings() {
+        return settingsHandler.getDefaultSettings();
+    }
+
+    @RequestMapping(value = "/api/getDefaultEiffelEventRepository", produces = "application/json; charset=UTF-8")
+    public EiffelEventRepository getDefaultEiffelEventRepository() {
+        return settingsHandler.getDefaultRepository();
+    }
+
     @RequestMapping(value = "/api/aggregationGraph", produces = "application/json; charset=UTF-8")
-    public ArrayList<Element> aggregationGraph(@RequestBody Settings settings) {
+    public ReturnData aggregationGraph(@RequestBody EiffelEventRepository eiffelEventRepository) {
 
 //        JSONObject jsonObject = new JSONObject(settings);
 //        System.out.println(jsonObject.toString());
 
         Fetcher fetcher = new Fetcher();
-        Events eventsObject = fetcher.getEvents(settings.getSystem().getUrl());
+        Events eventsObject = fetcher.getEvents(eiffelEventRepository.getUrl(), eiffelEventRepository.getRepositorySettings().getCacheLifeTimeMs());
         HashMap<String, Event> events = eventsObject.getEvents();
 
         ArrayList<Element> elements = new ArrayList<>();
@@ -150,7 +127,6 @@ public class ApiController {
             Event event = events.get(key);
 
             if (!event.getType().equals(REDIRECT)) {
-                event.setAggregateOn(getAggregateValue(event, null));
                 Node node;
                 if (nodes.containsKey(event.getAggregateOn())) {
                     node = nodes.get(event.getAggregateOn());
@@ -188,7 +164,7 @@ public class ApiController {
             elements.add(edges.get(key));
         }
 
-        return elements;
+        return new ReturnData(elements, eventsObject.getTimeCollected());
     }
 
     private String getEdgeId(String source, String target, String type) {
@@ -196,10 +172,10 @@ public class ApiController {
     }
 
     @RequestMapping(value = "/api/detailedEvents", produces = "application/json; charset=UTF-8")
-    public Source detailedEvents(@RequestBody Settings settings, @RequestParam(value = "name", defaultValue = "") String name) {
+    public ReturnData detailedEvents(@RequestBody EiffelEventRepository eiffelEventRepository) {
 
         Fetcher fetcher = new Fetcher();
-        Events eventsObject = fetcher.getEvents(settings.getSystem().getUrl());
+        Events eventsObject = fetcher.getEvents(eiffelEventRepository.getUrl(), eiffelEventRepository.getRepositorySettings().getCacheLifeTimeMs());
         HashMap<String, Event> events = eventsObject.getEvents();
 
         ArrayList<HashMap<String, String>> data = new ArrayList<>();
@@ -210,7 +186,7 @@ public class ApiController {
         for (String key : events.keySet()) {
             Event event = events.get(key);
             if (!event.getType().equals(REDIRECT)) {
-                if (event.getAggregateOn().equals(name)) {
+                if (event.getAggregateOn().equals(eiffelEventRepository.getRepositorySettings().getDetailsTargetId())) {
                     HashMap<String, String> row = new HashMap<>();
 
                     addColumn(row, columns, cSet, "id", event.getId());
@@ -229,12 +205,14 @@ public class ApiController {
                         case TEST_CASE:
                         case ACTIVITY:
                         case TEST_SUITE:
-                            Outcome outcome = event.getEiffelEvents().get(FINISHED).getData().getOutcome();
-                            if (outcome.getConclusion() != null) {
-                                addColumn(row, columns, cSet, "conclusion", outcome.getConclusion());
-                            }
-                            if (outcome.getVerdict() != null) {
-                                addColumn(row, columns, cSet, "verdict", outcome.getVerdict());
+                            if (event.getEiffelEvents().containsKey(FINISHED)) {
+                                Outcome outcome = event.getEiffelEvents().get(FINISHED).getData().getOutcome();
+                                if (outcome.getConclusion() != null) {
+                                    addColumn(row, columns, cSet, "conclusion", outcome.getConclusion());
+                                }
+                                if (outcome.getVerdict() != null) {
+                                    addColumn(row, columns, cSet, "verdict", outcome.getVerdict());
+                                }
                             }
 
                             break;
@@ -251,7 +229,7 @@ public class ApiController {
             }
         }
 
-        return new Source(columns, data);
+        return new ReturnData(new Source(columns, data), eventsObject.getTimeCollected());
     }
 
     private void addColumn(HashMap<String, String> row, ArrayList<Column> columns, HashSet<String> set, String key, String value) {
@@ -303,18 +281,18 @@ public class ApiController {
     }
 
     @RequestMapping(value = "/api/detailedPlot", produces = "application/json; charset=UTF-8")
-    public Plot detailedPlot(@RequestBody Settings settings, @RequestParam(value = "name", defaultValue = "") String name) {
+    public ReturnData detailedPlot(@RequestBody EiffelEventRepository eiffelEventRepository) {
 
-        System.out.println(name);
+//        System.out.println(name);
 
         Fetcher fetcher = new Fetcher();
-        Events eventsObject = fetcher.getEvents(settings.getSystem().getUrl());
+        Events eventsObject = fetcher.getEvents(eiffelEventRepository.getUrl(), eiffelEventRepository.getRepositorySettings().getCacheLifeTimeMs());
         HashMap<String, Event> events = eventsObject.getEvents();
 
         ArrayList<Event> eventsList = new ArrayList<>();
         for (Event event : events.values()) {
             if (!event.getType().equals(REDIRECT)) {
-                if (event.getAggregateOn().equals(name)) {
+                if (event.getAggregateOn().equals(eiffelEventRepository.getRepositorySettings().getDetailsTargetId())) {
                     eventsList.add(event);
                 }
             }
@@ -324,8 +302,7 @@ public class ApiController {
             return null;
         }
 
-//        eventsList.sort((o1, o2) -> (int) (o1.getTimes().get(TRIGGERED) - o2.getTimes().get(TRIGGERED)));
-        eventsList.sort(Comparator.comparingLong(o -> o.getTimes().get(TRIGGERED)));
+        eventsList.sort(Comparator.comparingLong(this::getSortTime));
 
         ArrayList<Item> items = new ArrayList<>();
 
@@ -361,32 +338,32 @@ public class ApiController {
                         }
                     }
 
-                    Outcome outcome = event.getEiffelEvents().get(FINISHED).getData().getOutcome();
-                    if (outcome.getVerdict() != null) {
-                        if (outcome.getVerdict().equals("PASSED")) {
-                            group = PLOT_GROUP_FILL_PASS;
-                        } else if (outcome.getVerdict().equals("FAILED")) {
-                            group = PLOT_GROUP_FILL_FAIL;
-                        }
-                        // else stay 0
-                    } else if (outcome.getConclusion() != null) {
-                        switch (outcome.getConclusion()) {
-                            case "SUCCESSFUL":
+                    if (event.getEiffelEvents().containsKey(FINISHED)) {
+                        Outcome outcome = event.getEiffelEvents().get(FINISHED).getData().getOutcome();
+                        if (outcome.getVerdict() != null) {
+                            if (outcome.getVerdict().equals("PASSED")) {
                                 group = PLOT_GROUP_FILL_PASS;
-                                break;
-                            case "INCONCLUSIVE":
-                                group = PLOT_GROUP_FILL_INCONCLUSIVE;
-                                break;
-                            default:
+                            } else if (outcome.getVerdict().equals("FAILED")) {
                                 group = PLOT_GROUP_FILL_FAIL;
-                                break;
+                            }
+                            // else stay 0
+                        } else if (outcome.getConclusion() != null) {
+                            switch (outcome.getConclusion()) {
+                                case "SUCCESSFUL":
+                                    group = PLOT_GROUP_FILL_PASS;
+                                    break;
+                                case "INCONCLUSIVE":
+                                    group = PLOT_GROUP_FILL_INCONCLUSIVE;
+                                    break;
+                                default:
+                                    group = PLOT_GROUP_FILL_FAIL;
+                                    break;
+                            }
+                        }
+                        if (outcome.getConclusion() != null) {
+                            label = outcome.getConclusion();
                         }
                     }
-                    if (outcome.getConclusion() != null) {
-                        label = outcome.getConclusion();
-                    }
-
-
                     break;
                 case "EiffelConfidenceLevelModifiedEvent":
 
@@ -431,35 +408,23 @@ public class ApiController {
         items.add(new Item(timeLast, 0, PLOT_GROUP_FILL_PASS, null));
         items.add(new Item(timeLast, 0, PLOT_GROUP_FILL_FAIL, null));
 
-        return new Plot(items, timeFirst, timeLast, valueMin, valueMax);
+        return new ReturnData(new Plot(items, timeFirst - 1000, timeLast + 1000, valueMin, valueMax), eventsObject.getTimeCollected());
     }
 
-    @RequestMapping(value = "/api/eventChainGraph", produces = "application/json; charset=UTF-8")
-    public Graph eventChainGraph(@RequestBody Settings settings, @RequestParam(value = "id", defaultValue = "") String id) {
+    public Graph getChainGraph(RepositorySettings repositorySettings, ArrayList<Event> baseEvents, HashMap<String, Event> events) {
         Graph graph = new Graph();
-        if (id.equals("")) {
-            return graph;
-        }
-
-        Fetcher fetcher = new Fetcher();
-        Events eventsObject = fetcher.getEvents(settings.getSystem().getUrl());
-        HashMap<String, Event> events = eventsObject.getEvents();
-
-        if (!events.containsKey(id)) {
-            return graph;
-        }
-
-        Event mainEvent = events.get(id);
 
         HashMap<String, Event> incEvents = new HashMap<>();
 
-        step(settings, mainEvent, incEvents, events, settings.getEventChain().getSteps());
+        for (Event baseEvent : baseEvents) {
+            step(repositorySettings, baseEvent, incEvents, events, repositorySettings.getEventChainMaxSteps());
+        }
 
         HashMap<String, Node> nodes = new HashMap<>();
         HashMap<String, Edge> edges = new HashMap<>();
 
         ArrayList<Node> nodesList = null;
-        if (settings.getEventChain().isRelativeXAxis()) {
+        if (repositorySettings.isEventChainTimeRelativeXAxis()) {
             nodesList = new ArrayList<>();
         }
 
@@ -487,7 +452,7 @@ public class ApiController {
                 graph.increaseInfo("nodeTypes", node.getData().getType());
                 setQuantities(node, event);
                 nodes.put(event.getId(), node);
-                if (settings.getEventChain().isRelativeXAxis()) {
+                if (repositorySettings.isEventChainTimeRelativeXAxis()) {
                     node.setPosition(new Position((int) (node.getData().getTimes().get(TRIGGERED) - graph.getTime().getStart()) / 1000, 0));
                     if (nodesList != null) {
                         nodesList.add(node);
@@ -500,13 +465,13 @@ public class ApiController {
         for (String key : incEvents.keySet()) {
             Event event = incEvents.get(key);
 
-            if (!event.getType().equals(REDIRECT) && event.getLinks().size() + event.getChildren().size() <= settings.getEventChain().getMaxConnections()) {
+            if (!event.getType().equals(REDIRECT) && event.getLinks().size() + event.getChildren().size() <= repositorySettings.getEventChainMaxConnections()) {
                 for (Link link : event.getLinks()) {
                     String target = getTarget(link.getTarget(), events);
                     if (!incEvents.containsKey(target)) {
                         Node node = new Node(new DataNode(target, "unknown", "unknown", null));
                         nodes.put(target, node);
-                        if (settings.getEventChain().isRelativeXAxis()) {
+                        if (repositorySettings.isEventChainTimeRelativeXAxis()) {
                             node.setPosition(new Position((int) (event.getTimes().get(TRIGGERED) - graph.getTime().getStart()) / 1000, 0));
                             nodesList.add(node);
                         }
@@ -527,7 +492,7 @@ public class ApiController {
                     if (!incEvents.containsKey(childId)) {
                         Node node = new Node(new DataNode(childId, "unknown", "unknown", null));
                         nodes.put(childId, node);
-                        if (settings.getEventChain().isRelativeXAxis()) {
+                        if (repositorySettings.isEventChainTimeRelativeXAxis()) {
                             node.setPosition(new Position((int) (event.getTimes().get(TRIGGERED) - graph.getTime().getStart()) / 1000, 0));
                             nodesList.add(node);
                         }
@@ -545,7 +510,7 @@ public class ApiController {
             }
         }
 
-        if (settings.getEventChain().isRelativeXAxis()) {
+        if (repositorySettings.isEventChainTimeRelativeXAxis()) {
             nodesList.sort(Comparator.comparingInt(o -> o.getPosition().getX()));
             HashMap<Integer, Integer> lastPositions = new HashMap<>();
 
@@ -583,36 +548,36 @@ public class ApiController {
         return graph;
     }
 
-    private void step(Settings settings, Event event, HashMap<String, Event> incEvents, HashMap<String, Event> events, int steps) {
+    private void step(RepositorySettings repositorySettings, Event event, HashMap<String, Event> incEvents, HashMap<String, Event> events, int steps) {
 
         incEvents.put(event.getId(), event);
-        if (event.getChildren().size() + event.getLinks().size() > settings.getEventChain().getMaxConnections()) {
+        if (event.getChildren().size() + event.getLinks().size() > repositorySettings.getEventChainMaxConnections()) {
             return;
         }
         if (steps <= 0) {
             return;
         }
-        if (settings.getEventChain().isDownStream()) {
+        if (repositorySettings.isEventChainGoDownStream()) {
             ArrayList<Link> links = event.getLinks();
             if (links != null) {
                 for (Link link : links) {
-                    if (!settings.getEventChain().getBannedLinks().contains(link.getType())) {
+                    if (!repositorySettings.getEventChainBannedLinks().contains(link.getType())) {
                         Event tmpEvent = events.get(getTarget(link.getTarget(), events));
                         int newSteps = steps - 1;
-                        step(settings, tmpEvent, incEvents, events, newSteps);
+                        step(repositorySettings, tmpEvent, incEvents, events, newSteps);
                     }
                 }
             }
         }
 
-        if (settings.getEventChain().isUpStream()) {
+        if (repositorySettings.isEventChainGoUpStream()) {
             ArrayList<ChildLink> children = event.getChildren();
             if (children != null) {
                 for (ChildLink child : children) {
-                    if (!settings.getEventChain().getBannedLinks().contains(child.getType())) {
+                    if (!repositorySettings.getEventChainBannedLinks().contains(child.getType())) {
                         Event tmpEvent = events.get(child.getChild());
                         int newSteps = steps - 1;
-                        step(settings, tmpEvent, incEvents, events, newSteps);
+                        step(repositorySettings, tmpEvent, incEvents, events, newSteps);
                     }
                 }
             }
@@ -628,5 +593,55 @@ public class ApiController {
             return getTarget(event.getAggregateOn(), events);
         }
         return target;
+    }
+
+    @RequestMapping(value = "/api/eventChainGraph", produces = "application/json; charset=UTF-8")
+    public ReturnData eventChainGraph(@RequestBody EiffelEventRepository eiffelEventRepository) {
+        if (eiffelEventRepository.getRepositorySettings().getEventChainTargetId().equals("")) {
+            return new ReturnData(new Graph());
+        }
+
+        Fetcher fetcher = new Fetcher();
+        Events eventsObject = fetcher.getEvents(eiffelEventRepository.getUrl(), eiffelEventRepository.getRepositorySettings().getCacheLifeTimeMs());
+        HashMap<String, Event> events = eventsObject.getEvents();
+
+        if (!events.containsKey(eiffelEventRepository.getRepositorySettings().getEventChainTargetId())) {
+            return new ReturnData(new Graph(), eventsObject.getTimeCollected());
+        }
+
+        Event mainEvent = events.get(eiffelEventRepository.getRepositorySettings().getEventChainTargetId());
+        ArrayList<Event> baseEvents = new ArrayList<>();
+        baseEvents.add(mainEvent);
+
+        return new ReturnData(getChainGraph(eiffelEventRepository.getRepositorySettings(), baseEvents, events), eventsObject.getTimeCollected());
+    }
+
+    @RequestMapping(value = "/api/liveEventChainGraph", produces = "application/json; charset=UTF-8")
+    public ReturnData liveEventChainGraph(@RequestBody EiffelEventRepository eiffelEventRepository) {
+
+        Fetcher fetcher = new Fetcher();
+        // TODO: fetch only base events based on time added
+        Events eventsObject = fetcher.getEvents(eiffelEventRepository.getUrl(), eiffelEventRepository.getRepositorySettings().getCacheLifeTimeMs());
+        HashMap<String, Event> events = eventsObject.getEvents();
+
+        Collection<Event> eventsCollection = events.values();
+        ArrayList<Event> eventsList = new ArrayList<>(eventsCollection);
+
+        eventsList.sort(Comparator.comparingLong(this::getSortTime));
+
+        ArrayList<Event> baseEvents = new ArrayList<>();
+
+        int i = eventsList.size() - 1;
+        int count = 0;
+        while (count < eiffelEventRepository.getRepositorySettings().getStreamBaseEvents() && i >= 0) {
+            Event tmpEvent = eventsList.get(i);
+            if (!tmpEvent.getType().equals(REDIRECT)) {
+                baseEvents.add(tmpEvent);
+                count++;
+            }
+            i--;
+        }
+
+        return new ReturnData(getChainGraph(eiffelEventRepository.getRepositorySettings(), baseEvents, events), eventsObject.getTimeCollected());
     }
 }

@@ -1,5 +1,7 @@
 package vici.entities;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import vici.entities.Eiffel.EiffelEvent;
 
 import java.util.ArrayList;
@@ -74,6 +76,16 @@ public class Event {
             mergedEvents = new ArrayList<>();
         }
         mergedEvents.add(event);
+    }
+
+    public String toString() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            return objectMapper.writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public EiffelEvent getThisEiffelEvent() {

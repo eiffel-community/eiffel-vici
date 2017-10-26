@@ -5,7 +5,6 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 
     <!-- Style Sheets -->
-
     <link rel="stylesheet" media="screen" th:href="@{/styles/bootstrap/bootstrap.min.css}"/>
     <link rel="stylesheet" media="screen" th:href="@{/styles/bootstrap/bootstrap-theme.min.css}"/>
     <link rel="stylesheet" media="screen" th:href="@{/styles/bootstrap/bootstrap-toggle.min.css}"/>
@@ -23,8 +22,8 @@
     <link rel="stylesheet" media="screen" th:href="@{/styles/main.css}"/>
 
     <!-- JavaScript imports -->
-
     <script th:src="@{/js/jquery/jquery-3.2.1.min.js}"></script>
+    <script th:src="@{/js/jquery/jquery.timeago.js}"></script>
     <script th:src="@{/js/underscore/underscore-min.js}"></script>
 
     <script th:src="@{/js/bootstrap/bootstrap.min.js}"></script>
@@ -71,6 +70,7 @@
     </div>
 
     <article>
+        <!-- Content containers -->
         <div id="loader_overlay" class="overlay">
             <div id="loader" class="loader"></div>
         </div>
@@ -99,9 +99,10 @@
         </div>
 
         <div id="live_wrapper" class="content-container">
-            <div id="live" class="content-container cy"></div>
+            <div id="live_chain" class="content-container cy"></div>
         </div>
 
+        <!-- Setting page -->
         <div id="settings" class="content-container non-cy">
             <div class="container settings-container">
                 <div class="row">
@@ -110,86 +111,29 @@
                         <h2>Settings</h2>
                         When changing a setting, all caches relative to that settings will be invalidated automatically.
 
-                        <div id="settings-general">
-                            <h3>General</h3>
-
-                            <div class="input-group settings-row">
-                                <span class="input-group-addon">Time to keep caches</span>
-                                <input id="cacheKeepTime" type="number" class="form-control"
-                                       placeholder="Positive integer"/>
-                            </div>
-
-                            <div class="settings-row">
-                                <button class="btn btn-default" type="button" data-toggle="collapse"
-                                        data-target="#systemCollapse" aria-expanded="false">
-                                    Manage systems <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
-                                </button>
-                            </div>
-                            <div class="collapse" id="systemCollapse">
-                                <div id="systemsSettings">
-
-                                </div>
-                                <button id="btnNewSystem" type="button" class="btn btn-success"><span
-                                        class="glyphicon glyphicon-plus"
-                                        aria-hidden="true"></span></button>
-                            </div>
+                        <div class="settings-row">
+                            <button class="btn btn-default" type="button" data-toggle="collapse"
+                                    data-target="#systemCollapse" aria-expanded="false">
+                                Manage systems <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+                            </button>
                         </div>
 
-                        <div id="settings-aggregation">
-                            <h3>Aggregation</h3>
+                        <div class="collapse" id="systemCollapse">
+                            <div id="systemsSettings"></div>
+                            <button id="btnNewSystem" type="button" class="btn btn-success"><span
+                                    class="glyphicon glyphicon-plus"
+                                    aria-hidden="true"></span></button>
                         </div>
 
-                        <div id="settings-details">
-                            <h3>Details</h3>
-                        </div>
+                        <h3 id="settings_currentEiffelEventRepositoryHeader"></h3>
 
-                        <div id="settings-eventChain">
-
-                            <h3>Event Chain</h3>
-
-                            <div class="input-group settings-row">
-                                <span class="input-group-addon">Maximum jumps</span>
-                                <input id="steps" type="number" class="form-control" placeholder="Positive integer"/>
-                            </div>
-                            <div class="input-group settings-row">
-                                <span class="input-group-addon">Maximum connections/node</span>
-                                <input id="maxConnections" type="number" class="form-control"
-                                       placeholder="Positive integer"/>
-                            </div>
-
-                            <div class="input-group settings-row">
-                                <label class="checkbox-inline">
-                                    <input type="checkbox" data-toggle="toggle" id="upStream"/> Follow links <b>up</b>
-                                    stream
-                                </label>
-                            </div>
-
-                            <div class="input-group settings-row">
-                                <label class="checkbox-inline">
-                                    <input type="checkbox" data-toggle="toggle" id="downStream"/> Follow links
-                                    <b>down</b>
-                                    stream
-                                </label>
-                            </div>
-
-                            <div class="input-group settings-row">
-                                <label class="checkbox-inline">
-                                    <input type="checkbox" data-toggle="toggle" id="relativeXAxis"/> Node x-position
-                                    defined
-                                    by actual timestamp
-                                </label>
-                            </div>
-                        </div>
-
-                        <div id="settings-live">
-                            <h3>Live</h3>
-                        </div>
-
+                        <div id="settings_content"></div>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- Information and help page -->
         <div id=" help" class="content-container non-cy">
 
             <h2>Information</h2>
@@ -314,17 +258,24 @@
             <h3>Technical</h3>
             This section contains technical information about the application.
             <h4>Source</h4>
-            <!--<a target="_blank" href="https://gitlab.ida.liu.se/tddd96/visualization">Git repository</a>-->
+            <a target="_blank" href="https://github.com/Ericsson/eiffel-vici">Git repository</a>
             <h4>Contact</h4>
             <p>jonathan.wahlund@ericsson.com</p>
         </div>
     </article>
 
+    <!-- Navigation sidebar -->
     <nav>
-
         <div class="list-group" id="side-menu">
             <select class="selectpicker" title="Choose a system" id="systemSelect"
                     data-style="list-group-item"></select>
+
+            <a id="menu_system_force_fetch" class="list-group-item ">
+                Events collected
+                <time id="data_updated_timeago" class="timeago"></time>
+                <button id="button_system_force_fetch" type="button" class="btn btn-default">Update events</button>
+            </a>
+
             <a href="#" id="menu_aggregation" data-value="aggregation" class="list-group-item list-group-item-action">Aggregation</a>
             <a href="#" id="menu_details" data-value="details"
                class="list-group-item list-group-item-action">Details
@@ -339,12 +290,11 @@
                                                                         data-offstyle="default"
                                                                         data-width="100%"/></a>
 
-
             <a href="#" id="menu_eventChain" data-value="eventChain" class="list-group-item list-group-item-action">Event
                 chain
                 <span id="menu-eventChain-extra" class="menu-item-extra"></span></a>
             <a href="#" id="menu_live" data-value="live"
-               class="list-group-item list-group-item-action">Live</a>
+               class="list-group-item list-group-item-action">Event chain live stream</a>
             <a href="#" id="menu_settings" data-value="settings"
                class="list-group-item list-group-item-action"><span class="glyphicon glyphicon-cog"
                                                                     aria-hidden="true"></span></a>

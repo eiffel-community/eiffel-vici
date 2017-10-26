@@ -1,34 +1,39 @@
-.gradle
-/build/
-!gradle/wrapper/gradle-wrapper.jar
+# -- JAVA
+# Compiled class file
+*.class
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
+# Log file
+*.log
 
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
-nbproject/private/
-nbbuild/
-dist/
-nbdist/
-.nb-gradle/
+# Package Files #
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
 
 
+# -- GRADLE
+/app/.gradle/
+/app/build/
 
+# Ignore Gradle GUI config
+/app/gradle-app.setting
+
+# Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
+!gradle-wrapper.jar
+
+# Cache of project
+/app/.gradletasknamecache
+
+
+# -- JETBRAINS
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio and Webstorm
 # Reference: https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
 
 # User-specific stuff:
+.idea/**/workspace.xml
 .idea/**/tasks.xml
 .idea/dictionaries
 
@@ -39,15 +44,25 @@ nbdist/
 .idea/**/dataSources.local.xml
 .idea/**/sqlDataSources.xml
 .idea/**/dynamic.xml
+.idea/**/uiDesigner.xml
+
 # Gradle:
+.idea/**/gradle.xml
+.idea/**/libraries
+
 # CMake
-cmake-build-debug/
+/app/cmake-build-debug/
 
 # Mongo Explorer plugin:
+.idea/**/mongoSettings.xml
+
+## File-based project format:
+*.iws
+
 ## Plugin-specific files:
 
 # IntelliJ
-/out/
+/app/out/
 
 # mpeltonen/sbt-idea plugin
 .idea_modules/
@@ -64,5 +79,7 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
-ignored
-src/main/resources/static/events.json
+# -- CUSTOM
+!/app/src/main/resources/static/reference-data-set.zip
+/app/src/main/resources/static/reference-data-set.json
+/settings.json
