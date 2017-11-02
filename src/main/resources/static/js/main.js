@@ -742,9 +742,9 @@ function load(stage, useCache) {
                                         end: plotData.timeLast,
                                     };
 
-                                    console.log(groups);
-                                    console.log(dataset);
-                                    console.log(options);
+                                    // console.log(groups);
+                                    // console.log(dataset);
+                                    // console.log(options);
                                     document.getElementById('details_plot').innerHTML = '';
                                     let plot = new vis.Graph2d(document.getElementById('details_plot'), dataset, groups, options);
 
@@ -838,10 +838,16 @@ function load(stage, useCache) {
     });
 }
 
-function newDetailsTarget(target,) {
+function newDetailsTarget(target) {
     settingsElement.detailsTarget.html(target);
 
-    load("details");
+    load(STAGE_DETAILS);
+}
+
+function newEventChainTarget(target) {
+    settingsElement.eventChainTarget.html(target);
+
+    load(STAGE_EVENTCHAIN);
 }
 
 function generateStatusImages() {
@@ -1071,6 +1077,12 @@ function renderCytoscape(container, data, repositorySettings, target) {
                 'background-width': '100%',
             }
         },
+        {
+            selector: 'node[type $= "(Culled)"]',
+            style: {
+                'background-color': COLOR_UNDEFINED,
+            }
+        },
     ];
     let layout = {
         name: 'dagre',
@@ -1114,9 +1126,14 @@ function renderCytoscape(container, data, repositorySettings, target) {
             content = content +
                 '<tr><td>' + key + '</td><td class="td-right">' + data.info[key] + '</td></tr>';
         }
+
+        // Not aggregated
         if (target !== undefined) {
             /** @namespace data.quantities */
             for (let quantity in data.quantities) {
+                if (data.quantities[quantity] === 0) {
+                    continue;
+                }
                 if (quantity === 'SUCCESSFUL') {
                     content = content + '<tr class="table-success">';
                 } else if (quantity === 'FAILED' || quantity === 'UNSUCCESSFUL') {
@@ -1132,16 +1149,22 @@ function renderCytoscape(container, data, repositorySettings, target) {
                 content = content +
                     '<td>Result</td><td class="td">' + quantity + '</td></tr>';
             }
-            content = content + '</table><table class="table table-bordered table-sm table-hover table-qtip"><tr><th>Key</th><th colspan="2">Timestamp</th></tr>';
-            for (let time in data.times) {
-                if (time === 'Execution') {
-                    content = content +
-                        '<tr><td>' + time + ' (ms)</td><td class="td-right">' + data.times[time] + '</td></tr>';
-                } else {
-                    content = content +
-                        '<tr><td>' + time + '</td><td class="td-right">' + formatTime(data.times[time]) + '</td></tr>';
+
+            if (data.type.endsWith('(Culled)')) {
+                content += '<tr><td><button type="button" class="btn btn-block btn-secondary" onclick="newEventChainTarget(\'' + data.id + '\')"> Expand </button></td></tr>'
+            } else {
+                content = content + '</table><table class="table table-bordered table-sm table-hover table-qtip"><tr><th>Key</th><th colspan="2">Timestamp</th></tr>';
+                for (let time in data.times) {
+                    if (time === 'Execution') {
+                        content = content +
+                            '<tr><td>' + time + ' (ms)</td><td class="td-right">' + data.times[time] + '</td></tr>';
+                    } else {
+                        content = content +
+                            '<tr><td>' + time + '</td><td class="td-right">' + formatTime(data.times[time]) + '</td></tr>';
+                    }
                 }
             }
+
         }
 
         content = content + '</table>';

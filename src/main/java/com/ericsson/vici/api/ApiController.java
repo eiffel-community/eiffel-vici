@@ -16,9 +16,6 @@
 */
 package com.ericsson.vici.api;
 
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 import com.ericsson.vici.Fetcher;
 import com.ericsson.vici.api.entities.ReturnData;
 import com.ericsson.vici.api.entities.settings.EiffelEventRepository;
@@ -34,6 +31,9 @@ import com.ericsson.vici.entities.Table.Column;
 import com.ericsson.vici.entities.Table.Source;
 import com.ericsson.vici.entities.Vis.Item;
 import com.ericsson.vici.entities.Vis.Plot;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.*;
 
@@ -48,6 +48,10 @@ public class ApiController {
     private static final int PLOT_GROUP_FILL_INCONCLUSIVE = 1;
     private static final int PLOT_GROUP_FILL_PASS = 2;
     private static final int PLOT_GROUP_FILL_FAIL = 3;
+
+    private static final String LABEL_CULLED = "Culled [Click to expand]";
+    private static final String TYPE_CULLED = "(Culled)";
+    private static final String TYPE_UNKNOWN = "unknown";
 
     private void setQuantities(Node node, Event event) {
         switch (node.getData().getType()) {
@@ -485,13 +489,20 @@ public class ApiController {
                 for (Link link : event.getLinks()) {
                     String target = getTarget(link.getTarget(), events);
                     if (!incEvents.containsKey(target)) {
-                        Node node = new Node(new DataNode(target, "unknown", "unknown", null));
+
+                        String type = TYPE_UNKNOWN;
+                        Event targetEvent = events.get(target);
+                        if (targetEvent != null) {
+                            type = targetEvent.getType();
+                        }
+
+                        Node node = new Node(new DataNode(target, LABEL_CULLED, type + TYPE_CULLED, null));
                         nodes.put(target, node);
                         if (repositorySettings.isEventChainTimeRelativeXAxis()) {
                             node.setPosition(new Position((int) (event.getTimes().get(TRIGGERED) - graph.getTime().getStart()) / 1000, 0));
                             nodesList.add(node);
                         }
-                        graph.increaseInfo("nodeTypes", "unknown");
+                        graph.increaseInfo("nodeTypes", type);
                     }
 
                     if (nodes.containsKey(target)) {
@@ -506,13 +517,20 @@ public class ApiController {
                 for (ChildLink child : event.getChildren()) {
                     String childId = child.getChild();
                     if (!incEvents.containsKey(childId)) {
-                        Node node = new Node(new DataNode(childId, "unknown", "unknown", null));
+
+                        String type = TYPE_UNKNOWN;
+                        Event targetEvent = events.get(childId);
+                        if (targetEvent != null) {
+                            type = targetEvent.getType();
+                        }
+
+                        Node node = new Node(new DataNode(childId, LABEL_CULLED, type + TYPE_CULLED, null));
                         nodes.put(childId, node);
                         if (repositorySettings.isEventChainTimeRelativeXAxis()) {
                             node.setPosition(new Position((int) (event.getTimes().get(TRIGGERED) - graph.getTime().getStart()) / 1000, 0));
                             nodesList.add(node);
                         }
-                        graph.increaseInfo("nodeTypes", "unknown");
+                        graph.increaseInfo("nodeTypes", type);
                     }
 
                     if (nodes.containsKey(childId)) {
