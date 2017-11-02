@@ -33,7 +33,7 @@ public class RepositorySettings {
 
     private boolean eventChainGoUpStream = true;
     private boolean eventChainGoDownStream = true;
-    private int eventChainMaxSteps = 5;
+    private int eventChainMaxSteps = 4;
     private int eventChainMaxConnections = 16;
     private boolean eventChainTimeRelativeXAxis = false;
 
