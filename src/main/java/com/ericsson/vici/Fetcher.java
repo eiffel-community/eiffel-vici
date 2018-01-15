@@ -17,6 +17,10 @@
 package com.ericsson.vici;
 
 
+import com.ericsson.vici.api.entities.Query;
+import com.ericsson.vici.entities.*;
+import com.ericsson.vici.entities.Eiffel.CustomData;
+import com.ericsson.vici.entities.Eiffel.EiffelEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONObject;
@@ -24,10 +28,6 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
-import com.ericsson.vici.api.entities.Query;
-import com.ericsson.vici.entities.*;
-import com.ericsson.vici.entities.Eiffel.CustomData;
-import com.ericsson.vici.entities.Eiffel.EiffelEvent;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,7 +44,7 @@ public class Fetcher {
     public static final String ACTIVITY = "Activity";
     public static final String TEST_SUITE = "TestSuite";
 
-    private static HashMap<String, EventCache> eventCaches = new HashMap<>(); // TODO: a job that removes very old caches
+    private static HashMap<String, EventCache> eventCaches = new HashMap<>(); // TODO: a job that removes very old caches för memory cleanup
 
     public Fetcher() {
     }
@@ -190,32 +190,36 @@ public class Fetcher {
         long timeStart = Long.MAX_VALUE;
         long timeEnd = Long.MIN_VALUE;
 
+        // Collections.shuffle(Arrays.asList(eiffelEvents)); // for testing a non-ordered set of eiffel data
+
+
         HashMap<String, Event> events = new HashMap<>();
+
+        ArrayList<Event> potentialEventToBeMerges = new ArrayList<>();
+
+        // First all trigger events and such (the base events)
         for (EiffelEvent eiffelEvent : eiffelEvents) {
             Event event = new Event(eiffelEvent);
-//            if (event.getTime().getStart() < timeStart) {
-//                timeStart = event.getTime().getStart();
-//            }
-//            if (event.getTime().getFinish() > timeEnd) {
-//                timeEnd = event.getTime().getFinish();
-//            }
 
             switch (event.getType()) {
                 case "EiffelTestCaseTriggeredEvent":
                     event.setType(TEST_CASE);
                     events.put(event.getId(), event);
+                    potentialEventToBeMerges.add(event);
+                    count++;
                     break;
 
                 case "EiffelActivityTriggeredEvent":
                     event.setType(ACTIVITY);
                     events.put(event.getId(), event);
+                    count++;
                     break;
 
                 case "EiffelTestSuiteStartedEvent":
                     event.setType(TEST_SUITE);
                     events.put(event.getId(), event);
+                    count++;
                     break;
-
                 case "EiffelTestCaseStartedEvent":
                 case "EiffelTestCaseFinishedEvent":
                 case "EiffelTestCaseCanceledEvent":
@@ -225,66 +229,65 @@ public class Fetcher {
                 case "EiffelActivityCanceledEvent":
 
                 case "EiffelTestSuiteFinishedEvent":
-                    Event target = null;
-
-                    ArrayList<Link> tmpLinks = new ArrayList<>();
-                    for (Link link : event.getLinks()) {
-                        if (link.getType().equals("ACTIVITY_EXECUTION") || link.getType().equals("TEST_CASE_EXECUTION") || link.getType().equals("TEST_SUITE_EXECUTION")) {
-                            target = events.get(link.getTarget());
-                        } else {
-                            tmpLinks.add(link);
-                        }
-                    }
-                    if (target != null) {
-                        for (Link link : tmpLinks) {
-                            events.get(target.getId()).getLinks().add(link);
-                        }
-
-                        events.put(event.getId(), new Event(event, target.getId()));
-                        switch (event.getType()) {
-                            case "EiffelTestCaseStartedEvent":
-                            case "EiffelActivityStartedEvent":
-                                target.getEiffelEvents().put(STARTED, event.getEiffelEvents().get(TRIGGERED));
-                                target.getTimes().put(STARTED, event.getTimes().get(TRIGGERED));
-                                break;
-                            case "EiffelTestCaseCanceledEvent":
-                            case "EiffelActivityCanceledEvent":
-                                target.getEiffelEvents().put(CANCELED, event.getEiffelEvents().get(TRIGGERED));
-                                target.getTimes().put(CANCELED, event.getTimes().get(TRIGGERED));
-                                break;
-                            default:
-                                target.getEiffelEvents().put(FINISHED, event.getEiffelEvents().get(TRIGGERED));
-                                target.getTimes().put(FINISHED, event.getTimes().get(TRIGGERED));
-
-                                tmpLinks = new ArrayList<>();
-                                Event testSuite = null;
-                                for (Link link : target.getLinks()) {
-                                    if (events.get(link.getTarget()).getType().equals(TEST_SUITE)) {
-                                        testSuite = events.get(link.getTarget());
-                                        testSuite.addEvent(target);
-//                                        events.remove(target.getId());
-                                        events.put(target.getId(), new Event(event, testSuite.getId()));
-                                    } else {
-                                        tmpLinks.add(link);
-                                    }
-                                }
-                                if (testSuite != null) {
-                                    for (Link link : tmpLinks) {
-                                        testSuite.getLinks().add(link);
-                                    }
-                                }
-                                break;
-                        }
-                    } else {
-                        System.out.println("ERROR: Eiffel wrong links.");
-                    }
+                    // Skip at this time
                     break;
-
                 default:
                     events.put(event.getId(), event);
+                    count++;
                     break;
             }
 
+            // Print progress
+            if ((float) count / total > (float) lastPrint / total + 0.1 || count == total || count == 0) {
+                System.out.println(count + "/" + total);
+                lastPrint = count;
+            }
+        }
+
+        // All followup events
+        for (EiffelEvent eiffelEvent : eiffelEvents) {
+            Event event = new Event(eiffelEvent);
+
+            // If event is not already added, its a followup event
+            if (!events.containsKey(event.getId())) {
+                Event target = null;
+
+                // Find the target
+                ArrayList<Link> tmpLinks = new ArrayList<>();
+                for (Link link : event.getLinks()) {
+                    if (link.getType().equals("ACTIVITY_EXECUTION") || link.getType().equals("TEST_CASE_EXECUTION") || link.getType().equals("TEST_SUITE_EXECUTION")) {
+                        target = events.get(link.getTarget());
+                    } else {
+                        tmpLinks.add(link);
+                    }
+                }
+
+                if (target != null) {
+                    for (Link link : tmpLinks) {
+                        events.get(target.getId()).getLinks().add(link);
+                    }
+
+                    events.put(event.getId(), new Event(event, target.getId()));
+                    switch (event.getType()) {
+                        case "EiffelTestCaseStartedEvent":
+                        case "EiffelActivityStartedEvent":
+                            target.getEiffelEvents().put(STARTED, event.getEiffelEvents().get(TRIGGERED));
+                            target.getTimes().put(STARTED, event.getTimes().get(TRIGGERED));
+                            break;
+                        case "EiffelTestCaseCanceledEvent":
+                        case "EiffelActivityCanceledEvent":
+                            target.getEiffelEvents().put(CANCELED, event.getEiffelEvents().get(TRIGGERED));
+                            target.getTimes().put(CANCELED, event.getTimes().get(TRIGGERED));
+                            break;
+                        default:
+                            target.getEiffelEvents().put(FINISHED, event.getEiffelEvents().get(TRIGGERED));
+                            target.getTimes().put(FINISHED, event.getTimes().get(TRIGGERED));
+                            break;
+                    }
+                } else {
+                    System.out.println("ERROR: null link.");
+                }
+            }
             count++;
             if ((float) count / total > (float) lastPrint / total + 0.1 || count == total || count == 0) {
                 System.out.println(count + "/" + total);
@@ -292,6 +295,28 @@ public class Fetcher {
             }
         }
 
+        // Merge test cases into suites
+        for (Event event : potentialEventToBeMerges) {
+            ArrayList<Link> tmpLinks = new ArrayList<>();
+            Event testSuite = null;
+            for (Link link : event.getLinks()) {
+                if (events.get(link.getTarget()).getType().equals(TEST_SUITE)) {
+                    testSuite = events.get(link.getTarget());
+                    testSuite.addEvent(event);
+                    events.put(event.getId(), new Event(event, testSuite.getId())); // Override with redirect
+                } else {
+                    tmpLinks.add(link);
+                }
+            }
+            if (testSuite != null) {
+                // Pass the test case's links to the test suite
+                for (Link link : tmpLinks) {
+                    testSuite.getLinks().add(link);
+                }
+            }
+        }
+
+        // Makes the links go both ways.
         System.out.println("Finding children...");
         for (String key : events.keySet()) {
             Event event = events.get(key);
@@ -303,9 +328,9 @@ public class Fetcher {
             }
         }
 
+        // Sets aggregate values
         for (String key : events.keySet()) {
             Event event = events.get(key);
-
             if (!event.getType().equals(REDIRECT)) {
                 event.setAggregateOn(getAggregateValue(event, null));
             }
