@@ -16,9 +16,9 @@
 */
 package com.ericsson.vici.entities;
 
+import com.ericsson.vici.entities.Eiffel.EiffelEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ericsson.vici.entities.Eiffel.EiffelEvent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,7 +37,6 @@ public class Event {
     private HashMap<String, Long> times;
     private HashMap<String, Integer> quantities;
     private ArrayList<Event> mergedEvents;
-
 
     private String id;
     private String type;

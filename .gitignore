@@ -19,10 +19,7 @@ target/
 derby.log
 
 ignored
-src/main/resources/static/events.json
 
 # -- CUSTOM
-!/app/src/main/resources/static/reference-data-set.zip
-/app/src/main/resources/static/reference-data-set.json
-/settings.json
-/src/main/resources/static/reference-data-set.json
+settings.json
+src/main/resources/static/*.json
