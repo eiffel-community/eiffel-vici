@@ -413,6 +413,7 @@ function getContentElements() {
         menu: {
             aggregation: $('#menu_aggregation'),
             systemForceUpdate: $('#menu_system_force_fetch'),
+            systemStatusUpdateText: $('#last_fetch_status_text'),
             details: $('#menu_details'),
             detailsToggle: $('#menu_details_toggle'),
             eventChain: $('#menu_eventChain'),
@@ -513,8 +514,14 @@ function populateExternalLegend(groups, graph2d) {
     }
 }
 
-function updateEventsCollectedTime(lastDataCollectedAt) {
+function updateEventsCollectedTime(msg, lastDataCollectedAt) {
+    contentGlobal.menu.systemStatusUpdateText.html(msg + ' ');
     contentGlobal.timeago.dataUpdated.timeago("update", new Date(lastDataCollectedAt));
+}
+
+function fetchCompleted() {
+    contentGlobal.menu.systemForceUpdate.show();
+    contentGlobal.loader.hide();
 }
 
 function load(stage, useCache) {
@@ -560,8 +567,7 @@ function load(stage, useCache) {
                             renderCytoscape(contentGlobal.cyAggregation, graphData, repository.repositorySettings, undefined);
                             storeCache(stage, repository.url);
                             /** @namespace data.timeCollected */
-                            updateEventsCollectedTime(data.timeCollected);
-                            contentGlobal.menu.systemForceUpdate.show();
+                            updateEventsCollectedTime('Events collected', data.timeCollected);
                         },
                         error: function (jqXHR, textStatus, errorThrown) {
                             showModal('<p>Wops! I could not fetch data from the given url :( check that the event repository server is running and the correct url is given in the settings.</p><div class="alert alert-danger" role="alert">' + jqXHR.responseText + '</div>');
@@ -569,12 +575,10 @@ function load(stage, useCache) {
                             disableMenuLevel(0);
                             renderCytoscape(contentGlobal.cyAggregation, undefined, repository.repositorySettings, undefined);
                             storeCache(stage, repository.url);
-                            contentGlobal.menu.systemForceUpdate.hide();
+                            updateEventsCollectedTime("Failed to fetch events", Date.now());
                         },
                         complete: function (jqXHR, textStatus) {
-                            // console.log(jqXHR);
-                            // console.log(textStatus);
-                            contentGlobal.loader.hide();
+                            fetchCompleted();
                         }
                     });
                 });
@@ -639,11 +643,13 @@ function load(stage, useCache) {
                                 } else {
                                     console.log("No data");
                                 }
-                                /** @namespace data.timeCollected */
-                                updateEventsCollectedTime(data.timeCollected);
+                                updateEventsCollectedTime('Events collected', data.timeCollected);
+                            },
+                            error: function () {
+                                updateEventsCollectedTime('Failed to details', Date.now());
                             },
                             complete: function () {
-                                contentGlobal.loader.hide();
+                                fetchCompleted();
                             }
                         });
                     });
@@ -750,16 +756,17 @@ function load(stage, useCache) {
 
                                     populateExternalLegend(groups, plot);
 
-
                                     storeCache('detailsPlot', repository.url + detailsTarget);
                                 } else {
                                     console.log("No data");
                                 }
-                                /** @namespace data.timeCollected */
-                                updateEventsCollectedTime(data.timeCollected);
+                                updateEventsCollectedTime('Events collected', data.timeCollected);
+                            },
+                            error: function () {
+                                updateEventsCollectedTime('Failed to fetch plot', Date.now());
                             },
                             complete: function () {
-                                contentGlobal.loader.hide();
+                                fetchCompleted();
                             }
                         });
                     });
@@ -783,11 +790,13 @@ function load(stage, useCache) {
                             let graphData = data.data;
                             renderCytoscape(contentGlobal.cyEventChain, graphData.elements, repository.repositorySettings, eventTarget);
                             storeCache(stage, repository.url + eventTarget);
-                            /** @namespace data.timeCollected */
-                            updateEventsCollectedTime(data.timeCollected);
+                            updateEventsCollectedTime('Events collected', data.timeCollected);
+                        },
+                        error: function () {
+                            updateEventsCollectedTime('Failed to fetch event-chain', Date.now());
                         },
                         complete: function () {
-                            contentGlobal.loader.hide();
+                            fetchCompleted();
                         }
                     });
                 });
@@ -813,11 +822,13 @@ function load(stage, useCache) {
                                 let graphData = data.data;
                                 renderCytoscape(contentGlobal.cyLiveEventChain, graphData.elements, repository);
                                 storeCache(stage, repository.url);
-                                /** @namespace data.timeCollected */
-                                updateEventsCollectedTime(data.timeCollected);
+                                updateEventsCollectedTime('Events collected', data.timeCollected);
+                            },
+                            error: function () {
+                                updateEventsCollectedTime('Failed live fetch', data.timeCollected);
                             },
                             complete: function () {
-                                contentGlobal.loader.hide();
+                                fetchCompleted();
                                 isFetching = false;
                             }
                         });
