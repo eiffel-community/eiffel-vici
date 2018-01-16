@@ -38,6 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.*;
 
 import static com.ericsson.vici.Fetcher.*;
+import static com.ericsson.vici.ViciApplication.log;
 import static com.ericsson.vici.ViciApplication.settingsHandler;
 import static com.ericsson.vici.entities.Event.*;
 
@@ -98,7 +99,7 @@ public class ApiController {
         } else if (event.getTimes().containsKey(CANCELED)) {
             return event.getTimes().get(CANCELED);
         }
-        System.out.println("Error: no time found for event " + event.getId());
+        log.error("no time found for event " + event.getId());
         return 0;
     }
 

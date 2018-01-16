@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.ericsson.vici.ViciApplication.log;
 import static com.ericsson.vici.api.ApiController.getTarget;
 import static com.ericsson.vici.entities.Event.*;
 
@@ -59,7 +60,7 @@ public class Fetcher {
 //            case "EiffelArtifactPublishedEvent": TODO
             case "EiffelArtifactReusedEvent":
                 if (event.getThisEiffelEvent().getData().getGav() == null) {
-                    System.out.println(event.getThisEiffelEvent().getMeta().getType());
+                    log.error("Investigate in Fetcher.getStandardAggregateValue: " + event.getThisEiffelEvent().getMeta().getType());
                 }
 //                return event.getThisEiffelEvent().getData().getGav().getGroupId() + "[" + event.getThisEiffelEvent().getData().getGav().getArtifactId() + "]";
                 return event.getThisEiffelEvent().getData().getGav().getArtifactId();
@@ -124,11 +125,12 @@ public class Fetcher {
         if (eventCaches.containsKey(url)) {
             EventCache eventCache = eventCaches.get(url);
             if (eventCache.getLastUpdate() > System.currentTimeMillis() - cacheLifetimeMs) {
+                log.info("Stored cache used for: " + url);
                 return eventCache.getEvents();
             }
         }
 
-        System.out.println("Downloading eiffel-events...");
+        log.info("Downloading eiffel-events from: " + url);
 
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<EiffelEvent[]> responseEntity;
@@ -140,7 +142,7 @@ public class Fetcher {
         long eventsFetchedAt = System.currentTimeMillis();
 
         if (matcher.find()) {
-            System.out.println("Request for local file " + matcher.group(1) + ".json");
+//            System.out.println("Request for local file " + matcher.group(1) + ".json");
 //            responseEntity = restTemplate.getForEntity("http://127.0.0.1:8080/" + matcher.group(1), EiffelEvent[].class);
 
             ObjectMapper mapper = new ObjectMapper();
@@ -181,7 +183,7 @@ public class Fetcher {
             return null;
         }
 
-        System.out.println("Downloaded eiffel-events. Importing...");
+        log.info("Downloaded eiffel-events. Importing...");
 
         int total = eiffelEvents.length;
         int count = 0;
@@ -239,7 +241,7 @@ public class Fetcher {
 
             // Print progress
             if ((float) count / total > (float) lastPrint / total + 0.1 || count == total || count == 0) {
-                System.out.println(count + "/" + total);
+                log.info(count + "/" + total);
                 lastPrint = count;
             }
         }
@@ -285,12 +287,12 @@ public class Fetcher {
                             break;
                     }
                 } else {
-                    System.out.println("ERROR: null link.");
+                    log.error("null link while fetching followup events.");
                 }
             }
             count++;
             if ((float) count / total > (float) lastPrint / total + 0.1 || count == total || count == 0) {
-                System.out.println(count + "/" + total);
+                log.info(count + "/" + total);
                 lastPrint = count;
             }
         }
@@ -317,7 +319,7 @@ public class Fetcher {
         }
 
         // Makes the links go both ways.
-        System.out.println("Finding children...");
+        log.info("Fining and applying children to all nodes.");
         for (String key : events.keySet()) {
             Event event = events.get(key);
             if (!event.getType().equals(REDIRECT)) {
@@ -339,7 +341,7 @@ public class Fetcher {
         Events eventsObject = new Events(events, timeStart, timeEnd, eventsFetchedAt);
         eventCaches.put(url, new EventCache(eventsObject, eventsFetchedAt));
 
-        System.out.println("Events imported.");
+        log.info("Events imported from: " + url);
         return eventsObject;
     }
 }
