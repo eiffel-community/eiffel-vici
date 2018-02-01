@@ -204,24 +204,6 @@ public class Fetcher {
             Event event = new Event(eiffelEvent);
 
             switch (event.getType()) {
-                case "EiffelTestCaseTriggeredEvent":
-                    event.setType(TEST_CASE);
-                    events.put(event.getId(), event);
-                    potentialEventToBeMerges.add(event);
-                    count++;
-                    break;
-
-                case "EiffelActivityTriggeredEvent":
-                    event.setType(ACTIVITY);
-                    events.put(event.getId(), event);
-                    count++;
-                    break;
-
-                case "EiffelTestSuiteStartedEvent":
-                    event.setType(TEST_SUITE);
-                    events.put(event.getId(), event);
-                    count++;
-                    break;
                 case "EiffelTestCaseStartedEvent":
                 case "EiffelTestCaseFinishedEvent":
                 case "EiffelTestCaseCanceledEvent":
@@ -233,7 +215,26 @@ public class Fetcher {
                 case "EiffelTestSuiteFinishedEvent":
                     // Skip at this time
                     break;
+
                 default:
+                    switch (event.getType()) {
+                        case "EiffelTestCaseTriggeredEvent":
+                            event.setType(TEST_CASE);
+                            // May be merged into a TestSuite
+                            potentialEventToBeMerges.add(event);
+                            break;
+
+                        case "EiffelActivityTriggeredEvent":
+                            event.setType(ACTIVITY);
+                            break;
+
+                        case "EiffelTestSuiteStartedEvent":
+                            event.setType(TEST_SUITE);
+                            break;
+
+                        default:
+                            break;
+                    }
                     events.put(event.getId(), event);
                     count++;
                     break;
@@ -289,11 +290,11 @@ public class Fetcher {
                 } else {
                     log.error("null link while fetching followup events.");
                 }
-            }
-            count++;
-            if ((float) count / total > (float) lastPrint / total + 0.1 || count == total || count == 0) {
-                log.info(count + "/" + total);
-                lastPrint = count;
+                count++;
+                if ((float) count / total > (float) lastPrint / total + 0.1 || count == total || count == 0) {
+                    log.info(count + "/" + total);
+                    lastPrint = count;
+                }
             }
         }
 

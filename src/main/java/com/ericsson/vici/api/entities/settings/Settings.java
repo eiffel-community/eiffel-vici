@@ -17,26 +17,34 @@
 package com.ericsson.vici.api.entities.settings;
 
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.HashMap;
+import java.util.UUID;
 
 public class Settings {
+    public static final String propertiesVersion = "1.0";
+
     private String version;
     // EiffelEventRepositories
-    private List<EiffelEventRepository> eiffelEventRepositories = Arrays.asList(
-            new EiffelEventRepository("Local static dummy file", "localFile[reference-data-set]", null),
-            new EiffelEventRepository("EER static dummy file", "http://127.0.0.1:8081/reference-data-set", null),
-            new EiffelEventRepository("EER [live] dummy event stream", "http://127.0.0.1:8081/live[reference-data-set]", null),
-            new EiffelEventRepository("Docker EER static dummy file", "http://dummy-er:8081/reference-data-set", null),
-            new EiffelEventRepository("Docker EER [live] dummy event stream", "http://dummy-er:8081/live[reference-data-set]", null)
-    );
-
+    private HashMap<String, EiffelEventRepository> eiffelEventRepositories;
+//            = Arrays.asList(
+//            new EiffelEventRepository("Local static dummy file", "localFile[reference-data-set]"),
+//            new EiffelEventRepository("EER static dummy file", "http://127.0.0.1:8081/reference-data-set"),
+//            new EiffelEventRepository("EER [live] dummy event stream", "http://127.0.0.1:8081/live[reference-data-set]"),
+//            new EiffelEventRepository("Docker EER static dummy file", "http://dummy-er:8081/reference-data-set"),
+//            new EiffelEventRepository("Docker EER [live] dummy event stream", "http://dummy-er:8081/live[reference-data-set]")
+//    );
 
     public Settings() {
     }
 
     public Settings(String version) {
         this.version = version;
+        this.eiffelEventRepositories = new HashMap<>();
+        eiffelEventRepositories.put(UUID.randomUUID().toString(), new EiffelEventRepository("Local static dummy file", "localFile[reference-data-set]"));
+        eiffelEventRepositories.put(UUID.randomUUID().toString(), new EiffelEventRepository("EER static dummy file", "http://127.0.0.1:8081/reference-data-set"));
+        eiffelEventRepositories.put(UUID.randomUUID().toString(), new EiffelEventRepository("Docker EER static dummy file", "http://dummy-er:8081/reference-data-set"));
+        eiffelEventRepositories.put(UUID.randomUUID().toString(), new EiffelEventRepository("Docker EER static dummy file", "http://dummy-er:8081/reference-data-set"));
+        eiffelEventRepositories.put(UUID.randomUUID().toString(), new EiffelEventRepository("Docker EER [live] dummy event stream", "http://dummy-er:8081/live[reference-data-set]"));
     }
 
     public String getVersion() {
@@ -47,11 +55,11 @@ public class Settings {
         this.version = version;
     }
 
-    public List<EiffelEventRepository> getEiffelEventRepositories() {
+    public HashMap<String, EiffelEventRepository> getEiffelEventRepositories() {
         return eiffelEventRepositories;
     }
 
-    public void setEiffelEventRepositories(List<EiffelEventRepository> eiffelEventRepositories) {
+    public void setEiffelEventRepositories(HashMap<String, EiffelEventRepository> eiffelEventRepositories) {
         this.eiffelEventRepositories = eiffelEventRepositories;
     }
 }

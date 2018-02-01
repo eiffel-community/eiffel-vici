@@ -166,6 +166,10 @@ li.active {
 
 }
 
+.repo_id-span {
+    display: none;
+}
+
 /* Plot styles */
 
 .vis-graph-result {

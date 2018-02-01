@@ -17,22 +17,18 @@
 package com.ericsson.vici.api.entities.settings;
 
 
+import com.ericsson.vici.api.entities.Preferences;
+
 public class EiffelEventRepository {
-    private String name;
-    private String url;
-    private RepositorySettings repositorySettings;
+    private String name = null;
+    private Preferences preferences = new Preferences();
 
     public EiffelEventRepository() {
     }
 
-    public EiffelEventRepository(String name, String url, RepositorySettings repositorySettings) {
+    public EiffelEventRepository(String name, String url) {
         this.name = name;
-        this.url = url;
-        if (repositorySettings == null) {
-            this.repositorySettings = new RepositorySettings();
-        } else {
-            this.repositorySettings = repositorySettings;
-        }
+        preferences.setUrl(url);
     }
 
     public String getName() {
@@ -43,19 +39,11 @@ public class EiffelEventRepository {
         this.name = name;
     }
 
-    public String getUrl() {
-        return url;
+    public Preferences getPreferences() {
+        return preferences;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public RepositorySettings getRepositorySettings() {
-        return repositorySettings;
-    }
-
-    public void setRepositorySettings(RepositorySettings repositorySettings) {
-        this.repositorySettings = repositorySettings;
+    public void setPreferences(Preferences preferences) {
+        this.preferences = preferences;
     }
 }
