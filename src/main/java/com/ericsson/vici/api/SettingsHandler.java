@@ -17,18 +17,20 @@
 package com.ericsson.vici.api;
 
 
+import com.ericsson.vici.api.entities.settings.EiffelEventRepository;
+import com.ericsson.vici.api.entities.settings.Settings;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.ericsson.vici.api.entities.settings.EiffelEventRepository;
-import com.ericsson.vici.api.entities.settings.Settings;
 
 import java.io.File;
 import java.io.IOException;
 
+import static com.ericsson.vici.api.entities.settings.Settings.propertiesVersion;
+
 public class SettingsHandler {
     private static final String propertiesFileName = "settings.json";
-    private static final String propertiesVersion = "1.0";
+
 
     public SettingsHandler() {
         Settings settings = getSettings();
@@ -37,6 +39,18 @@ public class SettingsHandler {
         } else if (settings.getVersion() == null || !settings.getVersion().equals(propertiesVersion)) {
             resetSettingsDefault();
         }
+    }
+
+    public void deleteEiffelRepository(String id) {
+        Settings settings = getSettings();
+        settings.getEiffelEventRepositories().remove(id);
+        saveSettings(settings);
+    }
+
+    public void newEiffelRepository(EiffelEventRepository eiffelEventRepository) {
+        Settings settings = getSettings();
+        settings.getEiffelEventRepositories().put(eiffelEventRepository.getId(), eiffelEventRepository);
+        saveSettings(settings);
     }
 
     public Settings getDefaultSettings() {
@@ -83,6 +97,6 @@ public class SettingsHandler {
     }
 
     public EiffelEventRepository getDefaultRepository() {
-        return new EiffelEventRepository(null, null, null);
+        return new EiffelEventRepository();
     }
 }
