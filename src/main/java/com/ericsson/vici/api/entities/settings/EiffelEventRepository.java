@@ -19,7 +19,10 @@ package com.ericsson.vici.api.entities.settings;
 
 import com.ericsson.vici.api.entities.Preferences;
 
+import java.util.UUID;
+
 public class EiffelEventRepository {
+    private String id = UUID.randomUUID().toString();
     private String name = null;
     private Preferences preferences = new Preferences();
 
@@ -29,6 +32,14 @@ public class EiffelEventRepository {
     public EiffelEventRepository(String name, String url) {
         this.name = name;
         preferences.setUrl(url);
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getName() {

@@ -47,6 +47,12 @@ public class SettingsHandler {
         saveSettings(settings);
     }
 
+    public void newEiffelRepository(EiffelEventRepository eiffelEventRepository) {
+        Settings settings = getSettings();
+        settings.getEiffelEventRepositories().put(eiffelEventRepository.getId(), eiffelEventRepository);
+        saveSettings(settings);
+    }
+
     public Settings getDefaultSettings() {
         return new Settings(propertiesVersion);
     }

@@ -116,6 +116,12 @@ public class ApiController {
         return new ResponseEntity(HttpStatus.OK);
     }
 
+    @RequestMapping(value = "/api/newEiffelRepository", produces = "application/json; charset=UTF-8")
+    public ResponseEntity newEiffelRepository(@RequestBody EiffelEventRepository eiffelEventRepository) {
+        settingsHandler.newEiffelRepository(eiffelEventRepository);
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
     @RequestMapping(value = "/api/getSettings", produces = "application/json; charset=UTF-8")
     public Settings getSettings() {
         return settingsHandler.getSettings();

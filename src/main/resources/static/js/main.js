@@ -71,44 +71,33 @@ function removeSystemWithID(id) {
             data: id,
             success: function (data) {
                 $('#eiffelEventRepository\\[' + id + '\\]_panel').remove();
-                $('#eiffelEventpreferences\\[' + id + '\\]').remove();
+                $('#eiffelEventPreferences\\[' + id + '\\]').remove();
 
                 updateSystemSelector();
             },
             error: function (jqXHR, textStatus, errorThrown) {
-                console.log(jqXHR);
-                console.log(textStatus);
-                console.log(errorThrown);
-                showModal('<p>Wops! I could not delete the repository :( check that the event repository server is running and the correct url is given in the settings.</p><div class="alert alert-danger" role="alert">' + jqXHR.responseText + '</div>');
+                showModal('<p>Wops! I could not delete the repository :( check that the event repository server is running.</p><div class="alert alert-danger" role="alert">' + jqXHR.responseText + '</div>');
             },
             complete: function (jqXHR, textStatus) {
-
                 contentGlobal.loader.hide();
             }
         });
     });
 }
 
-function uploadRepository(repository) {
+function uploadEiffelRepository(repository) {
     contentGlobal.loader.show();
     _.defer(function () {
         $.ajax({
             type: "POST",
-            contentType: 'text/plain; charset=utf-8',
-            dataType: 'text',
-            url: '/api/removeEiffelEventRepository',
-            data: id,
+            contentType: 'application/json; charset=utf-8',
+            url: '/api/newEiffelRepository',
+            data: JSON.stringify(repository),
             success: function (data) {
-                $('#eiffelEventRepository\\[' + id + '\\]_panel').remove();
-                $('#eiffelEventpreferences\\[' + id + '\\]').remove();
-
-                updateSystemSelector();
+                disableUploadButtonsForRepo(repository.id);
             },
             error: function (jqXHR, textStatus, errorThrown) {
-                console.log(jqXHR);
-                console.log(textStatus);
-                console.log(errorThrown);
-                showModal('<p>Wops! I could not delete the repository :( check that the event repository server is running and the correct url is given in the settings.</p><div class="alert alert-danger" role="alert">' + jqXHR.responseText + '</div>');
+                showModal('<p>Wops! I could not upload/update the repository :( check that the event repository server is running.</p><div class="alert alert-danger" role="alert">' + jqXHR.responseText + '</div>');
             },
             complete: function (jqXHR, textStatus) {
                 contentGlobal.loader.hide();
@@ -117,23 +106,26 @@ function uploadRepository(repository) {
     });
 }
 
-function newSystem(repo_id, eiffelEventRepository) {
+function enableUploadButtonsForRepo(id) {
+    $('#eiffelEventRepository\\[' + id + '\\]_btmUpload').prop('disabled', false);
+    $('#eiffelEventRepositoryPreferences\\[' + id + '\\]_btmUpload').prop('disabled', false);
+}
 
-    if (repo_id === undefined) {
-        console.log("Generating random id.");
-        repo_id = uuidv4();
-    }
+function disableUploadButtonsForRepo(id) {
+    $('#eiffelEventRepository\\[' + id + '\\]_btmUpload').prop('disabled', true);
+    $('#eiffelEventRepositoryPreferences\\[' + id + '\\]_btmUpload').prop('disabled', true);
+}
 
+function newSystem(eiffelEventRepository) {
     if (eiffelEventRepository === undefined) {
         console.log("Fetching default preferences.");
         contentGlobal.loader.show();
         $.ajax({
             type: "POST",
-            contentType: 'application/json; charset=utf-8',
             dataType: 'json',
             url: '/api/getDefaultEiffelEventRepository',
             success: function (data) {
-                eiffelEventRepository = data;
+                initializeSystem(data);
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 showModal('<p>Could not fetch a new repository from server, something is wrong, check that server is running or check server log.</p><div class="alert alert-danger" role="alert">' + jqXHR.responseText + '</div>');
@@ -142,7 +134,13 @@ function newSystem(repo_id, eiffelEventRepository) {
                 contentGlobal.loader.hide();
             }
         });
+    } else {
+        initializeSystem(eiffelEventRepository);
     }
+}
+
+function initializeSystem(eiffelEventRepository) {
+    let repo_id = eiffelEventRepository.id;
 
     if (eiffelEventRepository.name === undefined) {
         eiffelEventRepository.name = "No name";
@@ -169,16 +167,8 @@ function newSystem(repo_id, eiffelEventRepository) {
         '</div>'
     );
 
-    $('#eiffelEventRepository\\[' + repo_id + '\\]_btmUpload').click(function () {
-        //TODO
-    });
-
-    $('#eiffelEventRepository\\[' + repo_id + '\\]_btmRemove').click(function () {
-        removeSystemWithID(repo_id);
-    });
-
     // Adding the settings content
-    let eersc = '<div id="eiffelEventpreferences[' + repo_id + ']">';
+    let eersc = '<div id="eiffelEventPreferences[' + repo_id + ']">';
 
     // General settings
     eersc += '<div id="eiffelEventRepository[' + repo_id + ']_settingsGeneral">' +
@@ -238,6 +228,9 @@ function newSystem(repo_id, eiffelEventRepository) {
 
     eersc += '</div>';
 
+    eersc += '<button id="eiffelEventRepositoryPreferences[' + repo_id + ']_btmUpload" type="button" class="btn btn-info">' +
+        '<span class="glyphicon glyphicon-upload" aria-hidden="true"></span></button>';
+
     eersc += '</div>';
     settingsElement.settingsContent.append(eersc);
 
@@ -264,12 +257,38 @@ function newSystem(repo_id, eiffelEventRepository) {
     $('#eiffelEventRepository\\[' + repo_id + '\\]_streamRefreshIntervalMs').val(eiffelEventRepository.preferences.streamRefreshIntervalMs);
 
     // Applying functions
+    $('#eiffelEventRepository\\[' + repo_id + '\\]_btmUpload').click(function () {
+        let settings = getCurrentSettings();
+        uploadEiffelRepository(settings.eiffelEventRepositories[repo_id]);
+    });
+
+    $('#eiffelEventRepositoryPreferences\\[' + repo_id + '\\]_btmUpload').click(function () {
+        let settings = getCurrentSettings();
+        uploadEiffelRepository(settings.eiffelEventRepositories[repo_id]);
+    });
+
+    $('#eiffelEventRepository\\[' + repo_id + '\\]_btmRemove').click(function () {
+        removeSystemWithID(repo_id);
+    });
+
     $('#eiffelEventRepository\\[' + repo_id + '\\]_name').change(function () {
+        enableUploadButtonsForRepo(repo_id);
         updateSystemSelector();
+    }).keyup(function () {
+        enableUploadButtonsForRepo(repo_id);
     });
 
     $('#eiffelEventRepository\\[' + repo_id + '\\]_url').change(function () {
+        enableUploadButtonsForRepo(repo_id);
         invalidateCache();
+    }).keyup(function () {
+        enableUploadButtonsForRepo(repo_id);
+    });
+
+    $('#eiffelEventPreferences\\[' + repo_id + '\\]').find('input').change(function () {
+        enableUploadButtonsForRepo(repo_id);
+    }).keyup(function () {
+        enableUploadButtonsForRepo(repo_id);
     });
 
     $('#eiffelEventRepository\\[' + repo_id + '\\]_settingsGeneral').find('input').change(function () {
@@ -312,7 +331,8 @@ function getSettingsFromServer() {
                 console.log(data);
                 /** @namespace data.eiffelEventRepositories */
                 for (let id in data.eiffelEventRepositories) {
-                    newSystem(id, data.eiffelEventRepositories[id]);
+                    newSystem(data.eiffelEventRepositories[id]);
+                    disableUploadButtonsForRepo(id);
                 }
             },
             error: function (jqXHR, textStatus, errorThrown) {
@@ -368,11 +388,7 @@ function getCurrentSettings() {
     let id = nameToId[name];
     let selectedEiffelEventRepository = undefined;
     if (id !== undefined) {
-        selectedEiffelEventRepository = {
-            id: id,
-            name: name,
-            repository: repositories[id],
-        }
+        selectedEiffelEventRepository = repositories[id];
     }
 
     // return settings object
@@ -567,7 +583,7 @@ function load(stage, useCache) {
     let settings = getCurrentSettings();
     let preferences = undefined;
     if (settings.selectedEiffelEventRepository !== undefined) {
-        preferences = settings.selectedEiffelEventRepository.repository.preferences;
+        preferences = settings.selectedEiffelEventRepository.preferences;
     }
 
     if (useCache === false && preferences !== undefined) {
@@ -1317,7 +1333,7 @@ function settingsSelectRepository(repository) {
         $('#settings_currentEiffelEventRepositoryHeader').html('Choose a repository to modify in the side menu');
     } else {
         $('#settings_currentEiffelEventRepositoryHeader').html(repository.name);
-        $('#eiffelEventpreferences\\[' + repository.id + '\\]').show();
+        $('#eiffelEventPreferences\\[' + repository.id + '\\]').show();
     }
 }
 
@@ -1393,13 +1409,8 @@ $(document).ready(function () {
                 window.location.reload()
             },
             error: function (jqXHR, textStatus, errorThrown) {
-                console.log(jqXHR);
-                console.log(textStatus);
-                console.log(errorThrown);
-                showModal('<p>Wops! I could not reset settings :( check that the event repository server is running and the correct url is given in the settings.</p><div class="alert alert-danger" role="alert">' + jqXHR.responseText + '</div>');
-            },
-            complete: function (jqXHR, textStatus) {
                 contentGlobal.loader.hide();
+                showModal('<p>Wops! I could not reset settings :( check that the event repository server is running and the correct url is given in the settings.</p><div class="alert alert-danger" role="alert">' + jqXHR.responseText + '</div>');
             }
         });
     });
