@@ -14,7 +14,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */
-package com.ericsson.vici.api.entities.settings;
+package com.ericsson.vici.api.entities;
 
 
 import java.util.Arrays;
@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 
 public class Settings {
-    public static final String propertiesVersion = "2.0";
+    public static final String propertiesVersion = "2.1 - Added eiffelEventRepositories{}.preferences.aggregateOn";
 
     private static final List<EiffelEventRepository> STANDARD_EIFFEL_REPOSITORIES = Arrays.asList(
             new EiffelEventRepository("Local static dummy file", "localFile[reference-data-set]"),

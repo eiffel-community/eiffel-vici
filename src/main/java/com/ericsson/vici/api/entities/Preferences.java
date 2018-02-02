@@ -1,13 +1,38 @@
 package com.ericsson.vici.api.entities;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+
+import static com.ericsson.vici.Fetcher.*;
 
 public class Preferences {
     private String url = null;
 
     // Cache
     private long cacheLifeTimeMs = 86400000;
+
+    // Aggregation
+    private HashMap<String, String> aggregateOn = new HashMap<String, String>() {
+        {
+            put(ACTIVITY, "data.name");
+            put("EiffelAnnouncementPublishedEvent", "data.heading");
+            put("EiffelArtifactCreatedEvent", "data.gav.artifactId");
+//            put("EiffelArtifactPublishedEvent","data.gav.artifactId"); TODO
+            put("EiffelArtifactReusedEvent", "data.gav.artifactId");
+            put("EiffelCompositionDefinedEvent", "data.name");
+            put("EiffelConfidenceLevelModifiedEvent", "data.name");
+            put("EiffelEnvironmentDefinedEvent", "data.name");
+            put(TEST_SUITE, "data.name");
+            put("EiffelFlowContextDefined", null);
+            put("EiffelIssueVerifiedEvent", null); // TODO: -IV: data.issues (notera att detta är en array. Dvs det skulle vara snyggt om samma event kan dyka upp i flera objektrepresentationer i grafen)
+            put("EiffelSourceChangeCreatedEvent", "Created@data.gitIdentifier.repoName");// TODO: möjlighet att välja identifier (git/svn/...)
+            put("EiffelSourceChangeSubmittedEvent", "Submitted@data.gitIdentifier.repoName");// TODO: möjlighet att välja identifier (git/svn/...)
+            put(TEST_CASE, "data.testCase.id");
+            put("EiffelTestExecutionRecipeCollectionCreatedEvent", null);
+            put(DEFAULT, "data.customData.(key=name)value");
+        }
+    };
 
     // Details
     private String detailsTargetId = null;
@@ -28,6 +53,14 @@ public class Preferences {
     private long streamRefreshIntervalMs = 2000;
 
     public Preferences() {
+    }
+
+    public HashMap<String, String> getAggregateOn() {
+        return aggregateOn;
+    }
+
+    public void setAggregateOn(HashMap<String, String> aggregateOn) {
+        this.aggregateOn = aggregateOn;
     }
 
     public String getUrl() {

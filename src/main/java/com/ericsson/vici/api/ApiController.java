@@ -17,10 +17,10 @@
 package com.ericsson.vici.api;
 
 import com.ericsson.vici.Fetcher;
+import com.ericsson.vici.api.entities.EiffelEventRepository;
 import com.ericsson.vici.api.entities.Preferences;
 import com.ericsson.vici.api.entities.ReturnData;
-import com.ericsson.vici.api.entities.settings.EiffelEventRepository;
-import com.ericsson.vici.api.entities.settings.Settings;
+import com.ericsson.vici.api.entities.Settings;
 import com.ericsson.vici.entities.ChildLink;
 import com.ericsson.vici.entities.Cytoscape.*;
 import com.ericsson.vici.entities.Eiffel.Outcome;
@@ -149,7 +149,7 @@ public class ApiController {
 //        System.out.println(jsonObject.toString());
 
         Fetcher fetcher = new Fetcher();
-        Events eventsObject = fetcher.getEvents(preferences.getUrl(), preferences.getCacheLifeTimeMs());
+        Events eventsObject = fetcher.getEvents(preferences);
         HashMap<String, Event> events = eventsObject.getEvents();
 
         ArrayList<Element> elements = new ArrayList<>();
@@ -210,7 +210,7 @@ public class ApiController {
     public ReturnData detailedEvents(@RequestBody Preferences preferences) {
 
         Fetcher fetcher = new Fetcher();
-        Events eventsObject = fetcher.getEvents(preferences.getUrl(), preferences.getCacheLifeTimeMs());
+        Events eventsObject = fetcher.getEvents(preferences);
         HashMap<String, Event> events = eventsObject.getEvents();
 
         ArrayList<HashMap<String, String>> data = new ArrayList<>();
@@ -321,7 +321,7 @@ public class ApiController {
 //        System.out.println(name);
 
         Fetcher fetcher = new Fetcher();
-        Events eventsObject = fetcher.getEvents(preferences.getUrl(), preferences.getCacheLifeTimeMs());
+        Events eventsObject = fetcher.getEvents(preferences);
         HashMap<String, Event> events = eventsObject.getEvents();
 
         ArrayList<Event> eventsList = new ArrayList<>();
@@ -651,7 +651,7 @@ public class ApiController {
         }
 
         Fetcher fetcher = new Fetcher();
-        Events eventsObject = fetcher.getEvents(preferences.getUrl(), preferences.getCacheLifeTimeMs());
+        Events eventsObject = fetcher.getEvents(preferences);
         HashMap<String, Event> events = eventsObject.getEvents();
 
         if (!events.containsKey(preferences.getEventChainTargetId())) {
@@ -670,7 +670,7 @@ public class ApiController {
 
         Fetcher fetcher = new Fetcher();
         // TODO: fetch only base events based on time added
-        Events eventsObject = fetcher.getEvents(preferences.getUrl(), preferences.getCacheLifeTimeMs());
+        Events eventsObject = fetcher.getEvents(preferences);
         HashMap<String, Event> events = eventsObject.getEvents();
 
         Collection<Event> eventsCollection = events.values();
