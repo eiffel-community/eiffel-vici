@@ -29,6 +29,12 @@ function formatTime(long) {
     return moment(long).format('YYYY-MM-DD, HH:mm:ss:SSS');
 }
 
+function uuidv4() {
+    return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+    )
+}
+
 // SETTINGS
 function getElementsSettings() {
     return {
@@ -55,180 +61,71 @@ function getElementsSettings() {
 }
 
 function removeSystemWithID(id) {
-    $('#eiffelEventRepository\\[' + id + '\\]_panel').remove();
-    $('#eiffelEventRepositorySettings\\[' + id + '\\]').remove();
+    contentGlobal.loader.show();
+    _.defer(function () {
+        $.ajax({
+            type: "POST",
+            contentType: 'text/plain; charset=utf-8',
+            dataType: 'text',
+            url: '/api/removeEiffelEventRepository',
+            data: id,
+            success: function (data) {
+                $('#eiffelEventRepository\\[' + id + '\\]_panel').remove();
+                $('#eiffelEventPreferences\\[' + id + '\\]').remove();
 
-    updateSystemSelector();
+                updateSystemSelector();
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                showModal('<p>Wops! I could not delete the repository :( check that the event repository server is running.</p><div class="alert alert-danger" role="alert">' + jqXHR.responseText + '</div>');
+            },
+            complete: function (jqXHR, textStatus) {
+                contentGlobal.loader.hide();
+            }
+        });
+    });
 }
 
-function addSystemToUI(eiffelEventRepository) {
-
-    let settings = getCurrentSettings();
-
-    if (eiffelEventRepository.id === undefined) {
-        let repositoryAmount = Object.keys(settings.eiffelEventRepositories).length;
-        let i = 0;
-        let count = 0;
-        while (count < repositoryAmount) {
-            let potentialSystem = $('#eiffelEventRepository\\[' + i + '\\]_name');
-            if (potentialSystem.length) {
-                count++;
+function uploadEiffelRepository(repository) {
+    contentGlobal.loader.show();
+    _.defer(function () {
+        $.ajax({
+            type: "POST",
+            contentType: 'application/json; charset=utf-8',
+            url: '/api/newEiffelRepository',
+            data: JSON.stringify(repository),
+            success: function (data) {
+                disableUploadButtonsForRepo(repository.id);
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                showModal('<p>Wops! I could not upload/update the repository :( check that the event repository server is running.</p><div class="alert alert-danger" role="alert">' + jqXHR.responseText + '</div>');
+            },
+            complete: function (jqXHR, textStatus) {
+                contentGlobal.loader.hide();
             }
-            i++;
-        }
-        eiffelEventRepository.id = i;
-    }
-
-
-    if (eiffelEventRepository.name === undefined) {
-        let tmpName = eiffelEventRepository.id;
-        while (settings.eiffelEventRepositories[tmpName] !== undefined) {
-            tmpName++;
-        }
-        eiffelEventRepository.name = tmpName;
-    }
-    if (eiffelEventRepository.url === undefined) {
-        eiffelEventRepository.url = '';
-    }
-
-    // Adding the system panel in manage systems
-    settingsElement.systems.append(
-        '<div class="panel panel-default" id="eiffelEventRepository[' + eiffelEventRepository.id + ']_panel">' +
-        '<div class="input-group">' +
-        '<span class="input-group-addon">' + eiffelEventRepository.id + '</span><span class="input-group-addon">Name</span>' +
-        '<input id="eiffelEventRepository[' + eiffelEventRepository.id + ']_name"  class="form-control" placeholder="My system" value="' + eiffelEventRepository.name + '"/>' +
-        '</div>' +
-        '<div class="input-group">' +
-        '<span class="input-group-addon">URL</span>' +
-        '<input id="eiffelEventRepository[' + eiffelEventRepository.id + ']_url"  class="form-control systemsUrlInput" placeholder="http://127.0.0.1:8080/events.json" value="' + eiffelEventRepository.url + '"/>' +
-        '</div>' +
-        '<span class="input-group-addon"><button id="eiffelEventRepository[' + eiffelEventRepository.id + ']_btmRemove" type="button" class="btn btn-danger">' +
-        '<span class="glyphicon glyphicon-minus" aria-hidden="true"></span></button></span>' +
-        '</div>'
-    );
-
-    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_btmRemove').click(function () {
-        removeSystemWithID(eiffelEventRepository.id);
+        });
     });
+}
 
-    // Adding the settings content
-    let eersc = '<div id="eiffelEventRepositorySettings[' + eiffelEventRepository.id + ']">';
+function enableUploadButtonsForRepo(id) {
+    $('#eiffelEventRepository\\[' + id + '\\]_btmUpload').prop('disabled', false);
+    $('#eiffelEventRepositoryPreferences\\[' + id + '\\]_btmUpload').prop('disabled', false);
+}
 
-    // General settings
-    eersc += '<div id="eiffelEventRepository[' + eiffelEventRepository.id + ']_settingsGeneral">' +
-        '<h4>General</h4>';
-
-    eersc += '<div class="input-group settings-row">' +
-        '<span class="input-group-addon">Time to keep caches (ms)</span><input id="eiffelEventRepository[' + eiffelEventRepository.id + ']_cacheLifeTimeMs" type="number" class="form-control" placeholder="Positive integer"/>' +
-        '</div>';
-
-    eersc += '</div>';
-    // Aggregation node graph settings
-    eersc += '<div id="eiffelEventRepository[' + eiffelEventRepository.id + ']_settingsAggregation">' +
-        '<h4>Aggregation</h4>';
-
-    eersc += '</div>';
-    // Details view settings
-    eersc += '<div id="eiffelEventRepository[' + eiffelEventRepository.id + ']_settingsDetails">' +
-        '<h4>Details</h4>';
-
-    eersc += '</div>';
-    // Event chain settings
-    eersc += '<div id="eiffelEventRepository[' + eiffelEventRepository.id + ']_settingsEventChain">' +
-        '<h4>Event Chain</h4>';
-
-    eersc += '<div class="input-group settings-row">' +
-        '<span class="input-group-addon">Maximum jumps</span><input id="eiffelEventRepository[' + eiffelEventRepository.id + ']_eventChainMaxSteps" type="number" class="form-control" placeholder="Positive integer"/>' +
-        '</div>';
-
-    eersc += '<div class="input-group settings-row">' +
-        '<span class="input-group-addon">Maximum connections/node</span><input id="eiffelEventRepository[' + eiffelEventRepository.id + ']_eventChainMaxConnections" type="number" class="form-control" placeholder="Positive integer"/>' +
-        '</div>';
-
-    eersc += '<div class="input-group settings-row"><label class="checkbox-inline">' +
-        '<input class="set-bootstraptoggle" type="checkbox" data-toggle="toggle" id="eiffelEventRepository[' + eiffelEventRepository.id + ']_eventChainGoUpStream"/> Follow links <b>up</b> stream</label>' +
-        '</div>';
-
-    eersc += '<div class="input-group settings-row"><label class="checkbox-inline">' +
-        '<input class="set-bootstraptoggle" type="checkbox" data-toggle="toggle" id="eiffelEventRepository[' + eiffelEventRepository.id + ']_eventChainGoDownStream"/> Follow links <b>down</b> stream</label>' +
-        '</div>';
-
-    eersc += '<div class="input-group settings-row"><label class="checkbox-inline">' +
-        '<input class="set-bootstraptoggle" type="checkbox" data-toggle="toggle" id="eiffelEventRepository[' + eiffelEventRepository.id + ']_eventChainTimeRelativeXAxis"/> Node x-position defined by actual timestamp</label>' +
-        '</div>';
-
-    eersc += '</div>';
-    // Live stream settings
-    eersc += '<div id="eiffelEventRepository[' + eiffelEventRepository.id + ']_settingsLive">' +
-        '<h5>Live</h5>';
-
-    eersc += '<div class="input-group settings-row">' +
-        '<span class="input-group-addon">Number of base events (latest)</span><input id="eiffelEventRepository[' + eiffelEventRepository.id + ']_streamBaseEvents" type="number" class="form-control" placeholder="Positive integer"/>' +
-        '</div>';
-
-    eersc += '<div class="input-group settings-row">' +
-        '<span class="input-group-addon">Time between updates (ms)</span><input id="eiffelEventRepository[' + eiffelEventRepository.id + ']_streamRefreshIntervalMs" type="number" class="form-control" placeholder="Positive integer"/>' +
-        '</div>';
-
-    eersc += '</div>';
-
-    eersc += '</div>';
-    settingsElement.settingsContent.append(eersc);
-
-    // Apply bootstrap
-    $('.set-bootstraptoggle').bootstrapToggle();
-
-    // Apply correct settings
-    setCurrentSettingsForEiffelEventRepository(eiffelEventRepository);
-
-    // Applying functions
-    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_name').change(function () {
-        updateSystemSelector();
-    });
-
-    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_url').change(function () {
-        invalidateCache();
-    });
-
-    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_settingsGeneral').find('input').change(function () {
-        invalidateCache();
-    });
-
-    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_settingsAggregation').find('input').change(function () {
-        invalidateCache(STAGE_AGGREGATION);
-    });
-
-    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_settingsDetails').find('input').change(function () {
-        invalidateCache(STAGE_DETAILS_TABLE);
-        invalidateCache(STAGE_DETAILS_PLOT);
-    });
-
-    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_settingsEventChain').find('input').change(function () {
-        invalidateCache(STAGE_EVENTCHAIN);
-    });
-
-    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_settingsLive').find('input').change(function () {
-        invalidateCache(STAGE_LIVE);
-    });
-
-    // Refresh
-    updateSystemSelector();
-
-    return eiffelEventRepository;
+function disableUploadButtonsForRepo(id) {
+    $('#eiffelEventRepository\\[' + id + '\\]_btmUpload').prop('disabled', true);
+    $('#eiffelEventRepositoryPreferences\\[' + id + '\\]_btmUpload').prop('disabled', true);
 }
 
 function newSystem(eiffelEventRepository) {
     if (eiffelEventRepository === undefined) {
+        console.log("Fetching default preferences.");
         contentGlobal.loader.show();
-
         $.ajax({
             type: "POST",
-            contentType: 'application/json; charset=utf-8',
             dataType: 'json',
             url: '/api/getDefaultEiffelEventRepository',
-            // async: false, // NOT asyncronous
             success: function (data) {
-                addSystemToUI(data);
+                initializeSystem(data);
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 showModal('<p>Could not fetch a new repository from server, something is wrong, check that server is running or check server log.</p><div class="alert alert-danger" role="alert">' + jqXHR.responseText + '</div>');
@@ -238,8 +135,185 @@ function newSystem(eiffelEventRepository) {
             }
         });
     } else {
-        addSystemToUI(eiffelEventRepository);
+        initializeSystem(eiffelEventRepository);
     }
+}
+
+function initializeSystem(eiffelEventRepository) {
+    let repo_id = eiffelEventRepository.id;
+
+    if (eiffelEventRepository.name === undefined) {
+        eiffelEventRepository.name = "No name";
+    }
+    if (eiffelEventRepository.preferences.url === undefined) {
+        eiffelEventRepository.preferences.url = '';
+    }
+
+    // Adding the system panel in manage systems
+    settingsElement.systems.append(
+        '<div class="panel panel-default" id="eiffelEventRepository[' + repo_id + ']_panel">' +
+        '<div class="input-group">' +
+        '<span class="input-group-addon repo_id-span">' + repo_id + '</span><span class="input-group-addon">Name</span>' +
+        '<input id="eiffelEventRepository[' + repo_id + ']_name"  class="form-control" placeholder="My system" value="' + eiffelEventRepository.name + '"/>' +
+        '</div>' +
+        '<div class="input-group">' +
+        '<span class="input-group-addon">URL</span>' +
+        '<input id="eiffelEventRepository[' + repo_id + ']_url"  class="form-control systemsUrlInput" placeholder="http://127.0.0.1:8080/events.json" value="' + eiffelEventRepository.preferences.url + '"/>' +
+        '</div>' +
+        '<span class="input-group-addon"><button id="eiffelEventRepository[' + repo_id + ']_btmUpload" type="button" class="btn btn-info">' +
+        '<span class="glyphicon glyphicon-upload" aria-hidden="true"></span></button></span>' +
+        '<span class="input-group-addon"><button id="eiffelEventRepository[' + repo_id + ']_btmRemove" type="button" class="btn btn-danger">' +
+        '<span class="glyphicon glyphicon-minus" aria-hidden="true"></span></button></span>' +
+        '</div>'
+    );
+
+    // Adding the settings content
+    let eersc = '<div id="eiffelEventPreferences[' + repo_id + ']">';
+
+    // General settings
+    eersc += '<div id="eiffelEventRepository[' + repo_id + ']_settingsGeneral">' +
+        '<h4>General</h4>';
+
+    eersc += '<div class="input-group settings-row">' +
+        '<span class="input-group-addon">Time to keep caches (ms)</span><input id="eiffelEventRepository[' + repo_id + ']_cacheLifeTimeMs" type="number" class="form-control" placeholder="Positive integer"/>' +
+        '</div>';
+
+    eersc += '</div>';
+    // Aggregation node graph settings
+    eersc += '<div id="eiffelEventRepository[' + repo_id + ']_settingsAggregation">' +
+        '<h4>Aggregation</h4>';
+
+    eersc += '</div>';
+    // Details view settings
+    eersc += '<div id="eiffelEventRepository[' + repo_id + ']_settingsDetails">' +
+        '<h4>Details</h4>';
+
+    eersc += '</div>';
+    // Event chain settings
+    eersc += '<div id="eiffelEventRepository[' + repo_id + ']_settingsEventChain">' +
+        '<h4>Event Chain</h4>';
+
+    eersc += '<div class="input-group settings-row">' +
+        '<span class="input-group-addon">Maximum jumps</span><input id="eiffelEventRepository[' + repo_id + ']_eventChainMaxSteps" type="number" class="form-control" placeholder="Positive integer"/>' +
+        '</div>';
+
+    eersc += '<div class="input-group settings-row">' +
+        '<span class="input-group-addon">Maximum connections/node</span><input id="eiffelEventRepository[' + repo_id + ']_eventChainMaxConnections" type="number" class="form-control" placeholder="Positive integer"/>' +
+        '</div>';
+
+    eersc += '<div class="input-group settings-row"><label class="checkbox-inline">' +
+        '<input class="set-bootstraptoggle" type="checkbox" data-toggle="toggle" id="eiffelEventRepository[' + repo_id + ']_eventChainGoUpStream"/> Follow links <b>up</b> stream</label>' +
+        '</div>';
+
+    eersc += '<div class="input-group settings-row"><label class="checkbox-inline">' +
+        '<input class="set-bootstraptoggle" type="checkbox" data-toggle="toggle" id="eiffelEventRepository[' + repo_id + ']_eventChainGoDownStream"/> Follow links <b>down</b> stream</label>' +
+        '</div>';
+
+    eersc += '<div class="input-group settings-row"><label class="checkbox-inline">' +
+        '<input class="set-bootstraptoggle" type="checkbox" data-toggle="toggle" id="eiffelEventRepository[' + repo_id + ']_eventChainTimeRelativeXAxis"/> Node x-position defined by actual timestamp</label>' +
+        '</div>';
+
+    eersc += '</div>';
+    // Live stream settings
+    eersc += '<div id="eiffelEventRepository[' + repo_id + ']_settingsLive">' +
+        '<h5>Live</h5>';
+
+    eersc += '<div class="input-group settings-row">' +
+        '<span class="input-group-addon">Number of base events (latest)</span><input id="eiffelEventRepository[' + repo_id + ']_streamBaseEvents" type="number" class="form-control" placeholder="Positive integer"/>' +
+        '</div>';
+
+    eersc += '<div class="input-group settings-row">' +
+        '<span class="input-group-addon">Time between updates (ms)</span><input id="eiffelEventRepository[' + repo_id + ']_streamRefreshIntervalMs" type="number" class="form-control" placeholder="Positive integer"/>' +
+        '</div>';
+
+    eersc += '</div>';
+
+    eersc += '<button id="eiffelEventRepositoryPreferences[' + repo_id + ']_btmUpload" type="button" class="btn btn-info">' +
+        '<span class="glyphicon glyphicon-upload" aria-hidden="true"></span></button>';
+
+    eersc += '</div>';
+    settingsElement.settingsContent.append(eersc);
+
+    // Apply bootstrap
+    $('.set-bootstraptoggle').bootstrapToggle();
+
+    // Apply correct settings
+    /** @namespace eiffelEventRepository.preferences */
+    $('#eiffelEventRepository\\[' + repo_id + '\\]_cacheLifeTimeMs').val(eiffelEventRepository.preferences.cacheLifeTimeMs);
+    // TODO previous links
+    if (eiffelEventRepository.preferences.eventChainGoUpStream) {
+        $('#eiffelEventRepository\\[' + repo_id + '\\]_eventChainGoUpStream').bootstrapToggle('on');
+    }
+    if (eiffelEventRepository.preferences.eventChainGoDownStream) {
+        $('#eiffelEventRepository\\[' + repo_id + '\\]_eventChainGoDownStream').bootstrapToggle('on');
+    }
+    $('#eiffelEventRepository\\[' + repo_id + '\\]_eventChainMaxSteps').val(eiffelEventRepository.preferences.eventChainMaxSteps);
+    $('#eiffelEventRepository\\[' + repo_id + '\\]_eventChainMaxConnections').val(eiffelEventRepository.preferences.eventChainMaxConnections);
+    if (eiffelEventRepository.preferences.eventChainTimeRelativeXAxis) {
+        $('#eiffelEventRepository\\[' + repo_id + '\\]_eventChainTimeRelativeXAxis').bootstrapToggle('on');
+    }
+
+    $('#eiffelEventRepository\\[' + repo_id + '\\]_streamBaseEvents').val(eiffelEventRepository.preferences.streamBaseEvents);
+    $('#eiffelEventRepository\\[' + repo_id + '\\]_streamRefreshIntervalMs').val(eiffelEventRepository.preferences.streamRefreshIntervalMs);
+
+    // Applying functions
+    $('#eiffelEventRepository\\[' + repo_id + '\\]_btmUpload').click(function () {
+        let settings = getCurrentSettings();
+        uploadEiffelRepository(settings.eiffelEventRepositories[repo_id]);
+    });
+
+    $('#eiffelEventRepositoryPreferences\\[' + repo_id + '\\]_btmUpload').click(function () {
+        let settings = getCurrentSettings();
+        uploadEiffelRepository(settings.eiffelEventRepositories[repo_id]);
+    });
+
+    $('#eiffelEventRepository\\[' + repo_id + '\\]_btmRemove').click(function () {
+        removeSystemWithID(repo_id);
+    });
+
+    $('#eiffelEventRepository\\[' + repo_id + '\\]_name').change(function () {
+        enableUploadButtonsForRepo(repo_id);
+        updateSystemSelector();
+    }).keyup(function () {
+        enableUploadButtonsForRepo(repo_id);
+    });
+
+    $('#eiffelEventRepository\\[' + repo_id + '\\]_url').change(function () {
+        enableUploadButtonsForRepo(repo_id);
+        invalidateCache();
+    }).keyup(function () {
+        enableUploadButtonsForRepo(repo_id);
+    });
+
+    $('#eiffelEventPreferences\\[' + repo_id + '\\]').find('input').change(function () {
+        enableUploadButtonsForRepo(repo_id);
+    }).keyup(function () {
+        enableUploadButtonsForRepo(repo_id);
+    });
+
+    $('#eiffelEventRepository\\[' + repo_id + '\\]_settingsGeneral').find('input').change(function () {
+        invalidateCache();
+    });
+
+    $('#eiffelEventRepository\\[' + repo_id + '\\]_settingsAggregation').find('input').change(function () {
+        invalidateCache(STAGE_AGGREGATION);
+    });
+
+    $('#eiffelEventRepository\\[' + repo_id + '\\]_settingsDetails').find('input').change(function () {
+        invalidateCache(STAGE_DETAILS_TABLE);
+        invalidateCache(STAGE_DETAILS_PLOT);
+    });
+
+    $('#eiffelEventRepository\\[' + repo_id + '\\]_settingsEventChain').find('input').change(function () {
+        invalidateCache(STAGE_EVENTCHAIN);
+    });
+
+    $('#eiffelEventRepository\\[' + repo_id + '\\]_settingsLive').find('input').change(function () {
+        invalidateCache(STAGE_LIVE);
+    });
+
+    // Refresh
+    updateSystemSelector();
 }
 
 
@@ -254,10 +328,12 @@ function getSettingsFromServer() {
             url: '/api/getSettings',
             // data: JSON.stringify(settings),
             success: function (data) {
+                console.log(data);
                 /** @namespace data.eiffelEventRepositories */
-                data.eiffelEventRepositories.forEach(function (eiffelEventRepository) {
-                    newSystem(eiffelEventRepository);
-                });
+                for (let id in data.eiffelEventRepositories) {
+                    newSystem(data.eiffelEventRepositories[id]);
+                    disableUploadButtonsForRepo(id);
+                }
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 showModal('<p>Could not fetch settings from server, something is wrong, check that server is running or check server log.</p><div class="alert alert-danger" role="alert">' + jqXHR.responseText + '</div>');
@@ -269,35 +345,12 @@ function getSettingsFromServer() {
     });
 }
 
-function saveSettings() {
-
-}
-
-function setCurrentSettingsForEiffelEventRepository(eiffelEventRepository) {
-    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_cacheLifeTimeMs').val(eiffelEventRepository.repositorySettings.cacheLifeTimeMs);
-    // TODO previous links
-    if (eiffelEventRepository.repositorySettings.eventChainGoUpStream) {
-        $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_eventChainGoUpStream').bootstrapToggle('on');
-    }
-    if (eiffelEventRepository.repositorySettings.eventChainGoDownStream) {
-        $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_eventChainGoDownStream').bootstrapToggle('on');
-    }
-    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_eventChainMaxSteps').val(eiffelEventRepository.repositorySettings.eventChainMaxSteps);
-    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_eventChainMaxConnections').val(eiffelEventRepository.repositorySettings.eventChainMaxConnections);
-    if (eiffelEventRepository.repositorySettings.eventChainTimeRelativeXAxis) {
-        $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_eventChainTimeRelativeXAxis').bootstrapToggle('on');
-    }
-
-    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_streamBaseEvents').val(eiffelEventRepository.repositorySettings.streamBaseEvents);
-    $('#eiffelEventRepository\\[' + eiffelEventRepository.id + '\\]_streamRefreshIntervalMs').val(eiffelEventRepository.repositorySettings.streamRefreshIntervalMs);
-}
-
 function getCurrentSettingsForId(repositoryLocalId) {
     return {
         id: repositoryLocalId,
         name: $('#eiffelEventRepository\\[' + repositoryLocalId + '\\]_name').val(),
-        url: $('#eiffelEventRepository\\[' + repositoryLocalId + '\\]_url').val(),
-        repositorySettings: {
+        preferences: {
+            url: $('#eiffelEventRepository\\[' + repositoryLocalId + '\\]_url').val(),
             cacheLifeTimeMs: parseInt($('#eiffelEventRepository\\[' + repositoryLocalId + '\\]_cacheLifeTimeMs').val()),
 
             detailsTargetId: settingsElement.detailsTarget.html(),
@@ -323,26 +376,25 @@ function getCurrentSettingsForId(repositoryLocalId) {
 function getCurrentSettings() {
     // Find systems
     let repositories = {};
-    let systemCount = settingsElement.systems.find('.panel').length;
-    let i = 0;
-    let count = 0;
-    while (count < systemCount) {
-        let potentialSystemObject = $('#eiffelEventRepository\\[' + i + '\\]_name');
-        // Check if jQuery object exists
-        if (potentialSystemObject.length) {
-            repositories[potentialSystemObject.val()] = getCurrentSettingsForId(i);
-            count++;
-        }
-        i++;
+    let nameToId = {};
+    $(".repo_id-span").each(function (index) {
+        let repo_id = $(this).text();
+
+        repositories[repo_id] = getCurrentSettingsForId(repo_id);
+        nameToId[repositories[repo_id].name] = repo_id;
+    });
+
+    let name = settingsElement.system.val();
+    let id = nameToId[name];
+    let selectedEiffelEventRepository = undefined;
+    if (id !== undefined) {
+        selectedEiffelEventRepository = repositories[id];
     }
 
     // return settings object
     return {
         eiffelEventRepositories: repositories,
-        selectedEiffelEventRepository: {
-            name: settingsElement.system.val(),
-            url: repositories[settingsElement.system.val()],
-        },
+        selectedEiffelEventRepository: selectedEiffelEventRepository,
     };
 }
 
@@ -350,9 +402,11 @@ function updateSystemSelector() {
     settingsElement.system.html('');
     let settings = getCurrentSettings();
     for (let key in settings.eiffelEventRepositories) {
-        settingsElement.system.append('<option>' + key + '</option>');
+        settingsElement.system.append('<option>' + settings.eiffelEventRepositories[key].name + '</option>');
     }
     settingsElement.system.selectpicker('refresh');
+    triggerSystemSelect();
+    settingsSelectRepository();
 }
 
 
@@ -413,6 +467,7 @@ function getContentElements() {
         menu: {
             aggregation: $('#menu_aggregation'),
             systemForceUpdate: $('#menu_system_force_fetch'),
+            systemStatusUpdateText: $('#last_fetch_status_text'),
             details: $('#menu_details'),
             detailsToggle: $('#menu_details_toggle'),
             eventChain: $('#menu_eventChain'),
@@ -420,7 +475,8 @@ function getContentElements() {
         },
         timeago: {
             dataUpdated: $('time#data_updated_timeago'),
-        }
+        },
+        settingsResetButton: $('#systemResetButton'),
     }
         ;
 }
@@ -449,11 +505,11 @@ function disableMenuLevel(level) {
 }
 
 function setMenuActive(settings) {
-    if (settings.selectedEiffelEventRepository.url === undefined) {
+    if (settings.selectedEiffelEventRepository === undefined) {
         disableMenuLevel(0);
-    } else if (settings.eiffelEventRepositories[settings.selectedEiffelEventRepository.name].repositorySettings.detailsTargetId === '') {
+    } else if (settings.eiffelEventRepositories[settings.selectedEiffelEventRepository.id].preferences.detailsTargetId === '') {
         disableMenuLevel(1);
-    } else if (settings.eiffelEventRepositories[settings.selectedEiffelEventRepository.name].repositorySettings.eventChainTargetId === '') {
+    } else if (settings.eiffelEventRepositories[settings.selectedEiffelEventRepository.id].preferences.eventChainTargetId === '') {
         disableMenuLevel(2);
     } else {
         disableMenuLevel(3);
@@ -513,17 +569,26 @@ function populateExternalLegend(groups, graph2d) {
     }
 }
 
-function updateEventsCollectedTime(lastDataCollectedAt) {
+function updateEventsCollectedTime(msg, lastDataCollectedAt) {
+    contentGlobal.menu.systemStatusUpdateText.html(msg + ' ');
     contentGlobal.timeago.dataUpdated.timeago("update", new Date(lastDataCollectedAt));
+}
+
+function fetchCompleted() {
+    contentGlobal.menu.systemForceUpdate.show();
+    contentGlobal.loader.hide();
 }
 
 function load(stage, useCache) {
     let settings = getCurrentSettings();
-    let repository = settings.eiffelEventRepositories[settings.selectedEiffelEventRepository.name];
+    let preferences = undefined;
+    if (settings.selectedEiffelEventRepository !== undefined) {
+        preferences = settings.selectedEiffelEventRepository.preferences;
+    }
 
-    if (useCache === false) {
+    if (useCache === false && preferences !== undefined) {
         // invalidateCache();
-        repository.repositorySettings.cacheLifeTimeMs = -1;
+        preferences.cacheLifeTimeMs = -1;
     }
 
     if (stage === STAGE_LIVE && currentStage === STAGE_LIVE) {
@@ -544,8 +609,8 @@ function load(stage, useCache) {
 
         if (stage === STAGE_AGGREGATION) {
             contentGlobal.containers.aggregation.show();
-            if (usableCache(stage, repository.url, repository.repositorySettings.cacheLifeTimeMs) === true) {
-                console.log('Using cache for system ' + repository.url);
+            if (preferences === undefined || usableCache(stage, preferences.url, preferences.cacheLifeTimeMs) === true) {
+                console.log('Using cache for system ' + preferences.url + '. Or no repository.');
                 contentGlobal.loader.hide();
             } else {
                 _.defer(function () {
@@ -554,27 +619,24 @@ function load(stage, useCache) {
                         contentType: 'application/json; charset=utf-8',
                         dataType: 'json',
                         url: '/api/aggregationGraph',
-                        data: JSON.stringify(repository),
+                        data: JSON.stringify(preferences),
                         success: function (data) {
                             let graphData = data.data;
-                            renderCytoscape(contentGlobal.cyAggregation, graphData, repository.repositorySettings, undefined);
-                            storeCache(stage, repository.url);
+                            renderCytoscape(contentGlobal.cyAggregation, graphData, preferences, undefined);
+                            storeCache(stage, preferences.url);
                             /** @namespace data.timeCollected */
-                            updateEventsCollectedTime(data.timeCollected);
-                            contentGlobal.menu.systemForceUpdate.show();
+                            updateEventsCollectedTime('Events collected', data.timeCollected);
                         },
                         error: function (jqXHR, textStatus, errorThrown) {
                             showModal('<p>Wops! I could not fetch data from the given url :( check that the event repository server is running and the correct url is given in the settings.</p><div class="alert alert-danger" role="alert">' + jqXHR.responseText + '</div>');
                             resetSelections();
                             disableMenuLevel(0);
-                            renderCytoscape(contentGlobal.cyAggregation, undefined, repository.repositorySettings, undefined);
-                            storeCache(stage, repository.url);
-                            contentGlobal.menu.systemForceUpdate.hide();
+                            renderCytoscape(contentGlobal.cyAggregation, undefined, preferences, undefined);
+                            storeCache(stage, preferences.url);
+                            updateEventsCollectedTime("Failed to fetch events", Date.now());
                         },
                         complete: function (jqXHR, textStatus) {
-                            // console.log(jqXHR);
-                            // console.log(textStatus);
-                            contentGlobal.loader.hide();
+                            fetchCompleted();
                         }
                     });
                 });
@@ -583,15 +645,15 @@ function load(stage, useCache) {
             contentGlobal.menu.detailsToggle.show();
             contentGlobal.containers.details.show();
 
-            let detailsTarget = repository.repositorySettings.detailsTargetId;
+            let detailsTarget = preferences.detailsTargetId;
 
             // Table
             if (contentGlobal.detailsToggle.prop('checked')) {
                 contentGlobal.detailsTable.show();
                 contentGlobal.detailsPlot.hide();
 
-                if (usableCache('detailsTable', repository.url + detailsTarget, repository.repositorySettings.cacheLifeTimeMs)) {
-                    console.log('Using cache for ' + detailsTarget + ' from system ' + repository.url);
+                if (usableCache('detailsTable', preferences.url + detailsTarget, preferences.cacheLifeTimeMs)) {
+                    console.log('Using cache for ' + detailsTarget + ' from system ' + preferences.url);
                     contentGlobal.loader.hide();
                 } else {
                     _.defer(function () {
@@ -600,7 +662,7 @@ function load(stage, useCache) {
                             contentType: 'application/json; charset=utf-8',
                             dataType: 'json',
                             url: "/api/detailedEvents",
-                            data: JSON.stringify(repository),
+                            data: JSON.stringify(preferences),
                             success: function (data) {
                                 let plotData = data.data;
                                 if (contentGlobal.datatableDetails !== undefined) {
@@ -635,15 +697,17 @@ function load(stage, useCache) {
                                         load("eventChain");
                                     });
 
-                                    storeCache('detailsTable', repository.url + detailsTarget);
+                                    storeCache('detailsTable', preferences.url + detailsTarget);
                                 } else {
                                     console.log("No data");
                                 }
-                                /** @namespace data.timeCollected */
-                                updateEventsCollectedTime(data.timeCollected);
+                                updateEventsCollectedTime('Events collected', data.timeCollected);
+                            },
+                            error: function () {
+                                updateEventsCollectedTime('Failed to details', Date.now());
                             },
                             complete: function () {
-                                contentGlobal.loader.hide();
+                                fetchCompleted();
                             }
                         });
                     });
@@ -653,8 +717,8 @@ function load(stage, useCache) {
                 contentGlobal.detailsTable.hide();
                 contentGlobal.detailsPlot.show();
 
-                if (usableCache('detailsPlot', repository.url + detailsTarget, repository.repositorySettings.cacheLifeTimeMs)) {
-                    console.log('Using cache for ' + detailsTarget + ' from system ' + repository.url);
+                if (usableCache('detailsPlot', preferences.url + detailsTarget, preferences.cacheLifeTimeMs)) {
+                    console.log('Using cache for ' + detailsTarget + ' from system ' + preferences.url);
                     contentGlobal.loader.hide();
                 } else {
                     _.defer(function () {
@@ -663,7 +727,7 @@ function load(stage, useCache) {
                             contentType: 'application/json; charset=utf-8',
                             dataType: 'json',
                             url: "/api/detailedPlot",
-                            data: JSON.stringify(repository),
+                            data: JSON.stringify(preferences),
                             success: function (data) {
                                 let plotData = data.data;
                                 if (plotData !== undefined && plotData.items.length !== 0) {
@@ -750,16 +814,17 @@ function load(stage, useCache) {
 
                                     populateExternalLegend(groups, plot);
 
-
-                                    storeCache('detailsPlot', repository.url + detailsTarget);
+                                    storeCache('detailsPlot', preferences.url + detailsTarget);
                                 } else {
                                     console.log("No data");
                                 }
-                                /** @namespace data.timeCollected */
-                                updateEventsCollectedTime(data.timeCollected);
+                                updateEventsCollectedTime('Events collected', data.timeCollected);
+                            },
+                            error: function () {
+                                updateEventsCollectedTime('Failed to fetch plot', Date.now());
                             },
                             complete: function () {
-                                contentGlobal.loader.hide();
+                                fetchCompleted();
                             }
                         });
                     });
@@ -767,9 +832,9 @@ function load(stage, useCache) {
             }
         } else if (stage === STAGE_EVENTCHAIN) {
             contentGlobal.containers.eventChain.show();
-            let eventTarget = repository.repositorySettings.eventChainTargetId;
-            if (usableCache(stage, repository.url + eventTarget, repository.repositorySettings.cacheLifeTimeMs)) {
-                console.log('Using cache for ' + eventTarget + ' from system ' + repository.url);
+            let eventTarget = preferences.eventChainTargetId;
+            if (usableCache(stage, preferences.url + eventTarget, preferences.cacheLifeTimeMs)) {
+                console.log('Using cache for ' + eventTarget + ' from system ' + preferences.url);
                 contentGlobal.loader.hide();
             } else {
                 _.defer(function () {
@@ -778,16 +843,18 @@ function load(stage, useCache) {
                         contentType: 'application/json; charset=utf-8',
                         dataType: 'json',
                         url: '/api/eventChainGraph',
-                        data: JSON.stringify(repository),
+                        data: JSON.stringify(preferences),
                         success: function (data) {
                             let graphData = data.data;
-                            renderCytoscape(contentGlobal.cyEventChain, graphData.elements, repository.repositorySettings, eventTarget);
-                            storeCache(stage, repository.url + eventTarget);
-                            /** @namespace data.timeCollected */
-                            updateEventsCollectedTime(data.timeCollected);
+                            renderCytoscape(contentGlobal.cyEventChain, graphData.elements, preferences, eventTarget);
+                            storeCache(stage, preferences.url + eventTarget);
+                            updateEventsCollectedTime('Events collected', data.timeCollected);
+                        },
+                        error: function () {
+                            updateEventsCollectedTime('Failed to fetch event-chain', Date.now());
                         },
                         complete: function () {
-                            contentGlobal.loader.hide();
+                            fetchCompleted();
                         }
                     });
                 });
@@ -796,8 +863,8 @@ function load(stage, useCache) {
             liveFetch = true;
             contentGlobal.containers.live.show();
 
-            if (!(lastLiveFetch === undefined || Date.now() - lastLiveFetch > repository.repositorySettings.streamRefreshIntervalMs) && usableCache(stage, repository.url, repository.repositorySettings.cacheLifeTimeMs)) {
-                console.log('Using cache for live view from system ' + repository.url);
+            if (!(lastLiveFetch === undefined || Date.now() - lastLiveFetch > preferences.streamRefreshIntervalMs) && usableCache(stage, preferences.url, preferences.cacheLifeTimeMs)) {
+                console.log('Using cache for live view from system ' + preferences.url);
                 contentGlobal.loader.hide();
             } else {
                 _.defer(function () {
@@ -808,16 +875,18 @@ function load(stage, useCache) {
                             contentType: 'application/json; charset=utf-8',
                             dataType: 'json',
                             url: '/api/liveEventChainGraph',
-                            data: JSON.stringify(repository),
+                            data: JSON.stringify(preferences),
                             success: function (data) {
                                 let graphData = data.data;
-                                renderCytoscape(contentGlobal.cyLiveEventChain, graphData.elements, repository);
-                                storeCache(stage, repository.url);
-                                /** @namespace data.timeCollected */
-                                updateEventsCollectedTime(data.timeCollected);
+                                renderCytoscape(contentGlobal.cyLiveEventChain, graphData.elements, preferences);
+                                storeCache(stage, preferences.url);
+                                updateEventsCollectedTime('Events collected', data.timeCollected);
+                            },
+                            error: function () {
+                                updateEventsCollectedTime('Failed live fetch', data.timeCollected);
                             },
                             complete: function () {
-                                contentGlobal.loader.hide();
+                                fetchCompleted();
                                 isFetching = false;
                             }
                         });
@@ -826,7 +895,7 @@ function load(stage, useCache) {
                 lastLiveFetch = Date.now();
             }
         } else if (stage === STAGE_SETTINGS) {
-            settingsSelectRepository(repository);
+            settingsSelectRepository(settings.selectedEiffelEventRepository);
             contentGlobal.containers.settings.show();
             contentGlobal.loader.hide();
         } else if (stage === STAGE_HELP) {
@@ -871,7 +940,7 @@ function generateStatusImages() {
     }
 }
 
-function renderCytoscape(container, data, repositorySettings, target) {
+function renderCytoscape(container, data, preferences, target) {
     let style = [
         {
             selector: 'node',
@@ -1097,7 +1166,7 @@ function renderCytoscape(container, data, repositorySettings, target) {
                 'border-color': '#ffea22',
             }
         });
-        if (repositorySettings.eventChainTimeRelativeXAxis) {
+        if (preferences.eventChainTimeRelativeXAxis) {
             layout = {
                 name: 'preset',
             }
@@ -1264,7 +1333,20 @@ function settingsSelectRepository(repository) {
         $('#settings_currentEiffelEventRepositoryHeader').html('Choose a repository to modify in the side menu');
     } else {
         $('#settings_currentEiffelEventRepositoryHeader').html(repository.name);
-        $('#eiffelEventRepositorySettings\\[' + repository.id + '\\]').show();
+        $('#eiffelEventPreferences\\[' + repository.id + '\\]').show();
+    }
+}
+
+function triggerSystemSelect() {
+    resetSelections();
+    disableMenuLevel(0);
+    let settings = getCurrentSettings();
+    if (settings.selectedEiffelEventRepository !== undefined) {
+        settingsSelectRepository(settings.eiffelEventRepositories[settings.selectedEiffelEventRepository.id]);
+        setMenuActive(settings);
+        if (currentStage !== STAGE_SETTINGS) {
+            load(STAGE_AGGREGATION);
+        }
     }
 }
 
@@ -1308,21 +1390,7 @@ $(document).ready(function () {
 
 
     settingsElement.system.on('changed.bs.select', function () {
-        resetSelections();
-        disableMenuLevel(0);
-        if (currentStage === STAGE_SETTINGS) {
-            let settings = getCurrentSettings();
-            settingsSelectRepository(settings.eiffelEventRepositories[settings.selectedEiffelEventRepository.name]);
-            setMenuActive(settings);
-        } else {
-            load(STAGE_AGGREGATION);
-        }
-
-        settingsElement.systemSettingsSelect.selectpicker('val', settingsElement.system.val());
-    });
-
-    settingsElement.system.on('changed.bs.select', function () {
-
+        triggerSystemSelect();
     });
 
     contentGlobal.systemForceUpdateButton.click(function () {
@@ -1332,7 +1400,22 @@ $(document).ready(function () {
         }
     });
 
-    if (getCurrentSettings().selectedEiffelEventRepository.url !== undefined) {
+    contentGlobal.settingsResetButton.click(function () {
+        contentGlobal.loader.show();
+        $.ajax({
+            type: "POST",
+            url: '/api/resetSettingsDefault',
+            success: function (data) {
+                window.location.reload()
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                contentGlobal.loader.hide();
+                showModal('<p>Wops! I could not reset settings :( check that the event repository server is running and the correct url is given in the settings.</p><div class="alert alert-danger" role="alert">' + jqXHR.responseText + '</div>');
+            }
+        });
+    });
+
+    if (getCurrentSettings().selectedEiffelEventRepository !== undefined) {
         _.defer(function () {
             load(STAGE_AGGREGATION);
         });
@@ -1344,7 +1427,7 @@ $(document).ready(function () {
     let interval0 = window.setInterval(function () {
         if (liveFetch === true) {
             let settings = getCurrentSettings();
-            if (lastLiveFetch === undefined || Date.now() - lastLiveFetch > settings.eiffelEventRepositories[settings.selectedEiffelEventRepository.name].repositorySettings.streamRefreshIntervalMs) {
+            if (lastLiveFetch === undefined || Date.now() - lastLiveFetch > settings.eiffelEventRepositories[settings.selectedEiffelEventRepository.id].preferences.streamRefreshIntervalMs) {
                 load('live', false);
             }
         }

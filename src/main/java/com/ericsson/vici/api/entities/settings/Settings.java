@@ -18,25 +18,36 @@ package com.ericsson.vici.api.entities.settings;
 
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 public class Settings {
-    private String version;
-    // EiffelEventRepositories
-    private List<EiffelEventRepository> eiffelEventRepositories = Arrays.asList(
-            new EiffelEventRepository("Local static dummy file", "localFile[reference-data-set]", null),
-            new EiffelEventRepository("EER static dummy file", "http://127.0.0.1:8081/reference-data-set", null),
-            new EiffelEventRepository("EER [live] dummy event stream", "http://127.0.0.1:8081/live[reference-data-set]", null),
-            new EiffelEventRepository("Docker EER static dummy file", "http://dummy-er:8081/reference-data-set", null),
-            new EiffelEventRepository("Docker EER [live] dummy event stream", "http://dummy-er:8081/live[reference-data-set]", null)
+    public static final String propertiesVersion = "2.0";
+
+    private static final List<EiffelEventRepository> STANDARD_EIFFEL_REPOSITORIES = Arrays.asList(
+            new EiffelEventRepository("Local static dummy file", "localFile[reference-data-set]"),
+            new EiffelEventRepository("EER static dummy file", "http://127.0.0.1:8081/reference-data-set"),
+            new EiffelEventRepository("EER [live] dummy event stream", "http://127.0.0.1:8081/live[reference-data-set]"),
+            new EiffelEventRepository("Docker EER static dummy file", "http://dummy-er:8081/reference-data-set"),
+            new EiffelEventRepository("Docker EER [live] dummy event stream", "http://dummy-er:8081/live[reference-data-set]")
     );
 
+    private String version;
+    // EiffelEventRepositories
+    private HashMap<String, EiffelEventRepository> eiffelEventRepositories;
+
+//    );
 
     public Settings() {
     }
 
     public Settings(String version) {
         this.version = version;
+        this.eiffelEventRepositories = new HashMap<>();
+
+        for (EiffelEventRepository repository : STANDARD_EIFFEL_REPOSITORIES) {
+            eiffelEventRepositories.put(repository.getId(), repository);
+        }
     }
 
     public String getVersion() {
@@ -47,11 +58,11 @@ public class Settings {
         this.version = version;
     }
 
-    public List<EiffelEventRepository> getEiffelEventRepositories() {
+    public HashMap<String, EiffelEventRepository> getEiffelEventRepositories() {
         return eiffelEventRepositories;
     }
 
-    public void setEiffelEventRepositories(List<EiffelEventRepository> eiffelEventRepositories) {
+    public void setEiffelEventRepositories(HashMap<String, EiffelEventRepository> eiffelEventRepositories) {
         this.eiffelEventRepositories = eiffelEventRepositories;
     }
 }
