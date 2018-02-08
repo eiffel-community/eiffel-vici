@@ -17,6 +17,7 @@
 package com.ericsson.vici;
 
 
+import com.ericsson.vici.api.entities.Preferences;
 import com.ericsson.vici.api.entities.Query;
 import com.ericsson.vici.entities.*;
 import com.ericsson.vici.entities.Eiffel.CustomData;
@@ -45,99 +46,108 @@ public class Fetcher {
     public static final String ACTIVITY = "Activity";
     public static final String TEST_SUITE = "TestSuite";
 
+    public static final String DEFAULT = "Default";
+
+    private static final Pattern CUSTOMDATA_KEY_PATTERN = Pattern.compile("^\\(key=(.*)\\)");
+
     private static HashMap<String, EventCache> eventCaches = new HashMap<>(); // TODO: a job that removes very old caches för memory cleanup
 
     public Fetcher() {
     }
 
-    private String getStandardAggregateValue(Event event) {
-        switch (event.getType()) {
-            case ACTIVITY:
-                return event.getThisEiffelEvent().getData().getName();
-            case "EiffelAnnouncementPublishedEvent":
-                return event.getThisEiffelEvent().getData().getHeading();
-            case "EiffelArtifactCreatedEvent":
-//            case "EiffelArtifactPublishedEvent": TODO
-            case "EiffelArtifactReusedEvent":
-                if (event.getThisEiffelEvent().getData().getGav() == null) {
-                    log.error("Investigate in Fetcher.getStandardAggregateValue: " + event.getThisEiffelEvent().getMeta().getType());
-                }
-//                return event.getThisEiffelEvent().getData().getGav().getGroupId() + "[" + event.getThisEiffelEvent().getData().getGav().getArtifactId() + "]";
-                return event.getThisEiffelEvent().getData().getGav().getArtifactId();
-            case "EiffelCompositionDefinedEvent":
-            case "EiffelConfidenceLevelModifiedEvent":
-            case "EiffelEnvironmentDefinedEvent":
-            case TEST_SUITE:
-                return event.getThisEiffelEvent().getData().getName();
-            case "EiffelFlowContextDefined":
-                return null;
-            case "EiffelIssueVerifiedEvent":
-                // TODO: -IV: data.issues (notera att detta är en array. Dvs det skulle vara snyggt om samma event kan dyka upp i flera objektrepresentationer i grafen)
-                return null;
-            case "EiffelSourceChangeCreatedEvent":
-            case "EiffelSourceChangeSubmittedEvent":
-                // TODO: möjlighet att välja identifier (git/svn/...)
-
-                String type;
-                if (event.getType().equals("EiffelSourceChangeCreatedEvent")) {
-                    type = "Created";
-                } else {
-                    type = "Submitted";
-                }
-                if (event.getThisEiffelEvent().getData().getGitIdentifier() != null) {
-//                    return event.getThisEiffelEvent().getData().getGitIdentifier().getRepoUri() + "[" + event.getThisEiffelEvent().getData().getGitIdentifier().getBranch() + "]";
-//                    return event.getThisEiffelEvent().getData().getGitIdentifier().getRepoUri();
-                    return type + "@" + event.getThisEiffelEvent().getData().getGitIdentifier().getRepoName();
-                }
-                return null;
-            case TEST_CASE:
-                return event.getThisEiffelEvent().getData().getTestCase().getId();
-            case "EiffelTestExecutionRecipeCollectionCreatedEvent":
-                return null;
-            default:
-                return null;
+    private String getValueFromKey(EiffelEvent event, String key) {
+        if (key == null || key.trim().equals("")) {
+            return null;
         }
-    }
 
-    private String getAggregateValue(Event event, HashMap<String, String> aggregateKeys) {
-        if (aggregateKeys == null || !aggregateKeys.containsKey(event.getType())) {
-            String value = getStandardAggregateValue(event);
+        String[] prefixSplit = key.split("@");
+        String prefix = "";
+        if (prefixSplit.length > 1) {
+            prefix = prefixSplit[0];
+            key = prefixSplit[1];
+        }
+        String[] keySplit = key.split("\\.");
 
-            if (value == null) {
-                if (event.getThisEiffelEvent().getData().getCustomData() != null) {
-                    for (CustomData customData : event.getThisEiffelEvent().getData().getCustomData()) {
-                        if (customData.getKey().equals("name")) {
-                            return "Custom[" + customData.getValue() + "]";
+        switch (keySplit[0]) {
+            case "data":
+                switch (keySplit[1]) {
+                    case "name":
+                        return prefix + event.getData().getName();
+                    case "heading":
+                        return prefix + event.getData().getHeading();
+                    case "gav":
+                        switch (keySplit[2]) {
+                            case "artifactId":
+                                return prefix + event.getData().getGav().getArtifactId();
+                            default:
+                                break;
                         }
-                    }
+                        break;
+                    case "gitIdentifier":
+                        switch (keySplit[2]) {
+                            case "repoName":
+                                return prefix + event.getData().getGitIdentifier().getRepoName();
+                            default:
+                                break;
+                        }
+                        break;
+                    case "testCase":
+                        switch (keySplit[2]) {
+                            case "id":
+                                return prefix + event.getData().getTestCase().getId();
+                            default:
+                                break;
+                        }
+                        break;
+                    case "customData":
+                        Matcher matcher = CUSTOMDATA_KEY_PATTERN.matcher(keySplit[2]);
+                        String customDataKey = null;
+                        if (matcher.find()) {
+                            customDataKey = matcher.group(1);
+                        }
+                        for (CustomData customData : event.getData().getCustomData()) {
+                            if (customDataKey == null || customData.getKey().equals(customDataKey)) {
+                                return prefix + customData.getValue();
+                            }
+                        }
+                        break;
+                    default:
+                        break;
                 }
-            }
-            return value;
+            default:
+                break;
         }
-
-        String aggregateKey = aggregateKeys.get(event.getType());
-        String[] path = aggregateKeys.get(event.getType()).split("\\.");
-
+        log.error("Aggregation key not implemented: " + key + ". Please add this key to the Fetcher or correct into a valid key.");
+        if (prefix.length() > 0) {
+            return prefix;
+        }
         return null;
     }
 
-    public Events getEvents(String url, long cacheLifetimeMs) {
-        if (eventCaches.containsKey(url)) {
-            EventCache eventCache = eventCaches.get(url);
-            if (eventCache.getLastUpdate() > System.currentTimeMillis() - cacheLifetimeMs) {
-                log.info("Stored cache used for: " + url);
-                return eventCache.getEvents();
+    private String getAggregateValue(Event event, Preferences preferences) {
+        String key = preferences.getAggregateOn().get(event.getType());
+        if (key == null) {
+            key = preferences.getAggregateOn().get(DEFAULT);
+            if (key == null) {
+                key = new Preferences().getAggregateOn().get(event.getType());
+                if (key == null) {
+                    key = new Preferences().getAggregateOn().get(DEFAULT);
+                }
             }
         }
 
-        log.info("Downloading eiffel-events from: " + url);
+        return getValueFromKey(event.getThisEiffelEvent(), key);
+    }
+
+    public Events fetchEvents(Preferences preferences) {
+        log.info("Downloading eiffel-events from: " + preferences.getUrl());
 
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<EiffelEvent[]> responseEntity;
         EiffelEvent[] eiffelEvents = null;
 
         Pattern pattern = Pattern.compile("^localFile\\[(.+)]$");
-        Matcher matcher = pattern.matcher(url.trim());
+        Matcher matcher = pattern.matcher(preferences.getUrl().trim());
 
         long eventsFetchedAt = System.currentTimeMillis();
 
@@ -172,7 +182,7 @@ public class Fetcher {
                 entity = new HttpEntity<>(queryJson.toString(), headers);
             }
 
-            responseEntity = restTemplate.exchange(url, HttpMethod.POST, entity, EiffelEvent[].class);
+            responseEntity = restTemplate.exchange(preferences.getUrl(), HttpMethod.POST, entity, EiffelEvent[].class);
             eiffelEvents = responseEntity.getBody();
 
 //            MediaType contentType = responseEntity.getHeaders().getContentType();
@@ -241,7 +251,7 @@ public class Fetcher {
             }
 
             // Print progress
-            if ((float) count / total > (float) lastPrint / total + 0.1 || count == total || count == 0) {
+            if ((float) count / total > (float) lastPrint / total + 0.2 || count == total || count == 0) {
                 log.info(count + "/" + total);
                 lastPrint = count;
             }
@@ -291,7 +301,7 @@ public class Fetcher {
                     log.error("null link while fetching followup events.");
                 }
                 count++;
-                if ((float) count / total > (float) lastPrint / total + 0.1 || count == total || count == 0) {
+                if ((float) count / total > (float) lastPrint / total + 0.2 || count == total || count == 0) {
                     log.info(count + "/" + total);
                     lastPrint = count;
                 }
@@ -321,8 +331,7 @@ public class Fetcher {
 
         // Makes the links go both ways.
         log.info("Fining and applying children to all nodes.");
-        for (String key : events.keySet()) {
-            Event event = events.get(key);
+        for (Event event : events.values()) {
             if (!event.getType().equals(REDIRECT)) {
                 for (Link link : event.getLinks()) {
                     String target = getTarget(link.getTarget(), events);
@@ -331,18 +340,63 @@ public class Fetcher {
             }
         }
 
-        // Sets aggregate values
-        for (String key : events.keySet()) {
-            Event event = events.get(key);
-            if (!event.getType().equals(REDIRECT)) {
-                event.setAggregateOn(getAggregateValue(event, null));
+        Events eventsObject = new Events(events, timeStart, timeEnd, eventsFetchedAt);
+
+
+        log.info("Events imported from: " + preferences.getUrl());
+        return eventsObject;
+    }
+
+    public Events getEvents(Preferences preferences) {
+        Events events = null;
+        EventCache eventCache = eventCaches.get(preferences.getUrl());
+
+        boolean setAggregateOn = true;
+
+        if (eventCache != null && eventCache.getEvents().getTimeCollected() > System.currentTimeMillis() - preferences.getCacheLifeTimeMs()) {
+            log.info("Using cached events for: " + preferences.getUrl());
+            events = eventCache.getEvents();
+
+            // Checking if we need to reset aggregateOn
+            setAggregateOn = false;
+            for (String type : preferences.getAggregateOn().keySet()) {
+                String stored = eventCache.getPreferences().getAggregateOn().get(type);
+                String preferred = preferences.getAggregateOn().get(type);
+
+                if (stored == null || preferred == null) {
+                    if (stored == null && preferred == null) {
+                        setAggregateOn = true;
+                        break;
+                    }
+                } else if (!stored.equals(preferred)) {
+                    setAggregateOn = true;
+                    break;
+                }
             }
         }
 
-        Events eventsObject = new Events(events, timeStart, timeEnd, eventsFetchedAt);
-        eventCaches.put(url, new EventCache(eventsObject, eventsFetchedAt));
+        if (events == null) {
+            events = fetchEvents(preferences);
+        }
 
-        log.info("Events imported from: " + url);
-        return eventsObject;
+        // Sets aggregate values
+        if (setAggregateOn) {
+            log.info("Setting aggregation values for: " + preferences.getUrl());
+            for (Event event : events.getEvents().values()) {
+                if (!event.getType().equals(REDIRECT)) {
+                    String value = getAggregateValue(event, preferences);
+                    if (value == null) {
+                        // Throws error to send it to frontend.
+                        String error = "Null aggregation value for: " + event.getType() + ". Please implement in backend.";
+                        log.error(error);
+                        throw new RuntimeException(error);
+                    }
+                    event.setAggregateOn(value);
+                }
+            }
+        }
+
+        eventCaches.put(preferences.getUrl(), new EventCache(events, preferences));
+        return events;
     }
 }

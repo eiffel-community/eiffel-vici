@@ -14,10 +14,8 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */
-package com.ericsson.vici.api.entities.settings;
+package com.ericsson.vici.api.entities;
 
-
-import com.ericsson.vici.api.entities.Preferences;
 
 import java.util.UUID;
 
