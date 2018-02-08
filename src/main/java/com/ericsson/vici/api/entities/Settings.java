@@ -14,15 +14,35 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */
-package com.ericsson.vici.api.entities.settings;
+package com.ericsson.vici.api.entities;
 
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import static com.ericsson.vici.Fetcher.*;
+
 public class Settings {
-    public static final String propertiesVersion = "2.0";
+    public static final String propertiesVersion = "2.1 - Added eiffelEventRepositories{}.preferences.aggregateOn";
+
+    private static final String[] eventTypesAggregatedOn = {
+            ACTIVITY,
+            "EiffelAnnouncementPublishedEvent",
+            "EiffelArtifactCreatedEvent",
+//            "EiffelArtifactPublishedEvent",
+            "EiffelArtifactReusedEvent",
+            "EiffelCompositionDefinedEvent",
+            "EiffelConfidenceLevelModifiedEvent",
+            "EiffelEnvironmentDefinedEvent",
+            TEST_SUITE,
+            "EiffelFlowContextDefined",
+            "EiffelIssueVerifiedEvent",
+            "EiffelSourceChangeCreatedEvent",
+            "EiffelSourceChangeSubmittedEvent",
+            TEST_CASE,
+            "EiffelTestExecutionRecipeCollectionCreatedEvent",
+            DEFAULT};
 
     private static final List<EiffelEventRepository> STANDARD_EIFFEL_REPOSITORIES = Arrays.asList(
             new EiffelEventRepository("Local static dummy file", "localFile[reference-data-set]"),
@@ -33,6 +53,7 @@ public class Settings {
     );
 
     private String version;
+    private String[] types = eventTypesAggregatedOn;
     // EiffelEventRepositories
     private HashMap<String, EiffelEventRepository> eiffelEventRepositories;
 
@@ -48,6 +69,14 @@ public class Settings {
         for (EiffelEventRepository repository : STANDARD_EIFFEL_REPOSITORIES) {
             eiffelEventRepositories.put(repository.getId(), repository);
         }
+    }
+
+    public String[] getTypes() {
+        return types;
+    }
+
+    public void setTypes(String[] types) {
+        this.types = types;
     }
 
     public String getVersion() {

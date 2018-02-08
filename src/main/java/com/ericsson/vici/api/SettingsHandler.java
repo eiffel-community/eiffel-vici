@@ -17,8 +17,8 @@
 package com.ericsson.vici.api;
 
 
-import com.ericsson.vici.api.entities.settings.EiffelEventRepository;
-import com.ericsson.vici.api.entities.settings.Settings;
+import com.ericsson.vici.api.entities.EiffelEventRepository;
+import com.ericsson.vici.api.entities.Settings;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -26,7 +26,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import java.io.File;
 import java.io.IOException;
 
-import static com.ericsson.vici.api.entities.settings.Settings.propertiesVersion;
+import static com.ericsson.vici.api.entities.Settings.propertiesVersion;
 
 public class SettingsHandler {
     private static final String propertiesFileName = "settings.json";
