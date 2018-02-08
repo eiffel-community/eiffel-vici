@@ -24,6 +24,8 @@ let statusImages = undefined;
 let liveFetch = undefined;
 let lastLiveFetch = undefined;
 
+let eventTypes = undefined;
+
 // FORMATTING
 function formatTime(long) {
     return moment(long).format('YYYY-MM-DD, HH:mm:ss:SSS');
@@ -183,6 +185,13 @@ function initializeSystem(eiffelEventRepository) {
     eersc += '<div id="eiffelEventRepository[' + repo_id + ']_settingsAggregation">' +
         '<h4>Aggregation</h4>';
 
+    /** @namespace eiffelEventRepository.preferences.aggregateOn */
+    for (let type in eiffelEventRepository.preferences.aggregateOn) {
+        eersc += '<div class="input-group settings-row">' +
+            '<span class="input-group-addon">' + type + '</span><input id="eiffelEventRepository[' + repo_id + ']_aggregateOn' + type + '" type="text" class="form-control" placeholder="' + eiffelEventRepository.preferences.aggregateOn[type] + '"/>' +
+            '</div>';
+    }
+
     eersc += '</div>';
     // Details view settings
     eersc += '<div id="eiffelEventRepository[' + repo_id + ']_settingsDetails">' +
@@ -238,6 +247,14 @@ function initializeSystem(eiffelEventRepository) {
     $('.set-bootstraptoggle').bootstrapToggle();
 
     // Apply correct settings
+    for (let type in eiffelEventRepository.preferences.aggregateOn) {
+        let value = eiffelEventRepository.preferences.aggregateOn[type];
+        // if (value === undefined) {
+        //     value = 'null';
+        // }
+        $('#eiffelEventRepository\\[' + repo_id + '\\]_aggregateOn' + type).val(value);
+    }
+
     /** @namespace eiffelEventRepository.preferences */
     $('#eiffelEventRepository\\[' + repo_id + '\\]_cacheLifeTimeMs').val(eiffelEventRepository.preferences.cacheLifeTimeMs);
     // TODO previous links
@@ -329,6 +346,7 @@ function getSettingsFromServer() {
             // data: JSON.stringify(settings),
             success: function (data) {
                 console.log(data);
+                eventTypes = data.types;
                 /** @namespace data.eiffelEventRepositories */
                 for (let id in data.eiffelEventRepositories) {
                     newSystem(data.eiffelEventRepositories[id]);
@@ -346,10 +364,20 @@ function getSettingsFromServer() {
 }
 
 function getCurrentSettingsForId(repositoryLocalId) {
+    let aggregateOn = {};
+
+    eventTypes.forEach(function (type) {
+        aggregateOn[type] = $('#eiffelEventRepository\\[' + repositoryLocalId + '\\]_aggregateOn' + type).val().replace(/\s/g, '');
+        if (aggregateOn[type].length < 1) {
+            aggregateOn[type] = undefined;
+        }
+    });
+
     return {
         id: repositoryLocalId,
         name: $('#eiffelEventRepository\\[' + repositoryLocalId + '\\]_name').val(),
         preferences: {
+            aggregateOn: aggregateOn,
             url: $('#eiffelEventRepository\\[' + repositoryLocalId + '\\]_url').val(),
             cacheLifeTimeMs: parseInt($('#eiffelEventRepository\\[' + repositoryLocalId + '\\]_cacheLifeTimeMs').val()),
 

@@ -158,9 +158,7 @@ public class ApiController {
         HashMap<String, Edge> edges = new HashMap<>();
 
         // Nodes
-        for (String key : events.keySet()) {
-            Event event = events.get(key);
-
+        for (Event event : events.values()) {
             if (!event.getType().equals(REDIRECT)) {
                 Node node;
                 if (nodes.containsKey(event.getAggregateOn())) {
@@ -176,8 +174,7 @@ public class ApiController {
         }
 
         // Edges
-        for (String key : events.keySet()) {
-            Event event = events.get(key);
+        for (Event event : events.values()) {
             if (!event.getType().equals(REDIRECT)) {
                 for (Link link : event.getLinks()) {
                     String target = events.get(getTarget(link.getTarget(), events)).getAggregateOn();
@@ -191,13 +188,9 @@ public class ApiController {
             }
         }
 
-        for (String key : nodes.keySet()) {
-            elements.add(nodes.get(key));
-        }
+        elements.addAll(nodes.values());
 
-        for (String key : edges.keySet()) {
-            elements.add(edges.get(key));
-        }
+        elements.addAll(edges.values());
 
         return new ReturnData(elements, eventsObject.getTimeCollected());
     }
@@ -218,8 +211,7 @@ public class ApiController {
 
         HashSet<String> cSet = new HashSet<>();
 
-        for (String key : events.keySet()) {
-            Event event = events.get(key);
+        for (Event event : events.values()) {
             if (!event.getType().equals(REDIRECT)) {
                 if (event.getAggregateOn().equals(preferences.getDetailsTargetId())) {
                     HashMap<String, String> row = new HashMap<>();
@@ -464,8 +456,7 @@ public class ApiController {
         }
 
         // Nodes
-        for (String key : incEvents.keySet()) {
-            Event event = incEvents.get(key);
+        for (Event event : incEvents.values()) {
 
             if (!event.getType().equals(REDIRECT)) {
                 Node node = new Node(new DataNode(event.getId(), event.getAggregateOn(), event.getType(), null, 0));
@@ -497,8 +488,7 @@ public class ApiController {
         }
 
         // Edges
-        for (String key : incEvents.keySet()) {
-            Event event = incEvents.get(key);
+        for (Event event : incEvents.values()) {
 
             if (!event.getType().equals(REDIRECT) && event.getLinks().size() + event.getChildren().size() <= preferences.getEventChainMaxConnections()) {
                 for (Link link : event.getLinks()) {
@@ -585,14 +575,8 @@ public class ApiController {
             }
         }
 
-
-        for (String key : nodes.keySet()) {
-            graph.getElements().add(nodes.get(key));
-        }
-
-        for (String key : edges.keySet()) {
-            graph.getElements().add(edges.get(key));
-        }
+        graph.getElements().addAll(nodes.values());
+        graph.getElements().addAll(edges.values());
 
         return graph;
     }

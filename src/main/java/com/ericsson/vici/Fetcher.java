@@ -137,18 +137,9 @@ public class Fetcher {
         }
 
         return getValueFromKey(event.getThisEiffelEvent(), key);
-
     }
 
-    public Events getEvents(Preferences preferences) {
-        if (eventCaches.containsKey(preferences.getUrl())) {
-            EventCache eventCache = eventCaches.get(preferences.getUrl());
-            if (eventCache.getLastUpdate() > System.currentTimeMillis() - preferences.getCacheLifeTimeMs()) {
-                log.info("Stored cache used for: " + preferences.getUrl());
-                return eventCache.getEvents();
-            }
-        }
-
+    public Events fetchEvents(Preferences preferences) {
         log.info("Downloading eiffel-events from: " + preferences.getUrl());
 
         RestTemplate restTemplate = new RestTemplate();
@@ -260,7 +251,7 @@ public class Fetcher {
             }
 
             // Print progress
-            if ((float) count / total > (float) lastPrint / total + 0.1 || count == total || count == 0) {
+            if ((float) count / total > (float) lastPrint / total + 0.2 || count == total || count == 0) {
                 log.info(count + "/" + total);
                 lastPrint = count;
             }
@@ -310,7 +301,7 @@ public class Fetcher {
                     log.error("null link while fetching followup events.");
                 }
                 count++;
-                if ((float) count / total > (float) lastPrint / total + 0.1 || count == total || count == 0) {
+                if ((float) count / total > (float) lastPrint / total + 0.2 || count == total || count == 0) {
                     log.info(count + "/" + total);
                     lastPrint = count;
                 }
@@ -340,8 +331,7 @@ public class Fetcher {
 
         // Makes the links go both ways.
         log.info("Fining and applying children to all nodes.");
-        for (String key : events.keySet()) {
-            Event event = events.get(key);
+        for (Event event : events.values()) {
             if (!event.getType().equals(REDIRECT)) {
                 for (Link link : event.getLinks()) {
                     String target = getTarget(link.getTarget(), events);
@@ -350,18 +340,63 @@ public class Fetcher {
             }
         }
 
-        // Sets aggregate values
-        for (String key : events.keySet()) {
-            Event event = events.get(key);
-            if (!event.getType().equals(REDIRECT)) {
-                event.setAggregateOn(getAggregateValue(event, preferences));
-            }
-        }
-
         Events eventsObject = new Events(events, timeStart, timeEnd, eventsFetchedAt);
-        eventCaches.put(preferences.getUrl(), new EventCache(eventsObject, eventsFetchedAt));
+
 
         log.info("Events imported from: " + preferences.getUrl());
         return eventsObject;
+    }
+
+    public Events getEvents(Preferences preferences) {
+        Events events = null;
+        EventCache eventCache = eventCaches.get(preferences.getUrl());
+
+        boolean setAggregateOn = true;
+
+        if (eventCache != null && eventCache.getEvents().getTimeCollected() > System.currentTimeMillis() - preferences.getCacheLifeTimeMs()) {
+            log.info("Using cached events for: " + preferences.getUrl());
+            events = eventCache.getEvents();
+
+            // Checking if we need to reset aggregateOn
+            setAggregateOn = false;
+            for (String type : preferences.getAggregateOn().keySet()) {
+                String stored = eventCache.getPreferences().getAggregateOn().get(type);
+                String preferred = preferences.getAggregateOn().get(type);
+
+                if (stored == null || preferred == null) {
+                    if (stored == null && preferred == null) {
+                        setAggregateOn = true;
+                        break;
+                    }
+                } else if (!stored.equals(preferred)) {
+                    setAggregateOn = true;
+                    break;
+                }
+            }
+        }
+
+        if (events == null) {
+            events = fetchEvents(preferences);
+        }
+
+        // Sets aggregate values
+        if (setAggregateOn) {
+            log.info("Setting aggregation values for: " + preferences.getUrl());
+            for (Event event : events.getEvents().values()) {
+                if (!event.getType().equals(REDIRECT)) {
+                    String value = getAggregateValue(event, preferences);
+                    if (value == null) {
+                        // Throws error to send it to frontend.
+                        String error = "Null aggregation value for: " + event.getType() + ". Please implement in backend.";
+                        log.error(error);
+                        throw new RuntimeException(error);
+                    }
+                    event.setAggregateOn(value);
+                }
+            }
+        }
+
+        eventCaches.put(preferences.getUrl(), new EventCache(events, preferences));
+        return events;
     }
 }

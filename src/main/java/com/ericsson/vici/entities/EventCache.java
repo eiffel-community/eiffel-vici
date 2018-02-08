@@ -16,27 +16,15 @@
 */
 package com.ericsson.vici.entities;
 
+import com.ericsson.vici.api.entities.Preferences;
+
 public class EventCache {
     private Events events;
-    private long lastUpdate;
+    private Preferences preferences;
 
-
-    public EventCache(Events events) {
+    public EventCache(Events events, Preferences preferences) {
         this.events = events;
-        this.lastUpdate = System.currentTimeMillis();
-    }
-
-    public EventCache(Events events, long lastUpdate) {
-        this.events = events;
-        this.lastUpdate = lastUpdate;
-    }
-
-    public long getLastUpdate() {
-        return lastUpdate;
-    }
-
-    public void setLastUpdate(long lastUpdate) {
-        this.lastUpdate = lastUpdate;
+        this.preferences = preferences;
     }
 
     public Events getEvents() {
@@ -45,5 +33,13 @@ public class EventCache {
 
     public void setEvents(Events events) {
         this.events = events;
+    }
+
+    public Preferences getPreferences() {
+        return preferences;
+    }
+
+    public void setPreferences(Preferences preferences) {
+        this.preferences = preferences;
     }
 }
