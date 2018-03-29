@@ -32,7 +32,7 @@ This repository forms part of the Eiffel Community. Eiffel is a protocol for tec
 
 Visit [Eiffel Community](https://eiffel-community.github.io) to get started and get involved.
 
-## How to Run
+# How to Run
 During the development stage, please consider refreshing the app-webpage with clear cashe if something gets stuck and report the issue.
 
 For the local dummy event repository to work, you have to extract src\main\resources\static\reference-data-set.zip into src\main\resources\static\reference-data-set.json.
