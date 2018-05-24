@@ -14,10 +14,14 @@ Right now the project is build with Java Spring Boot as server and my own javasc
 
 Usually I work on my own fork https://github.com/ewahjon/eiffel-vici and then combine some commits into a big merge into https://github.com/eiffel-community/eiffel-vici
 
-unzip src/assets/reference-data-set.zip to src/assets/reference-data-set.json\
-npm install\
-ng build --watch\
-start the spring boot server\
+unzip src/assets/reference-data-set.zip to src/assets/reference-data-set.json
+
+npm install
+
+ng build --watch
+
+start the spring boot server
+
 may have to restard ng and spring first time
 
 
