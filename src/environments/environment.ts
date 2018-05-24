@@ -4,5 +4,22 @@
 // The list of which env maps to which file can be found in `.angular-cli.json`.
 
 export const environment = {
-  production: false
+    production: false,
+    views: {
+        home: 'home',
+        aggregation: 'aggregation',
+        details: 'details',
+        eventChain: 'eventChain'
+    },
+    params: {
+        system: 'eiffel-repository-id',
+        view: 'view',
+        target: 'target',
+        undefined: 'undefined'
+    },
+    colors: {
+        pass: '#22b14c',
+        fail: '#af0020',
+        undefined: '#666',
+    }
 };

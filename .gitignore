@@ -79,6 +79,6 @@ Thumbs.db
 
 # -- CUSTOM
 settings.json
-src/main/resources/static/*.json
+src/assets/*.json
 *.log
 ignored
