@@ -1,3 +1,27 @@
+FOR TDDD27 Advanced Web Programming
+
+
+In this project I will continue working on the webapplication Vici https://github.com/eiffel-community/eiffel-vici
+Members is only me Jonathan Wahlund, jonwa732. My Ericsson github acoount name is ewahjon.
+Before examination the code at https://github.com/eiffel-community/eiffel-vici will be cloned to https://gitlab.ida.liu.se/jonwa732/TDDD27_2018_Vici
+
+Things that I will do to pass this course is:
+- Totally remake the client side using Angular as framework.
+- Anything else that the examinatiors may want me to add after reading this (2018-04-01).
+- Continuing developing Vici adding features desired by customers and Ericsson, some defined in the Issues.
+
+Right now the project is build with Java Spring Boot as server and my own javascript code in the frontend. The client communicates with the server through Spring restuful API. The server communicates to external databases/eiffel-event-repositories though those specified API.
+
+Usually I work on my own fork https://github.com/ewahjon/eiffel-vici and then combine some commits into a big merge into https://github.com/eiffel-community/eiffel-vici
+
+unzip src/assets/reference-data-set.zip to src/assets/reference-data-set.json\
+npm install\
+ng build --watch\
+start the spring boot server\
+may have to restard ng and spring first time
+
+
+
 <!---
    Copyright 2017-2018 Ericsson AB.
    For a full list of individual contributors, please see the commit history.
