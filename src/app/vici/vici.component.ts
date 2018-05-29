@@ -9,11 +9,11 @@ import {Preferences} from "../preferences";
 import * as moment from 'moment';
 import * as cytoscape from 'cytoscape';
 import * as dagre from 'cytoscape-dagre';
-// import * as cyqtip from 'cytoscape-qtip';
 import * as panzoom from 'cytoscape-panzoom';
 import {CustomCache} from "../custom-cache";
 import {HistoryUnit} from "../history-unit";
 
+// Register cy plugins.
 cytoscape.use(dagre);
 panzoom(cytoscape);
 
@@ -47,10 +47,7 @@ export class ViciComponent implements OnInit {
     aggregationCy: any;
     eventChainCy: any;
     detailsDatatable: any;
-    dtOptions: DataTables.Settings = {};
 
-
-    test_date = new Date();
     history: Array<HistoryUnit> = [];
     newSystemInput = {
         name: '',
@@ -71,11 +68,6 @@ export class ViciComponent implements OnInit {
         private injector: Injector,
         private renderer: Renderer2,
     ) {
-    }
-
-
-    testClick(): void {
-        console.log(this.settings)
     }
 
     private activateLoader(): void {
@@ -114,20 +106,11 @@ export class ViciComponent implements OnInit {
         });
     }
 
+    // WIP/TODO
     newSystem(): void {
-
-
         this.newSystemInput.name = '';
         this.newSystemInput.url = '';
     }
-
-
-    // getServerSettings(): void {
-    //     this.http.get<Settings>('/api/getSettings').subscribe(result => {
-    //         this.settings = result;
-    //         this.updateSystemReferences(this.settings.eiffelEventRepositories);
-    //     });
-    // }
 
     private makeHistory(systemId: string, view: string, target: string, msg: string): void {
         for (let step = 0; step < this.history.length; step++) {
@@ -141,10 +124,6 @@ export class ViciComponent implements OnInit {
         if (this.history.length > environment.historyMaxUnits) {
             this.history.pop();
         }
-    }
-
-    private newAggrigationHover(id: string): void {
-
     }
 
     private changeView(requestedSystem: string, requestedView: string, requestedTarget: string): void {
@@ -161,11 +140,9 @@ export class ViciComponent implements OnInit {
                     this.activateLoader();
                     this.http.post<any>('/api/aggregationGraph', repository.preferences).subscribe(result => {
                         this.aggregationCy = this.renderCytoscape('aggregation_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data, repository.preferences, undefined);
-                        console.log(result);
+                        // console.log(result);
                         this.aggregationNodeData = {};
                         for (let nodeData in result.data) {
-                            // this.aggregationNodeData[result.data[nodeData].data.id] = result.data[nodeData].data;
-
                             let tmp = result.data[nodeData].data;
                             if (tmp.quantities !== undefined && Object.keys(tmp.quantities).length !== 0 && tmp.quantities.constructor === Object) {
                                 let rates = {
@@ -175,28 +152,26 @@ export class ViciComponent implements OnInit {
                                 };
 
                                 if (tmp.quantities.SUCCESS !== undefined) {
-                                    rates.success = Math.ceil((100 * tmp.quantities.SUCCESS) / tmp.quantity);
+                                    rates.success = Math.round((100 * tmp.quantities.SUCCESS) / tmp.quantity);
                                 } else if (tmp.quantities.SUCCESSFUL !== undefined) {
-                                    rates.success = Math.ceil((100 * tmp.quantities.SUCCESSFUL) / tmp.quantity);
+                                    rates.success = Math.round((100 * tmp.quantities.SUCCESSFUL) / tmp.quantity);
                                 }
 
                                 if (tmp.quantities.UNSUCCESSFUL !== undefined) {
-                                    rates.fail = Math.floor((100 * tmp.quantities.UNSUCCESSFUL) / tmp.quantity);
+                                    rates.fail = Math.round((100 * tmp.quantities.UNSUCCESSFUL) / tmp.quantity);
                                 } else if (tmp.quantities.FAILURE !== undefined) {
-                                    rates.fail = Math.floor((100 * tmp.quantities.FAILURE) / tmp.quantity);
+                                    rates.fail = Math.round((100 * tmp.quantities.FAILURE) / tmp.quantity);
                                 } else if (tmp.quantities.FAILED !== undefined) {
-                                    rates.fail = Math.floor((100 * tmp.quantities.FAILED) / tmp.quantity);
+                                    rates.fail = Math.round((100 * tmp.quantities.FAILED) / tmp.quantity);
                                 }
 
                                 rates.unknown = 100 - rates.success - rates.fail;
 
                                 tmp['rates'] = rates;
                             }
-
                             this.aggregationNodeData[tmp.id] = tmp;
-
                         }
-                        console.log(this.aggregationNodeData);
+                        // console.log(this.aggregationNodeData);
 
                         this.aggregationCy.on('tap', 'node', (evt) => {
                             let node = evt.target;
@@ -255,6 +230,8 @@ export class ViciComponent implements OnInit {
 
                     if (requestedSystem !== this.cache.details.systemId || requestedTarget !== this.cache.details.target) {
                         this.activateLoader();
+
+                        // Kills the previous datatable to avoid errors.
                         if (this.detailsDatatable !== undefined) {
                             this.detailsDatatable.clear();
                             this.detailsDatatable.destroy();
@@ -263,10 +240,6 @@ export class ViciComponent implements OnInit {
 
                         repository.preferences.detailsTargetId = requestedTarget;
                         this.http.post<any>('/api/detailedEvents', repository.preferences).subscribe(result => {
-                            // if (this.detailsDatatable !== undefined) {
-                            //     this.detailsDatatable.destroy();
-                            //     this.detailsDatatable.empty();
-                            // }
                             this.detailsDatatable = this.renderDatatables('details_table', result, requestedSystem);
                             this.cache.details.systemId = requestedSystem;
                             this.cache.details.target = requestedTarget;
@@ -284,7 +257,7 @@ export class ViciComponent implements OnInit {
                         this.activateLoader();
                         repository.preferences.eventChainTargetId = requestedTarget;
                         this.http.post<any>('/api/eventChainGraph', repository.preferences).subscribe(result => {
-                            console.log(result);
+                            // console.log(result);
                             this.eventChainCy = this.renderCytoscape('eventchain_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data.elements, repository.preferences, requestedTarget);
                             this.cache.eventchain.systemId = requestedSystem;
                             this.cache.eventchain.target = requestedTarget;
@@ -549,124 +522,6 @@ export class ViciComponent implements OnInit {
             style: style
         });
 
-
-        // cy.on('mouseout ', 'node', function (evt) {
-        //     let node = evt.target;
-        //     console.log(node);
-        // });
-
-
-        function getQTipContent(data) {
-            let content = '<h4>' + data.label + '</h4>';
-            if (target === undefined) {
-                // content = content + '<button type="button" class="btn btn-block btn-secondary" onclick="newDetailsTarget(\'' + data.id + '\')" value="' + data.id + '"> Show events </button>';
-            }
-            content = content + '<table class="table table-bordered table-sm table-hover table-qtip">';
-
-            for (let key in data.info) {
-                content = content +
-                    '<tr><td>' + key + '</td><td class="td-right">' + data.info[key] + '</td></tr>';
-            }
-
-            // Not aggregated
-            if (target !== undefined) {
-                /** @namespace data.quantities */
-                for (let quantity in data.quantities) {
-                    if (data.quantities[quantity] === 0) {
-                        continue;
-                    }
-                    if (quantity === 'SUCCESSFUL') {
-                        content = content + '<tr class="table-success">';
-                    } else if (quantity === 'FAILED' || quantity === 'UNSUCCESSFUL') {
-                        content = content + '<tr class="table-danger">';
-                    } else if (quantity === 'INCONCLUSIVE') {
-                        content = content + '<tr class="table-active">';
-                    } else if (quantity === 'TIMED_OUT' || quantity === 'ABORTED') {
-                        content = content + '<tr class="table-warning">';
-                    } else {
-                        content = content + '<tr>';
-                    }
-
-                    content = content +
-                        '<td>Result</td><td class="td">' + quantity + '</td></tr>';
-                }
-
-                if (data.type.endsWith('(Culled)')) {
-                    content += '<tr><td><button type="button" class="btn btn-block btn-secondary" onclick="newEventChainTarget(\'' + data.id + '\')"> Expand </button></td></tr>'
-                } else {
-                    content = content + '</table><table class="table table-bordered table-sm table-hover table-qtip"><tr><th>Key</th><th colspan="2">Timestamp</th></tr>';
-                    for (let time in data.times) {
-                        if (time === 'Execution') {
-                            content = content +
-                                '<tr><td>' + time + ' (ms)</td><td class="td-right">' + data.times[time] + '</td></tr>';
-                        } else {
-                            content = content +
-                                '<tr><td>' + time + '</td><td class="td-right">' + this.formatTime(data.times[time]) + '</td></tr>';
-                        }
-                    }
-                }
-
-            }
-
-            content = content + '</table>';
-
-
-            if (target === undefined) {
-                content = content + '<table class="table table-bordered table-sm table-hover table-qtip">' +
-                    '<tr><th>Attribute</th><th colspan="2">Amount</th></tr>';
-                for (let quantity in data.quantities) {
-                    if (quantity === 'SUCCESSFUL') {
-                        content = content + '<tr class="table-success">';
-                    } else if (quantity === 'FAILED' || quantity === 'UNSUCCESSFUL') {
-                        content = content + '<tr class="table-danger">';
-                    } else if (quantity === 'INCONCLUSIVE') {
-                        content = content + '<tr class="table-active">';
-                    } else if (quantity === 'TIMED_OUT' || quantity === 'ABORTED') {
-                        content = content + '<tr class="table-warning">';
-                    } else {
-                        content = content + '<tr>';
-                    }
-
-                    content = content +
-                        '<td>' + quantity + '</td><td class="td-right">' + data.quantities[quantity] + '</td><td class="td-right">' + Math.round(10 * (data.quantities[quantity] / data.quantity * 100) / 10) + '%</td></tr>';
-
-                }
-                content = content + '<tr><td><i>Total</i></td><td colspan="2" class="td-right"><i>' + data.quantity + '</i></td></tr>';
-            }
-
-            content = content + '</table>';
-            return content;
-        }
-
-        // cytoscape.use(cyqtip);
-        // // cyqtip(cytoscape, $);
-        // cy.nodes().qtip({
-        //     content: function () {
-        //         return getQTipContent(this.data());
-        //     },
-        //     position: {
-        //         my: 'bottom center',
-        //         at: 'top center',
-        //         container: container
-        //     },
-        //     show: {
-        //         event: 'mouseover',
-        //         // event: 'click', //om den ska trigga på klick istället
-        //         solo: true,
-        //     },
-        //     hide: {
-        //         event: 'mouseout'
-        //         // event: 'unfocus'
-        //     },
-        //     style: {
-        //         classes: 'qtip-vici qtip-shadow',
-        //         tip: {
-        //             width: 16,
-        //             height: 8
-        //         }
-        //     },
-        // });
-
         // Settings for panzoom
         let defaults = {
             zoomFactor: 0.05, // zoom factor per zoom tick
@@ -705,13 +560,11 @@ export class ViciComponent implements OnInit {
 
     private renderDatatables(parentDivId: string, data: any, activeSystem: string): any {
         $('#' + parentDivId).html('<table id="' + parentDivId + '_dataTableContainer" class="table table-striped table-bordered" cellspacing="0" width="100%"></table>');
-
         let container = $('#' + parentDivId + '_dataTableContainer');
 
         let plotData = data.data;
 
         if (plotData.data.length !== 0) {
-
             let preDefColumns = [
                 {
                     title: 'Chain',
@@ -739,25 +592,6 @@ export class ViciComponent implements OnInit {
                 }
             });
 
-            // this.dtOptions = {
-            //     destroy: true,
-            //     data: plotData.data,
-            //     columns: preDefColumns.concat(plotData.columns),
-            //     scrollY: '80vh',
-            //     scrollCollapse: true,
-            //     lengthMenu: [[20, 200, -1], [20, 200, "All"]],
-            //     order: [4, 'asc'],
-            // };
-
-            // container.find('tbody').on('click', 'button', function () {
-            //     let data = contentGlobal.datatableDetails.row($(this).parents('tr')).data();
-            //
-            //     // settingsElement.eventChainTarget.html(data.id);
-            //     // load("eventChain");
-            // });
-
-            // storeCache('detailsTable', preferences.url + detailsTarget);
-
             return tmp;
         }
         return undefined;
@@ -765,7 +599,9 @@ export class ViciComponent implements OnInit {
 
 
     ngOnInit() {
-        console.log('Vici ngOnInit called.');
+        if (!environment.production) {
+            console.log('Vici ngOnInit called.');
+        }
 
         this.currentSystemName = undefined;
         this.currentDetailsTarget = undefined;
@@ -830,7 +666,5 @@ export class ViciComponent implements OnInit {
                 }
             });
         });
-
-
     }
 }

@@ -1,6 +1,5 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <!--<a class="navbar-brand" [routerLink]="['']" routerLinkActive="active">Vici</a>-->
-
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
             aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -20,7 +19,6 @@
                             {{ system.name }}
                         </a>
                         <div class="dropdown-divider"></div>
-                        <!--<a routerLink="/details" class="dropdown-item">Action - 1</a>-->
                         <a class="dropdown-item" data-toggle="modal" data-target="#newSystemModal">New event repository
                             <span octicon="plus"></span></a>
                     </div>
@@ -65,8 +63,6 @@
                            [routerLink]="['', unit.systemId, unit.view, unit.target]">
                             {{ unit.msg }} - {{unit.date | timeAgo}}
                         </a>
-                        <!--<a class="dropdown-item" href="#">Action</a>-->
-                        <!--<a class="dropdown-item" href="#">Another action</a>-->
                         <!--<div class="dropdown-divider"></div>-->
                         <!--<a class="dropdown-item" href="#">Something else here</a>-->
                     </div>
@@ -81,12 +77,12 @@
                         octicon="gear"></span></a>
             </li>
         </ul>
-        <!--<form class="form-inline my-2 my-lg-0">-->
-        <!--<input class="form-control mr-sm-2" type="search" placeholder="Event id" aria-label="Search">-->
-        <!--<button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>-->
-        <!--</form>-->
     </div>
 </nav>
+
+<div [hidden]="!isLoading" id="loader_overlay" class="overlay">
+    <div id="loader" class="loader"></div>
+</div>
 
 <!-- New System Modal -->
 <div class="modal fade" id="newSystemModal" tabindex="-1" role="dialog" aria-labelledby="newSystemModalLabel"
@@ -126,8 +122,6 @@
 
                         </div>
                     </div>
-
-                    <!--<div id="settings_content"></div>-->
                 </div>
             </div>
 
@@ -136,10 +130,6 @@
                 <button class="btn btn-success" type="button" (click)="newSystem()" data-dismiss="modal"><span
                         octicon="plus"></span>
                 </button>
-                <!--<button (click)="uploadCurrentRepositorySettings()"-->
-                <!--[disabled]="!newSettings.has(currentSystem) || isUploadingRepository"-->
-                <!--type="button" class="btn btn-primary">Save changes <span octicon="cloud-upload"></span>-->
-                <!--</button>-->
             </div>
         </div>
     </div>
@@ -291,34 +281,18 @@
 
                         </div>
                     </div>
-
-                    <!--<div id="settings_content"></div>-->
                 </div>
             </div>
-
-
             <div class="modal-footer">
-                <!--<button class="btn btn-success" type="button" (click)="newSystem()" data-dismiss="modal"><span-->
-                <!--octicon="plus"></span>-->
-                <!--</button>-->
-                <!--<button (click)="uploadCurrentRepositorySettings()"-->
-                <!--[disabled]="!newSettings.has(currentSystem) || isUploadingRepository"-->
-                <!--type="button" class="btn btn-primary">Save changes <span octicon="cloud-upload"></span>-->
-                <!--</button>-->
             </div>
         </div>
     </div>
 </div>
 
-<div [hidden]="!isLoading" id="loader_overlay" class="overlay">
-    <div id="loader" class="loader"></div>
-</div>
-
-
 <!-- Settings Modal -->
 <div class="modal fade" id="settingsModal" tabindex="-1" role="dialog" aria-labelledby="settingsModalLabel"
      aria-hidden="true">
-    <div class="modal-dialog settings-modal" role="document">
+    <div class="modal-dialog  modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="settingsModalLabel">Settings</h5>
@@ -423,8 +397,6 @@
                                 Select a repository for more repository specific settings.
                             </div>
                         </div>
-
-                        <!--<div id="settings_content"></div>-->
                     </div>
                 </div>
             </div>
@@ -443,6 +415,7 @@
         </div>
     </div>
 </div>
+
 <div id="aggregation-container" [hidden]="currentView !== constants.views.aggregation" class="content-container">
     <div id="aggregation_graph" class="content-container cy"></div>
 
@@ -450,18 +423,6 @@
          class="card border-dark mb-3 cy-tooltip" style="max-width: 18rem;">
         <div class="card-header">{{aggregationHoverNode}}</div>
         <div class="card-body text-dark">
-            <!--<table class="table">-->
-            <!--<tbody>-->
-            <!--<tr>-->
-            <!--<td>Type</td>-->
-            <!--<td>{{aggregationNodeData[aggregationHoverNode].info.Type}}</td>-->
-            <!--</tr>-->
-            <!--<tr>-->
-            <!--<td>Type</td>-->
-            <!--<td>{{aggregationNodeData[aggregationHoverNode].info.Type}}</td>-->
-            <!--</tr>-->
-            <!--</tbody>-->
-            <!--</table>-->
 
             <!--<h5 class="card-title">Dark card title</h5>-->
             <p class="card-text">Containing {{aggregationNodeData[aggregationHoverNode].quantity}}
