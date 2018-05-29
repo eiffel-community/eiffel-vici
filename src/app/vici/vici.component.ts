@@ -164,7 +164,37 @@ export class ViciComponent implements OnInit {
                         console.log(result);
                         this.aggregationNodeData = {};
                         for (let nodeData in result.data) {
-                            this.aggregationNodeData[result.data[nodeData].data.id] = result.data[nodeData].data;
+                            // this.aggregationNodeData[result.data[nodeData].data.id] = result.data[nodeData].data;
+
+                            let tmp = result.data[nodeData].data;
+                            if (tmp.quantities !== undefined && Object.keys(tmp.quantities).length !== 0 && tmp.quantities.constructor === Object) {
+                                let rates = {
+                                    success: 0,
+                                    fail: 0,
+                                    unknown: 0,
+                                };
+
+                                if (tmp.quantities.SUCCESS !== undefined) {
+                                    rates.success = Math.ceil((100 * tmp.quantities.SUCCESS) / tmp.quantity);
+                                } else if (tmp.quantities.SUCCESSFUL !== undefined) {
+                                    rates.success = Math.ceil((100 * tmp.quantities.SUCCESSFUL) / tmp.quantity);
+                                }
+
+                                if (tmp.quantities.UNSUCCESSFUL !== undefined) {
+                                    rates.fail = Math.floor((100 * tmp.quantities.UNSUCCESSFUL) / tmp.quantity);
+                                } else if (tmp.quantities.FAILURE !== undefined) {
+                                    rates.fail = Math.floor((100 * tmp.quantities.FAILURE) / tmp.quantity);
+                                } else if (tmp.quantities.FAILED !== undefined) {
+                                    rates.fail = Math.floor((100 * tmp.quantities.FAILED) / tmp.quantity);
+                                }
+
+                                rates.unknown = 100 - rates.success - rates.fail;
+
+                                tmp['rates'] = rates;
+                            }
+
+                            this.aggregationNodeData[tmp.id] = tmp;
+
                         }
                         console.log(this.aggregationNodeData);
 

@@ -446,7 +446,8 @@
 <div id="aggregation-container" [hidden]="currentView !== constants.views.aggregation" class="content-container">
     <div id="aggregation_graph" class="content-container cy"></div>
 
-    <div *ngIf="aggregationHoverNode!==undefined" class="card border-dark mb-3 cy-tooltip" style="max-width: 18rem;">
+    <div *ngIf="aggregationHoverNode!==undefined"
+         class="card border-dark mb-3 cy-tooltip" style="max-width: 18rem;">
         <div class="card-header">{{aggregationHoverNode}}</div>
         <div class="card-body text-dark">
             <!--<table class="table">-->
@@ -466,17 +467,15 @@
             <p class="card-text">Containing {{aggregationNodeData[aggregationHoverNode].quantity}}
                 {{aggregationNodeData[aggregationHoverNode].info.Type}} events.</p>
 
-            <!--<div *ngIf="aggregationNodeData[aggregationHoverNode].info.Type === 'Activity' ||-->
-            <!--aggregationNodeData[aggregationHoverNode].info.Type === 'TestCase' ||-->
-            <!--aggregationNodeData[aggregationHoverNode].info.Type === 'TestSuite'||-->
-            <!--aggregationNodeData[aggregationHoverNode].info.Type === 'EiffelConfidenceLevelModifiedEvent'"-->
-            <!--class="progress">-->
-            <!--<div class="progress-bar bg-success" role="progressbar" style="width: 15%" aria-valuenow="15"-->
-            <!--aria-valuemin="0"-->
-            <!--aria-valuemax="100"></div>-->
-            <!--<div class="progress-bar bg-danger" role="progressbar" style="width: 30%" aria-valuenow="30"-->
-            <!--aria-valuemin="0" aria-valuemax="100"></div>-->
-            <!--</div>-->
+            <div *ngIf="aggregationNodeData[aggregationHoverNode].rates !== undefined"
+                 class="progress">
+                <!--<div class="progress-bar bg-success" role="progressbar" style="width: 15%"></div>-->
+                <div class="progress-bar bg-success" role="progressbar"
+                     [style.width]="aggregationNodeData[aggregationHoverNode].rates.success+'%'"></div>
+                <!--<div class="progress-bar bg-danger" role="progressbar" style="width: 30%"></div>-->
+                <div class="progress-bar bg-danger" role="progressbar"
+                     [style.width]="aggregationNodeData[aggregationHoverNode].rates.fail+'%'"></div>
+            </div>
         </div>
     </div>
 </div>
