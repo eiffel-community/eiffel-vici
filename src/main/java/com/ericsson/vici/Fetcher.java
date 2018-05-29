@@ -156,9 +156,8 @@ public class Fetcher {
 //            responseEntity = restTemplate.getForEntity("http://127.0.0.1:8080/" + matcher.group(1), EiffelEvent[].class);
 
             ObjectMapper mapper = new ObjectMapper();
-            Resource resource = new ClassPathResource("static/assets/" + matcher.group(1) + ".json");
+            Resource resource = new ClassPathResource("static/" + matcher.group(1) + ".json");
             InputStream jsonFileStream;
-
             try {
                 jsonFileStream = resource.getInputStream();
                 eiffelEvents = mapper.readValue(jsonFileStream, EiffelEvent[].class);
@@ -331,7 +330,7 @@ public class Fetcher {
         }
 
         // Makes the links go both ways.
-        log.info("Finding and applying children to all nodes.");
+        log.info("Fining and applying children to all nodes.");
         for (Event event : events.values()) {
             if (!event.getType().equals(REDIRECT)) {
                 for (Link link : event.getLinks()) {
@@ -398,7 +397,6 @@ public class Fetcher {
         }
 
         eventCaches.put(preferences.getUrl(), new EventCache(events, preferences));
-        log.info("Events fetched.");
         return events;
     }
 }

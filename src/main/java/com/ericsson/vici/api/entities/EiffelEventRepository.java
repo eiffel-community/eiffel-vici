@@ -21,7 +21,7 @@ import java.util.UUID;
 
 public class EiffelEventRepository {
     private String id = UUID.randomUUID().toString();
-    private String name = "";
+    private String name = null;
     private Preferences preferences = new Preferences();
 
     public EiffelEventRepository() {

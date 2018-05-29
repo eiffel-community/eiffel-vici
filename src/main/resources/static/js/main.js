@@ -177,8 +177,7 @@ function initializeSystem(eiffelEventRepository) {
         '<h4>General</h4>';
 
     eersc += '<div class="input-group settings-row">' +
-        '<span class="input-group-addon">Time to keep caches (ms)</span>' +
-        '<input id="eiffelEventRepository[' + repo_id + ']_cacheLifeTimeMs" type="number" class="form-control" placeholder="Positive integer"/>' +
+        '<span class="input-group-addon">Time to keep caches (ms)</span><input id="eiffelEventRepository[' + repo_id + ']_cacheLifeTimeMs" type="number" class="form-control" placeholder="Positive integer"/>' +
         '</div>';
 
     eersc += '</div>';

@@ -7,12 +7,7 @@ import java.util.List;
 import static com.ericsson.vici.Fetcher.*;
 
 public class Preferences {
-    public static final String SYSTEM_TYPE_LOCAL_FILE = "local_file";
-    public static final String SYSTEM_TYPE_EIFFEL_EVENT_REPOSITORY = "eiffel_event_repository";
-    public static final String SYSTEM_TYPE_URL = "url";
-
-    private String url = "";
-    private String type = null;
+    private String url = null;
 
     // Cache
     private long cacheLifeTimeMs = 86400000;

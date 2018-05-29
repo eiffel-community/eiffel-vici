@@ -24,7 +24,7 @@ import java.util.List;
 import static com.ericsson.vici.Fetcher.*;
 
 public class Settings {
-    public static final String propertiesVersion = "2.1.1 - Added eiffelEventRepositories{}.preferences.aggregateOn";
+    public static final String propertiesVersion = "2.1 - Added eiffelEventRepositories{}.preferences.aggregateOn";
 
     private static final String[] eventTypesAggregatedOn = {
             ACTIVITY,

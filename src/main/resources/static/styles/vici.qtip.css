@@ -1,0 +1,30 @@
+.qtip-vici {
+    /** Taken from Bootstrap body */
+    font-size: 14px;
+    line-height: 20px;
+    color: #333333;
+
+    /** Taken from Bootstrap .popover */
+    padding: 1px;
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    -webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+    -moz-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+    -webkit-background-clip: padding-box;
+    -moz-background-clip: padding;
+    background-clip: padding-box;
+    max-width: none;
+}
+
+.qtip-vici .table-qtip {
+    margin: 0;
+}
+
+.qtip-vici .qtip-content {
+    padding: 6px;
+}
+
+.qtip-vici h4 {
+    margin-left: 10px;
+}
