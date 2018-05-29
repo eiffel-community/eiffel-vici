@@ -56,6 +56,7 @@ export class ViciComponent implements OnInit {
 
     // Flags
     isUploadingRepository: boolean = false;
+    isLoading: boolean = false;
 
 
     constructor(
@@ -72,6 +73,11 @@ export class ViciComponent implements OnInit {
 
     testClick(): void {
         console.log(this.settings)
+    }
+
+    private activateLoader(): void {
+        this.isLoading = true;
+        this.appRef.tick();
     }
 
     private updateSystemReferences(eiffelEventRepositories: { [id: string]: System }): void {
@@ -145,16 +151,16 @@ export class ViciComponent implements OnInit {
                     // todo loadingscreen
                     // todo use cache
 
+                    this.activateLoader();
                     this.http.post<any>('/api/aggregationGraph', repository.preferences).subscribe(result => {
                         // if (this.aggregationCy !== undefined) {
                         //     this.aggregationCy.elements().remove();
                         // }
-                        console.log(result);
                         this.aggregationCy = this.renderCytoscape('aggregation_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data, repository.preferences, undefined);
 
                         this.cache.aggregation.systemId = requestedSystem;
                         this.cache.aggregation.target = requestedTarget;
-
+                        this.isLoading = false;
                     });
 
                     // _.defer(function () {
@@ -194,17 +200,23 @@ export class ViciComponent implements OnInit {
                     this.makeHistory(requestedSystem, requestedView, requestedTarget, 'Table for ' + repository.name + ' ' + requestedTarget);
 
                     if (requestedSystem !== this.cache.details.systemId || requestedTarget !== this.cache.details.target) {
+                        this.activateLoader();
+                        if (this.detailsDatatable !== undefined) {
+                            this.detailsDatatable.clear();
+                            this.detailsDatatable.destroy();
+                            this.detailsDatatable = undefined;
+                        }
+
                         repository.preferences.detailsTargetId = requestedTarget;
                         this.http.post<any>('/api/detailedEvents', repository.preferences).subscribe(result => {
-                            console.log(result);
                             // if (this.detailsDatatable !== undefined) {
                             //     this.detailsDatatable.destroy();
                             //     this.detailsDatatable.empty();
                             // }
-                            this.renderDatatables('details_table_table', result, requestedSystem);
+                            this.detailsDatatable = this.renderDatatables('details_table', result, requestedSystem);
                             this.cache.details.systemId = requestedSystem;
                             this.cache.details.target = requestedTarget;
-
+                            this.isLoading = false;
                         });
                     }
                 }
@@ -215,14 +227,15 @@ export class ViciComponent implements OnInit {
                     let repository = this.settings.eiffelEventRepositories[requestedSystem];
                     this.makeHistory(requestedSystem, requestedView, requestedTarget, 'Event chain for ' + repository.name + ' ' + requestedTarget);
                     if (requestedSystem !== this.cache.eventchain.systemId || requestedTarget !== this.cache.eventchain.target) {
+                        this.activateLoader();
                         repository.preferences.eventChainTargetId = requestedTarget;
                         this.http.post<any>('/api/eventChainGraph', repository.preferences).subscribe(result => {
-                            console.log(result);
                             this.eventChainCy = this.renderCytoscape('eventchain_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data.elements, repository.preferences, requestedTarget);
                             this.cache.eventchain.systemId = requestedSystem;
                             this.cache.eventchain.target = requestedTarget;
 
                             this.currentDetailsTarget = result.data.targetEvent.aggregateOn;
+                            this.isLoading = false;
                         });
                     }
                 }
@@ -636,20 +649,14 @@ export class ViciComponent implements OnInit {
         return cy;
     }
 
-    private renderDatatables(containerId: string, data: any, activeSystem: string): any {
-        // $.noConflict();
-        let container = $('#' + containerId);
+    private renderDatatables(parentDivId: string, data: any, activeSystem: string): any {
+        $('#' + parentDivId).html('<table id="' + parentDivId + '_dataTableContainer" class="table table-striped table-bordered" cellspacing="0" width="100%"></table>');
+
+        let container = $('#' + parentDivId + '_dataTableContainer');
+
         let plotData = data.data;
 
         if (plotData.data.length !== 0) {
-
-            // let preDefColumns = [
-            //     {
-            //         title: 'Chain',
-            //         data: null,
-            //         defaultContent: '<button class="btn btn-default btn-xs row-button">Graph</button>'
-            //     }
-            // ];
 
             let preDefColumns = [
                 {
@@ -699,15 +706,16 @@ export class ViciComponent implements OnInit {
 
             return tmp;
         }
+        return undefined;
     }
 
 
     ngOnInit() {
         console.log('Vici ngOnInit called.');
 
-        this.currentSystemName = environment.messages.selectSystem;
-        this.currentDetailsTarget = environment.params.undefined;
-        this.currentEventChainTarget = environment.params.undefined;
+        this.currentSystemName = undefined;
+        this.currentDetailsTarget = undefined;
+        this.currentEventChainTarget = undefined;
 
         this.cache = new CustomCache();
         this.cache.aggregation = {systemId: undefined, target: undefined};

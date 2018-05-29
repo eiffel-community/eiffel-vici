@@ -14,35 +14,37 @@ Right now the project is build with Java Spring Boot as server and my own javasc
 
 Usually I work on my own fork https://github.com/ewahjon/eiffel-vici and then combine some commits into a big merge into https://github.com/eiffel-community/eiffel-vici
 
-### How to run (might need admin rights)
+### How to run (might need admin rights in some cases)
 
 For dummy data unzip src/assets/reference-data-set.zip to src/assets/reference-data-set.json
 
+Make sure you have a java 1.8 jdk, JAVA_HOME set and added to path:
+
 http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html
 
-Add JAVA_HOME to system variables and %JAVA_HOME%\bin to path.
+(windows) Add JAVA_HOME to system variables and %JAVA_HOME%\bin to path.
 
-Install maven if needed https://maven.apache.org/
+Make sure you have maven version 3+ installed:
 
-~~~~
-mvn clean install
-~~~~
+https://maven.apache.org/
+
+(windows) Download and extract .zip file -> Add bin folder to path
 
 ~~~~
 mvn spring-boot:run
 ~~~~
 
-### How to develop
+App is not running at http://127.0.0.1:8080
 
-unzip src/assets/reference-data-set.zip to src/assets/reference-data-set.json
+### Tip: How to develop
 
-npm install
+~~~~
+mvn clean install
+~~~~
 
 ng build --watch
 
 start the spring boot server
-
-may have to restart ng and spring first time
 
 Official readme
 ------
