@@ -41,6 +41,9 @@ export class ViciComponent implements OnInit {
 
     cache: CustomCache;
 
+    aggregationNodeData: any;
+    aggregationHoverNode: string;
+
     aggregationCy: any;
     eventChainCy: any;
     detailsDatatable: any;
@@ -140,6 +143,10 @@ export class ViciComponent implements OnInit {
         }
     }
 
+    private newAggrigationHover(id: string): void {
+
+    }
+
     private changeView(requestedSystem: string, requestedView: string, requestedTarget: string): void {
         if (requestedView === environment.views.aggregation) {
             if (requestedSystem !== undefined) {
@@ -153,10 +160,27 @@ export class ViciComponent implements OnInit {
 
                     this.activateLoader();
                     this.http.post<any>('/api/aggregationGraph', repository.preferences).subscribe(result => {
-                        // if (this.aggregationCy !== undefined) {
-                        //     this.aggregationCy.elements().remove();
-                        // }
                         this.aggregationCy = this.renderCytoscape('aggregation_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data, repository.preferences, undefined);
+                        console.log(result);
+                        this.aggregationNodeData = {};
+                        for (let nodeData in result.data) {
+                            this.aggregationNodeData[result.data[nodeData].data.id] = result.data[nodeData].data;
+                        }
+                        console.log(this.aggregationNodeData);
+
+                        this.aggregationCy.on('tap', 'node', (evt) => {
+                            let node = evt.target;
+                            this.router.navigate(['', this.currentSystem, this.constants.views.details, node.id()]);
+                        });
+
+                        this.aggregationCy.on('mouseover', 'node', (evt) => {
+                            let node = evt.target;
+                            this.aggregationHoverNode = node.id();
+                        });
+
+                        this.aggregationCy.on('mouseout ', 'node', () => {
+                            this.aggregationHoverNode = undefined;
+                        });
 
                         this.cache.aggregation.systemId = requestedSystem;
                         this.cache.aggregation.target = requestedTarget;
@@ -230,6 +254,7 @@ export class ViciComponent implements OnInit {
                         this.activateLoader();
                         repository.preferences.eventChainTargetId = requestedTarget;
                         this.http.post<any>('/api/eventChainGraph', repository.preferences).subscribe(result => {
+                            console.log(result);
                             this.eventChainCy = this.renderCytoscape('eventchain_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data.elements, repository.preferences, requestedTarget);
                             this.cache.eventchain.systemId = requestedSystem;
                             this.cache.eventchain.target = requestedTarget;
@@ -494,12 +519,11 @@ export class ViciComponent implements OnInit {
             style: style
         });
 
-        if (target === undefined) {
-            cy.on('tap', 'node', function (evt) {
-                let node = evt.target;
-                router.navigate(['', currentSystem, constants.views.details, node.id()]);
-            });
-        }
+
+        // cy.on('mouseout ', 'node', function (evt) {
+        //     let node = evt.target;
+        //     console.log(node);
+        // });
 
 
         function getQTipContent(data) {
