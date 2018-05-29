@@ -438,8 +438,8 @@ public class ApiController {
         return new ReturnData(new Plot(items, timeFirst - 1000, timeLast + 1000, valueMin, valueMax), eventsObject.getTimeCollected());
     }
 
-    private Graph getChainGraph(Preferences preferences, ArrayList<Event> baseEvents, HashMap<String, Event> events) {
-        Graph graph = new Graph();
+    private Graph getChainGraph(Preferences preferences, ArrayList<Event> baseEvents, HashMap<String, Event> events, Event mainEvent) {
+        Graph graph = new Graph(mainEvent);
 
         HashMap<String, Event> incEvents = new HashMap<>();
 
@@ -631,7 +631,7 @@ public class ApiController {
     @RequestMapping(value = "/api/eventChainGraph", produces = "application/json; charset=UTF-8")
     public ReturnData eventChainGraph(@RequestBody Preferences preferences) {
         if (preferences.getEventChainTargetId().equals("")) {
-            return new ReturnData(new Graph());
+            return new ReturnData(new Graph(null));
         }
 
         Fetcher fetcher = new Fetcher();
@@ -639,42 +639,42 @@ public class ApiController {
         HashMap<String, Event> events = eventsObject.getEvents();
 
         if (!events.containsKey(preferences.getEventChainTargetId())) {
-            return new ReturnData(new Graph(), eventsObject.getTimeCollected());
+            return new ReturnData(new Graph(null), eventsObject.getTimeCollected());
         }
 
         Event mainEvent = events.get(preferences.getEventChainTargetId());
         ArrayList<Event> baseEvents = new ArrayList<>();
         baseEvents.add(mainEvent);
 
-        return new ReturnData(getChainGraph(preferences, baseEvents, events), eventsObject.getTimeCollected());
+        return new ReturnData(getChainGraph(preferences, baseEvents, events, mainEvent), eventsObject.getTimeCollected());
     }
 
-    @RequestMapping(value = "/api/liveEventChainGraph", produces = "application/json; charset=UTF-8")
-    public ReturnData liveEventChainGraph(@RequestBody Preferences preferences) {
-
-        Fetcher fetcher = new Fetcher();
-        // TODO: fetch only base events based on time added
-        Events eventsObject = fetcher.getEvents(preferences);
-        HashMap<String, Event> events = eventsObject.getEvents();
-
-        Collection<Event> eventsCollection = events.values();
-        ArrayList<Event> eventsList = new ArrayList<>(eventsCollection);
-
-        eventsList.sort(Comparator.comparingLong(this::getSortTime));
-
-        ArrayList<Event> baseEvents = new ArrayList<>();
-
-        int i = eventsList.size() - 1;
-        int count = 0;
-        while (count < preferences.getStreamBaseEvents() && i >= 0) {
-            Event tmpEvent = eventsList.get(i);
-            if (!tmpEvent.getType().equals(REDIRECT)) {
-                baseEvents.add(tmpEvent);
-                count++;
-            }
-            i--;
-        }
-
-        return new ReturnData(getChainGraph(preferences, baseEvents, events), eventsObject.getTimeCollected());
-    }
+//    @RequestMapping(value = "/api/liveEventChainGraph", produces = "application/json; charset=UTF-8")
+//    public ReturnData liveEventChainGraph(@RequestBody Preferences preferences) {
+//
+//        Fetcher fetcher = new Fetcher();
+//        // TODO: fetch only base events based on time added
+//        Events eventsObject = fetcher.getEvents(preferences);
+//        HashMap<String, Event> events = eventsObject.getEvents();
+//
+//        Collection<Event> eventsCollection = events.values();
+//        ArrayList<Event> eventsList = new ArrayList<>(eventsCollection);
+//
+//        eventsList.sort(Comparator.comparingLong(this::getSortTime));
+//
+//        ArrayList<Event> baseEvents = new ArrayList<>();
+//
+//        int i = eventsList.size() - 1;
+//        int count = 0;
+//        while (count < preferences.getStreamBaseEvents() && i >= 0) {
+//            Event tmpEvent = eventsList.get(i);
+//            if (!tmpEvent.getType().equals(REDIRECT)) {
+//                baseEvents.add(tmpEvent);
+//                count++;
+//            }
+//            i--;
+//        }
+//
+//        return new ReturnData(getChainGraph(preferences, baseEvents, events), eventsObject.getTimeCollected());
+//    }
 }

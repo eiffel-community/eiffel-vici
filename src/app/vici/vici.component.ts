@@ -12,6 +12,7 @@ import * as dagre from 'cytoscape-dagre';
 // import * as cyqtip from 'cytoscape-qtip';
 import * as panzoom from 'cytoscape-panzoom';
 import {CustomCache} from "../custom-cache";
+import {HistoryUnit} from "../history-unit";
 
 cytoscape.use(dagre);
 panzoom(cytoscape);
@@ -25,14 +26,18 @@ panzoom(cytoscape);
 })
 export class ViciComponent implements OnInit {
     settings: Settings;
+
     systemReferences: SystemReference[];
     statusImages: string[][];
 
     constants = environment;
+    newSettings: Set<string> = new Set<string>();
 
     currentSystem: string;
+    currentSystemName: string;
     currentView: string;
-    currentTarget: string;
+    currentDetailsTarget: string;
+    currentEventChainTarget: string;
 
     cache: CustomCache;
 
@@ -40,6 +45,17 @@ export class ViciComponent implements OnInit {
     eventChainCy: any;
     detailsDatatable: any;
     dtOptions: DataTables.Settings = {};
+
+
+    test_date = new Date();
+    history: Array<HistoryUnit> = [];
+    newSystemInput = {
+        name: '',
+        url: ''
+    };
+
+    // Flags
+    isUploadingRepository: boolean = false;
 
 
     constructor(
@@ -54,7 +70,7 @@ export class ViciComponent implements OnInit {
     }
 
 
-    private testClick(): void {
+    testClick(): void {
         console.log(this.settings)
     }
 
@@ -69,6 +85,33 @@ export class ViciComponent implements OnInit {
         }
     }
 
+    uploadCurrentRepositorySettings(): void {
+        this.isUploadingRepository = true;
+        let repository = this.settings.eiffelEventRepositories[this.currentSystem];
+        this.http.post<any>('/api/newEiffelRepository', repository).subscribe(result => {
+            this.newSettings.delete(this.currentSystem);
+            this.isUploadingRepository = false;
+        });
+    }
+
+    settingsInputChanged(systemId: string): void {
+        this.newSettings.add(systemId);
+    }
+
+    resetSettingsToServerDefault(): void {
+        this.http.get<any>('/api/resetSettingsDefault').subscribe(result => {
+            this.router.navigate(['']);
+            window.location.reload();
+        });
+    }
+
+    newSystem(): void {
+
+
+        this.newSystemInput.name = '';
+        this.newSystemInput.url = '';
+    }
+
 
     // getServerSettings(): void {
     //     this.http.get<Settings>('/api/getSettings').subscribe(result => {
@@ -77,24 +120,41 @@ export class ViciComponent implements OnInit {
     //     });
     // }
 
+    private makeHistory(systemId: string, view: string, target: string, msg: string): void {
+        for (let step = 0; step < this.history.length; step++) {
+            let unit = this.history[step];
+            if (unit.systemId === systemId && unit.view === view && unit.target === target) {
+                this.history.splice(step, 1);
+                break;
+            }
+        }
+        this.history.unshift(new HistoryUnit(systemId, view, target, msg));
+        if (this.history.length > environment.historyMaxUnits) {
+            this.history.pop();
+        }
+    }
+
     private changeView(requestedSystem: string, requestedView: string, requestedTarget: string): void {
         if (requestedView === environment.views.aggregation) {
             if (requestedSystem !== undefined) {
-                if (requestedSystem !== this.cache.aggregation.systemId) {
+                let repository = this.settings.eiffelEventRepositories[requestedSystem];
+                this.makeHistory(requestedSystem, requestedView, requestedTarget, 'Aggregation for ' + repository.name)
 
+                if (requestedSystem !== this.cache.aggregation.systemId) {
 
                     // todo loadingscreen
                     // todo use cache
 
-                    let preferences = this.settings.eiffelEventRepositories[requestedSystem].preferences;
-                    this.http.post<any>('/api/aggregationGraph', preferences).subscribe(result => {
+                    this.http.post<any>('/api/aggregationGraph', repository.preferences).subscribe(result => {
                         // if (this.aggregationCy !== undefined) {
                         //     this.aggregationCy.elements().remove();
                         // }
                         console.log(result);
-                        this.aggregationCy = this.renderCytoscape('aggregation_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data, preferences, undefined);
+                        this.aggregationCy = this.renderCytoscape('aggregation_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data, repository.preferences, undefined);
+
                         this.cache.aggregation.systemId = requestedSystem;
                         this.cache.aggregation.target = requestedTarget;
+
                     });
 
                     // _.defer(function () {
@@ -130,10 +190,12 @@ export class ViciComponent implements OnInit {
         } else if (requestedView === environment.views.details) {
             if (requestedSystem !== undefined) {
                 if (requestedTarget !== undefined) {
+                    let repository = this.settings.eiffelEventRepositories[requestedSystem];
+                    this.makeHistory(requestedSystem, requestedView, requestedTarget, 'Table for ' + repository.name + ' ' + requestedTarget);
+
                     if (requestedSystem !== this.cache.details.systemId || requestedTarget !== this.cache.details.target) {
-                        let preferences = this.settings.eiffelEventRepositories[requestedSystem].preferences;
-                        preferences.detailsTargetId = requestedTarget;
-                        this.http.post<any>('/api/detailedEvents', preferences).subscribe(result => {
+                        repository.preferences.detailsTargetId = requestedTarget;
+                        this.http.post<any>('/api/detailedEvents', repository.preferences).subscribe(result => {
                             console.log(result);
                             // if (this.detailsDatatable !== undefined) {
                             //     this.detailsDatatable.destroy();
@@ -142,6 +204,7 @@ export class ViciComponent implements OnInit {
                             this.renderDatatables('details_table_table', result, requestedSystem);
                             this.cache.details.systemId = requestedSystem;
                             this.cache.details.target = requestedTarget;
+
                         });
                     }
                 }
@@ -149,14 +212,17 @@ export class ViciComponent implements OnInit {
         } else if (requestedView === environment.views.eventChain) {
             if (requestedSystem !== undefined) {
                 if (requestedTarget !== undefined) {
+                    let repository = this.settings.eiffelEventRepositories[requestedSystem];
+                    this.makeHistory(requestedSystem, requestedView, requestedTarget, 'Event chain for ' + repository.name + ' ' + requestedTarget);
                     if (requestedSystem !== this.cache.eventchain.systemId || requestedTarget !== this.cache.eventchain.target) {
-                        let preferences = this.settings.eiffelEventRepositories[requestedSystem].preferences;
-                        preferences.eventChainTargetId = requestedTarget;
-                        this.http.post<any>('/api/eventChainGraph', preferences).subscribe(result => {
+                        repository.preferences.eventChainTargetId = requestedTarget;
+                        this.http.post<any>('/api/eventChainGraph', repository.preferences).subscribe(result => {
                             console.log(result);
-                            this.eventChainCy = this.renderCytoscape('eventchain_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data.elements, preferences, requestedTarget);
+                            this.eventChainCy = this.renderCytoscape('eventchain_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data.elements, repository.preferences, requestedTarget);
                             this.cache.eventchain.systemId = requestedSystem;
                             this.cache.eventchain.target = requestedTarget;
+
+                            this.currentDetailsTarget = result.data.targetEvent.aggregateOn;
                         });
                     }
                 }
@@ -639,6 +705,10 @@ export class ViciComponent implements OnInit {
     ngOnInit() {
         console.log('Vici ngOnInit called.');
 
+        this.currentSystemName = environment.messages.selectSystem;
+        this.currentDetailsTarget = environment.params.undefined;
+        this.currentEventChainTarget = environment.params.undefined;
+
         this.cache = new CustomCache();
         this.cache.aggregation = {systemId: undefined, target: undefined};
         this.cache.details = {systemId: undefined, target: undefined};
@@ -685,8 +755,17 @@ export class ViciComponent implements OnInit {
                 this.changeView(requestedSystem, requestedView, requestedTarget);
 
                 this.currentSystem = requestedSystem;
+                if (this.currentSystem === undefined) {
+                    this.currentSystemName = environment.messages.selectSystem;
+                } else {
+                    this.currentSystemName = this.settings.eiffelEventRepositories[this.currentSystem].name;
+                }
                 this.currentView = requestedView;
-                this.currentTarget = requestedTarget;
+                if (requestedView === environment.views.details || requestedView === environment.views.aggregation) {
+                    this.currentDetailsTarget = requestedTarget;
+                } else if (requestedView === environment.views.eventChain) {
+                    this.currentEventChainTarget = requestedTarget;
+                }
             });
         });
 

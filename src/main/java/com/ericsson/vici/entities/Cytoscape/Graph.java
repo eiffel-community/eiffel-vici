@@ -16,6 +16,7 @@
 */
 package com.ericsson.vici.entities.Cytoscape;
 
+import com.ericsson.vici.entities.Event;
 import com.ericsson.vici.entities.Time;
 
 import java.util.ArrayList;
@@ -25,11 +26,13 @@ public class Graph {
     private ArrayList<Element> elements;
     private HashMap<String, HashMap<String, Integer>> quantities;
     private Time time;
+    private Event targetEvent;
 
-    public Graph() {
+    public Graph(Event targetEvent) {
         this.elements = new ArrayList<>();
         this.quantities = new HashMap<>();
         this.time = new Time();
+        this.targetEvent = targetEvent;
     }
 
     public void increaseInfo(String category, String value) {
@@ -64,5 +67,13 @@ public class Graph {
 
     public void setQuantities(HashMap<String, HashMap<String, Integer>> quantities) {
         this.quantities = quantities;
+    }
+
+    public Event getTargetEvent() {
+        return targetEvent;
+    }
+
+    public void setTargetEvent(Event targetEvent) {
+        this.targetEvent = targetEvent;
     }
 }

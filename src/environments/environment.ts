@@ -21,5 +21,9 @@ export const environment = {
         pass: '#22b14c',
         fail: '#af0020',
         undefined: '#666',
-    }
+    },
+    messages: {
+        selectSystem: 'Select a repository',
+    },
+    historyMaxUnits: 6,
 };

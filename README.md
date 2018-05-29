@@ -1,6 +1,6 @@
 # TDDD27 Advanced Web Programming
 
-
+### Project plan submitted at start of the course
 In this project I will continue working on the webapplication Vici https://github.com/eiffel-community/eiffel-vici
 Members is only me Jonathan Wahlund, jonwa732. My Ericsson github acoount name is ewahjon.
 Before examination the code at https://github.com/eiffel-community/eiffel-vici will be cloned to https://gitlab.ida.liu.se/jonwa732/TDDD27_2018_Vici
@@ -14,7 +14,25 @@ Right now the project is build with Java Spring Boot as server and my own javasc
 
 Usually I work on my own fork https://github.com/ewahjon/eiffel-vici and then combine some commits into a big merge into https://github.com/eiffel-community/eiffel-vici
 
-### How to run
+### How to run (might need admin rights)
+
+For dummy data unzip src/assets/reference-data-set.zip to src/assets/reference-data-set.json
+
+http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html
+
+Add JAVA_HOME to system variables and %JAVA_HOME%\bin to path.
+
+Install maven if needed https://maven.apache.org/
+
+~~~~
+mvn clean install
+~~~~
+
+~~~~
+mvn spring-boot:run
+~~~~
+
+### How to develop
 
 unzip src/assets/reference-data-set.zip to src/assets/reference-data-set.json
 
@@ -24,7 +42,7 @@ ng build --watch
 
 start the spring boot server
 
-may have to restard ng and spring first time
+may have to restart ng and spring first time
 
 Official readme
 ------
