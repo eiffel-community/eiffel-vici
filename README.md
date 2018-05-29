@@ -34,7 +34,7 @@ https://maven.apache.org/
 mvn spring-boot:run
 ~~~~
 
-App is not running at http://127.0.0.1:8080
+App should now be running at http://127.0.0.1:8080
 
 ### Tip: How to develop
 
