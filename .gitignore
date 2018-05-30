@@ -4,7 +4,7 @@
 .settings/
 
 # Intellij
-.idea/
+.idea/*
 *.iml
 *.iws
 
@@ -82,3 +82,5 @@ settings.json
 src/assets/*.json
 *.log
 ignored
+!/.idea/runConfigurations/
+
