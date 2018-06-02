@@ -12,6 +12,7 @@ import * as dagre from 'cytoscape-dagre';
 import * as panzoom from 'cytoscape-panzoom';
 import {CustomCache} from "../custom-cache";
 import {HistoryUnit} from "../history-unit";
+import * as vis from 'vis';
 
 // Register cy plugins.
 cytoscape.use(dagre);
@@ -36,6 +37,7 @@ export class ViciComponent implements OnInit {
     currentSystem: string;
     currentSystemName: string;
     currentView: string;
+    currentAggregationTarget: string;
     currentDetailsTarget: string;
     currentEventChainTarget: string;
 
@@ -45,6 +47,8 @@ export class ViciComponent implements OnInit {
     aggregationHoverNode: string;
 
     aggregationCy: any;
+    aggregationTimeline: any;
+
     eventChainCy: any;
     detailsDatatable: any;
 
@@ -57,6 +61,7 @@ export class ViciComponent implements OnInit {
     // Flags
     isUploadingRepository: boolean = false;
     isLoading: boolean = false;
+    aggregationLockTooltip: boolean = false;
 
 
     constructor(
@@ -126,6 +131,43 @@ export class ViciComponent implements OnInit {
         }
     }
 
+    private setAggregationTarget(target: string): void {
+        if (target === undefined) {
+            this.aggregationHoverNode = undefined;
+            this.aggregationLockTooltip = false;
+            this.currentAggregationTarget = undefined;
+        } else {
+            this.aggregationHoverNode = target;
+            this.aggregationLockTooltip = true;
+            this.currentAggregationTarget = target;
+        }
+    }
+
+    private renderTimeline(containerId: string, data: Array<any>): any {
+        let container = document.getElementById(containerId);
+
+        // Create a DataSet (allows two way data-binding)
+        let items = new vis.DataSet([
+            {id: 1, content: 'item 1', start: '2013-04-20'},
+            {id: 2, content: 'item 2', start: '2013-04-14'},
+            {id: 3, content: 'item 3', start: '2013-04-18'},
+            {id: 4, content: 'item 4', start: '2013-04-16', end: '2013-04-19'},
+            {id: 5, content: 'item 5', start: '2013-04-25'},
+            {id: 6, content: 'item 6', start: '2013-04-27'}
+        ]);
+
+        // Configuration for the Timeline
+        let options = {
+            height: '6rem',
+            showCurrentTime: true,
+        };
+
+        // Create a Timeline
+        let timeline = new vis.Timeline(container, items, options);
+
+        return timeline;
+    }
+
     private changeView(requestedSystem: string, requestedView: string, requestedTarget: string): void {
         if (requestedView === environment.views.aggregation) {
             if (requestedSystem !== undefined) {
@@ -174,18 +216,42 @@ export class ViciComponent implements OnInit {
                         // console.log(this.aggregationNodeData);
 
                         this.aggregationCy.on('tap', 'node', (evt) => {
-                            let node = evt.target;
-                            this.router.navigate(['', this.currentSystem, this.constants.views.details, node.id()]);
+                            this.setAggregationTarget(evt.target.id());
+                            this.router.navigate(['', this.currentSystem, this.constants.views.details, evt.target.id()]);
                         });
 
                         this.aggregationCy.on('mouseover', 'node', (evt) => {
-                            let node = evt.target;
-                            this.aggregationHoverNode = node.id();
+                            if (!this.aggregationLockTooltip) {
+                                this.aggregationHoverNode = evt.target.id();
+                            }
+
                         });
 
                         this.aggregationCy.on('mouseout ', 'node', () => {
-                            this.aggregationHoverNode = undefined;
+                            if (!this.aggregationLockTooltip) {
+                                this.aggregationHoverNode = undefined;
+                            }
                         });
+
+                        this.aggregationCy.on('tap', (evt) => {
+                            if (evt.target === this.aggregationCy) {
+                                this.router.navigate(['', this.currentSystem, this.currentView, environment.params.undefined]);
+                            }
+                        });
+
+                        this.aggregationCy.on('cxttap', (evt) => {
+                            if (evt.target === this.aggregationCy) {
+                                this.router.navigate(['', this.currentSystem, this.currentView, environment.params.undefined]);
+                            }
+                        });
+
+                        this.aggregationCy.on('cxttap ', 'node', (evt) => {
+                            this.router.navigate(['', this.currentSystem, this.currentView, evt.target.id()]);
+                        });
+
+                        console.log(result);
+                        // Timeline
+                        this.aggregationTimeline = this.renderTimeline('aggregationTimeline', undefined);
 
                         this.cache.aggregation.systemId = requestedSystem;
                         this.cache.aggregation.target = requestedTarget;
@@ -262,6 +328,7 @@ export class ViciComponent implements OnInit {
                             this.cache.eventchain.systemId = requestedSystem;
                             this.cache.eventchain.target = requestedTarget;
 
+                            this.currentAggregationTarget = result.data.targetEvent.aggregateOn;
                             this.currentDetailsTarget = result.data.targetEvent.aggregateOn;
                             this.isLoading = false;
                         });
@@ -603,10 +670,6 @@ export class ViciComponent implements OnInit {
             console.log('Vici ngOnInit called.');
         }
 
-        this.currentSystemName = undefined;
-        this.currentDetailsTarget = undefined;
-        this.currentEventChainTarget = undefined;
-
         this.cache = new CustomCache();
         this.cache.aggregation = {systemId: undefined, target: undefined};
         this.cache.details = {systemId: undefined, target: undefined};
@@ -659,10 +722,12 @@ export class ViciComponent implements OnInit {
                     this.currentSystemName = this.settings.eiffelEventRepositories[this.currentSystem].name;
                 }
                 this.currentView = requestedView;
-                if (requestedView === environment.views.details || requestedView === environment.views.aggregation) {
+                if (requestedView === environment.views.details) {
                     this.currentDetailsTarget = requestedTarget;
                 } else if (requestedView === environment.views.eventChain) {
                     this.currentEventChainTarget = requestedTarget;
+                } else if (requestedView === environment.views.aggregation) {
+                    this.setAggregationTarget(requestedTarget);
                 }
             });
         });

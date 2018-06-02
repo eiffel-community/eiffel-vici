@@ -30,7 +30,7 @@
 
             <li class="nav-item">
                 <a [ngClass]="{'disabled': currentSystem === undefined, 'active': currentView === constants.views.aggregation}"
-                   [routerLink]="['', currentSystem, constants.views.aggregation, currentDetailsTarget]"
+                   [routerLink]="['', currentSystem, constants.views.aggregation, currentAggregationTarget]"
                    class="nav-link"
                 >Aggregation</a>
             </li>
@@ -419,9 +419,14 @@
 <div id="aggregation-container" [hidden]="currentView !== constants.views.aggregation" class="content-container">
     <div id="aggregation_graph" class="content-container cy"></div>
 
-    <div *ngIf="aggregationHoverNode!==undefined"
+    <div *ngIf="aggregationHoverNode!==undefined && aggregationNodeData !== undefined && aggregationNodeData[aggregationHoverNode] !== undefined"
          class="card border-dark mb-3 cy-tooltip" style="max-width: 18rem;">
-        <div class="card-header">{{aggregationHoverNode}}</div>
+        <div class="card-header">{{aggregationHoverNode}}
+            <button *ngIf="aggregationLockTooltip" type="button" class="close" aria-label="Close"
+                    (click)="router.navigate(['', currentSystem, currentView, constants.params.undefined])">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
         <div class="card-body text-dark">
 
             <!--<h5 class="card-title">Dark card title</h5>-->
@@ -437,6 +442,11 @@
                 <div class="progress-bar bg-danger" role="progressbar"
                      [style.width]="aggregationNodeData[aggregationHoverNode].rates.fail+'%'"></div>
             </div>
+        </div>
+    </div>
+
+    <div class="timeline-graph-outer" s>
+        <div class="timeline-graph-inner" id="aggregationTimeline">
         </div>
     </div>
 </div>

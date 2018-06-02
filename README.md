@@ -1,4 +1,11 @@
 # TDDD27 Advanced Web Programming
+### Final commit, how to use (for examination)
+Start the server according to the "How to run" section in this read me.
+Enter http://127.0.0.1:8080 ->
+in upper left, "Select a repository" -> select "Local static dummy file".
+If the dummy file was extracted correctly, there will be a graph visualizing the dummy CI system. Right click on node to lock the tooltip. Left click on node to enter the details table showing all the events aggregated into the node. In the details table view, click a "Graph" button to enter the eventchain view, visualizing the eventchain for that specific event. Upper right "History" gives you the option to go back to a specific view. "?" menu button gives some info (WIP). The cog button enters the settings for this specific eiffel event repository (system).
+
+The frontend files are found in between root and src/app/vici. The backend files are found at \src\main\java\*.
 
 ### Project plan submitted at start of the course
 In this project I will continue working on the webapplication Vici https://github.com/eiffel-community/eiffel-vici
