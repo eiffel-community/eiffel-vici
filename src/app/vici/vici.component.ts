@@ -13,6 +13,7 @@ import * as panzoom from 'cytoscape-panzoom';
 import {CustomCache} from "../custom-cache";
 import {HistoryUnit} from "../history-unit";
 import * as vis from 'vis';
+import {Graph2dOptions} from 'vis';
 
 // Register cy plugins.
 cytoscape.use(dagre);
@@ -75,6 +76,12 @@ export class ViciComponent implements OnInit {
     ) {
     }
 
+    debug(msg: string): void {
+        if (!environment.production) {
+            console.log(msg);
+        }
+    }
+
     private activateLoader(): void {
         this.isLoading = true;
         this.appRef.tick();
@@ -89,6 +96,12 @@ export class ViciComponent implements OnInit {
             tmp.name = system.name;
             this.systemReferences.push(tmp);
         }
+        if (this.currentSystem === undefined) {
+            this.currentSystemName = environment.messages.selectSystem;
+        } else {
+            this.currentSystemName = this.settings.eiffelEventRepositories[this.currentSystem].name;
+        }
+
     }
 
     uploadCurrentRepositorySettings(): void {
@@ -100,8 +113,49 @@ export class ViciComponent implements OnInit {
         });
     }
 
-    settingsInputChanged(systemId: string): void {
+    settingsInputChanged(systemId: string, view: string): void {
         this.newSettings.add(systemId);
+        this.clearCache(systemId, view)
+    }
+
+    private clearCache(systemId: string, view: string): void {
+        this.newSettings.add(systemId);
+        switch (view) {
+            case environment.views.aggregation:
+                if (systemId === this.cache.aggregation.systemId) {
+                    this.cache.aggregation.systemId = undefined;
+                    this.cache.aggregation.target = undefined;
+                }
+                break;
+            case environment.views.details:
+                if (systemId === this.cache.details.systemId) {
+                    this.cache.details.systemId = undefined;
+                    this.cache.details.target = undefined;
+                }
+                break;
+            case environment.views.eventChain:
+                if (systemId === this.cache.eventChain.systemId) {
+                    this.cache.eventChain.systemId = undefined;
+                    this.cache.eventChain.target = undefined;
+                }
+                break;
+            case environment.views.home:
+                if (systemId === this.cache.aggregation.systemId) {
+                    this.cache.aggregation.systemId = undefined;
+                    this.cache.aggregation.target = undefined;
+                }
+                if (systemId === this.cache.details.systemId) {
+                    this.cache.details.systemId = undefined;
+                    this.cache.details.target = undefined;
+                }
+                if (systemId === this.cache.eventChain.systemId) {
+                    this.cache.eventChain.systemId = undefined;
+                    this.cache.eventChain.target = undefined;
+                }
+                break;
+            default:
+                break;
+        }
     }
 
     resetSettingsToServerDefault(): void {
@@ -143,23 +197,26 @@ export class ViciComponent implements OnInit {
         }
     }
 
-    private renderTimeline(containerId: string, data: Array<any>): any {
+    private renderTimeline(containerId: string, data: any): any {
         let container = document.getElementById(containerId);
 
         // Create a DataSet (allows two way data-binding)
         let items = new vis.DataSet([
-            {id: 1, content: 'item 1', start: '2013-04-20'},
-            {id: 2, content: 'item 2', start: '2013-04-14'},
-            {id: 3, content: 'item 3', start: '2013-04-18'},
-            {id: 4, content: 'item 4', start: '2013-04-16', end: '2013-04-19'},
-            {id: 5, content: 'item 5', start: '2013-04-25'},
-            {id: 6, content: 'item 6', start: '2013-04-27'}
+            // {id: 1, content: 'Events', start: '2018-04-27', end: '2018-06-15'}
+            {
+                id: 1,
+                // content: 'Events',
+                start: data.data.time.start,
+                end: data.data.time.finish,
+                // type: 'range'
+            }
         ]);
 
         // Configuration for the Timeline
         let options = {
-            height: '6rem',
+            // height: '6rem',
             showCurrentTime: true,
+            // end: new Date(),
         };
 
         // Create a Timeline
@@ -180,12 +237,15 @@ export class ViciComponent implements OnInit {
                     // todo use cache
 
                     this.activateLoader();
+                    if (this.aggregationTimeline !== undefined) {
+                        this.aggregationTimeline.destroy();
+                    }
                     this.http.post<any>('/api/aggregationGraph', repository.preferences).subscribe(result => {
-                        this.aggregationCy = this.renderCytoscape('aggregation_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data, repository.preferences, undefined);
+                        this.aggregationCy = this.renderCytoscape('aggregation_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data.elements, repository.preferences, undefined);
                         // console.log(result);
                         this.aggregationNodeData = {};
-                        for (let nodeData in result.data) {
-                            let tmp = result.data[nodeData].data;
+                        for (let nodeData in result.data.elements) {
+                            let tmp = result.data.elements[nodeData].data;
                             if (tmp.quantities !== undefined && Object.keys(tmp.quantities).length !== 0 && tmp.quantities.constructor === Object) {
                                 let rates = {
                                     success: 0,
@@ -248,10 +308,8 @@ export class ViciComponent implements OnInit {
                         this.aggregationCy.on('cxttap ', 'node', (evt) => {
                             this.router.navigate(['', this.currentSystem, this.currentView, evt.target.id()]);
                         });
-
-                        console.log(result);
                         // Timeline
-                        this.aggregationTimeline = this.renderTimeline('aggregationTimeline', undefined);
+                        this.aggregationTimeline = this.renderTimeline('aggregationTimeline', result);
 
                         this.cache.aggregation.systemId = requestedSystem;
                         this.cache.aggregation.target = requestedTarget;
@@ -314,19 +372,165 @@ export class ViciComponent implements OnInit {
                     }
                 }
             }
-        } else if (requestedView === environment.views.eventChain) {
+        } else if (requestedView === environment.views.detailsPlot) {
+            if (requestedSystem !== undefined) {
+                if (requestedTarget !== undefined) {
+                    let repository = this.settings.eiffelEventRepositories[requestedSystem];
+                    this.makeHistory(requestedSystem, requestedView, requestedTarget, 'Table for ' + repository.name + ' ' + requestedTarget);
+
+                    if (requestedSystem !== this.cache.detailsPlot.systemId || requestedTarget !== this.cache.detailsPlot.target) {
+                        this.activateLoader();
+                        repository.preferences.detailsTargetId = requestedTarget;
+                        this.http.post<any>('/api/detailedPlot', repository.preferences).subscribe(result => {
+
+                            let plotData = result.data;
+                            if (plotData !== undefined && plotData.items.length !== 0) {
+                                let groups = new vis.DataSet();
+
+                                groups.add({
+                                    id: 0,
+                                    content: 'Execution time (ms)',
+                                    className: 'vis-graph-result',
+                                    options: {
+                                        drawPoints: {
+                                            styles: 'stroke:black;fill:black;',
+                                            size: 2,
+                                        },
+                                        interpolation: true,
+                                    },
+                                });
+
+                                groups.add({
+                                    id: 1,
+                                    content: "Inconclusive",
+                                    className: 'vis-graph-inconclusive',
+                                    options: {
+                                        drawPoints: false,
+                                        shaded: {
+                                            orientation: 'zero',
+                                        }
+                                    }
+                                });
+                                groups.add({
+                                    id: 2,
+                                    content: "Success",
+                                    className: 'vis-graph-success',
+                                    options: {
+                                        drawPoints: false,
+                                        shaded: {
+                                            orientation: 'zero',
+                                        }
+                                    }
+                                });
+                                groups.add({
+                                    id: 3,
+                                    content: "Fail",
+                                    className: 'vis-graph-fail',
+                                    options: {
+                                        drawPoints: false,
+                                        shaded: {
+                                            orientation: 'zero',
+                                        }
+                                    }
+                                });
+
+                                let dataset = new vis.DataSet(plotData.items);
+                                let options = {
+                                    sort: false,
+                                    interpolation: false,
+                                    graphHeight: '500px',
+                                    // legend: true,
+                                    dataAxis: {
+                                        left: {
+                                            // format: function (value) {
+                                            //     if (Math.floor(value) === value) {
+                                            //         return value;
+                                            //     }
+                                            //     return '';
+                                            // },
+                                            range: {
+                                                // max: (data.valueMax * 1.25),
+                                                min: 0,
+                                            }
+                                        }
+                                    },
+                                    // TODO: settings for default start
+                                    start: plotData.timeLast - 345600000,
+                                    end: plotData.timeLast,
+                                };
+
+                                // console.log(groups);
+                                // console.log(dataset);
+                                // console.log(options);
+                                document.getElementById('details_plot').innerHTML = '';
+                                let plot = new vis.Graph2d(document.getElementById('details_plot'), dataset, groups, options);
+
+                                let groupsData: any = groups.get();
+                                let legendDiv = document.getElementById("details_plot_legend");
+                                legendDiv.innerHTML = "";
+
+                                let legendContainer = $('#details_plot_legend');
+
+
+                                // get for all groups:
+                                for (let i = 0; i < groupsData.length; i++) {
+
+                                    // let container = $('<div class="legend-toggle-container"></div>');
+                                    let container = $('<div class="col col-lg-3 legend-toggle-container"></div>');
+
+                                    // get the legend for this group.
+                                    let legend = plot.getLegend(groupsData[i].id, 30, 30);
+
+                                    // append class to icon. All styling classes from the vis.css/vis-timeline-graph2d.min.css have been copied over into the head here to be able to style the
+                                    // icons with the same classes if they are using the default ones.
+                                    legend.icon.setAttributeNS(null, "class", "legend-icon");
+
+                                    // iconDiv.append(legend.icon);
+                                    // legendContainer.append(iconDiv);
+
+                                    // let label = $('<label id="legend-toggle-label-' + i + '" class="checkbox-inline"></label>');
+                                    let inputToggle = $('<input id="legend-toggle-' + i + '" checked="checked" type="checkbox" data-toggle="toggle" data-on="On" data-off="Off" data-onstyle="default" data-offstyle="default">');
+                                    container.append(inputToggle);
+                                    container.append(legend.icon);
+                                    container.append(legend.label);
+
+                                    legendContainer.append(container);
+
+                                    let toggle = $('#legend-toggle-' + i);
+                                    // toggle.bootstrapToggle();
+
+                                    toggle.change(function () {
+                                        // _.defer(function () {
+
+                                        groups.update({id: i, visible: $(this).prop('checked')});
+
+                                        // });
+                                    });
+                                }
+
+                            }
+
+                            this.cache.detailsPlot.systemId = requestedSystem;
+                            this.cache.detailsPlot.target = requestedTarget;
+                            this.isLoading = false;
+                        });
+                    }
+                }
+            }
+        }
+        else if (requestedView === environment.views.eventChain) {
             if (requestedSystem !== undefined) {
                 if (requestedTarget !== undefined) {
                     let repository = this.settings.eiffelEventRepositories[requestedSystem];
                     this.makeHistory(requestedSystem, requestedView, requestedTarget, 'Event chain for ' + repository.name + ' ' + requestedTarget);
-                    if (requestedSystem !== this.cache.eventchain.systemId || requestedTarget !== this.cache.eventchain.target) {
+                    if (requestedSystem !== this.cache.eventChain.systemId || requestedTarget !== this.cache.eventChain.target) {
                         this.activateLoader();
                         repository.preferences.eventChainTargetId = requestedTarget;
                         this.http.post<any>('/api/eventChainGraph', repository.preferences).subscribe(result => {
                             // console.log(result);
                             this.eventChainCy = this.renderCytoscape('eventchain_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data.elements, repository.preferences, requestedTarget);
-                            this.cache.eventchain.systemId = requestedSystem;
-                            this.cache.eventchain.target = requestedTarget;
+                            this.cache.eventChain.systemId = requestedSystem;
+                            this.cache.eventChain.target = requestedTarget;
 
                             this.currentAggregationTarget = result.data.targetEvent.aggregateOn;
                             this.currentDetailsTarget = result.data.targetEvent.aggregateOn;
@@ -561,6 +765,8 @@ export class ViciComponent implements OnInit {
         let layout = {
             name: 'dagre',
             rankDir: 'RL',
+            // align: 'UR',
+            ranker: 'network-simplex',
         };
 
         // if (target !== undefined) { TODO
@@ -622,6 +828,15 @@ export class ViciComponent implements OnInit {
         cy.maxZoom(10); //same setting as panzoom for Krav 2
         cy.minZoom(0.1); //same setting as panzoom for Krav 2
 
+        // let containerHeight = container.height();
+
+        cy.fit(50);
+        // cy.panBy({
+        //     x: 0,
+        //     y: -cy.height() * 0.1,
+        // });
+
+
         return cy;
     }
 
@@ -666,14 +881,26 @@ export class ViciComponent implements OnInit {
 
 
     ngOnInit() {
-        if (!environment.production) {
-            console.log('Vici ngOnInit called.');
-        }
-
+        this.debug('ngOnInit Vici component');
         this.cache = new CustomCache();
         this.cache.aggregation = {systemId: undefined, target: undefined};
         this.cache.details = {systemId: undefined, target: undefined};
-        this.cache.eventchain = {systemId: undefined, target: undefined};
+        this.cache.detailsPlot = {systemId: undefined, target: undefined};
+        this.cache.eventChain = {systemId: undefined, target: undefined};
+
+        $('#settingsModal').on('hide.bs.modal', () => {
+            this.updateSystemReferences(this.settings.eiffelEventRepositories);
+
+            let target = undefined;
+            if (this.currentView === environment.views.aggregation) {
+                target = this.currentAggregationTarget;
+            } else if (this.currentView === environment.views.details) {
+                target = this.currentDetailsTarget;
+            } else if (this.currentView === environment.views.eventChain) {
+                target = this.currentEventChainTarget;
+            }
+            this.changeView(this.currentSystem, this.currentView, target);
+        });
 
         let canvas = document.createElement('canvas');
         canvas.width = 100;
@@ -722,7 +949,7 @@ export class ViciComponent implements OnInit {
                     this.currentSystemName = this.settings.eiffelEventRepositories[this.currentSystem].name;
                 }
                 this.currentView = requestedView;
-                if (requestedView === environment.views.details) {
+                if (requestedView === environment.views.details || requestedView === environment.views.detailsPlot) {
                     this.currentDetailsTarget = requestedTarget;
                 } else if (requestedView === environment.views.eventChain) {
                     this.currentEventChainTarget = requestedTarget;

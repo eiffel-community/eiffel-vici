@@ -7,7 +7,11 @@ export class CustomCache {
         systemId: string,
         target: string;
     };
-    eventchain: {
+    detailsPlot: {
+        systemId: string,
+        target: string;
+    };
+    eventChain: {
         systemId: string,
         target: string,
     }

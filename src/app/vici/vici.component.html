@@ -42,6 +42,12 @@
             </li>
 
             <li class="nav-item">
+                <a [ngClass]="{'disabled': currentSystem === undefined || currentDetailsTarget === undefined, 'active': currentView === constants.views.detailsPlot}"
+                   [routerLink]="['', currentSystem, constants.views.detailsPlot, currentDetailsTarget]"
+                   class="nav-link">Plot</a>
+            </li>
+
+            <li class="nav-item">
                 <a [ngClass]="{'disabled': currentSystem === undefined || currentEventChainTarget === undefined, 'active': currentView === constants.views.eventChain}"
                    [routerLink]="['', currentSystem, constants.views.eventChain, currentEventChainTarget]"
                    class="nav-link">Event
@@ -314,11 +320,28 @@
                                 <h4>General</h4>
                                 <div class="input-group settings-row">
                                     <div class="input-group-prepend">
+                                        <span class="input-group-text">Name</span>
+                                    </div>
+                                    <input type="text" class="form-control" placeholder="Name"
+                                           [(ngModel)]="settings.eiffelEventRepositories[system.id].name"
+                                           (ngModelChange)="settingsInputChanged(system.id, constants.views.home)"/>
+                                </div>
+                                <div class="input-group settings-row">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">URL</span>
+                                    </div>
+                                    <input type="text" class="form-control" placeholder="URL"
+                                           [(ngModel)]="settings.eiffelEventRepositories[system.id].preferences.url"
+                                           (ngModelChange)="settingsInputChanged(system.id, constants.views.home)"/>
+                                </div>
+
+                                <div class="input-group settings-row">
+                                    <div class="input-group-prepend">
                                         <span class="input-group-text">Time to keep caches (ms)</span>
                                     </div>
                                     <input type="number" class="form-control" placeholder="Positive integer"
                                            [(ngModel)]="settings.eiffelEventRepositories[system.id].preferences.cacheLifeTimeMs"
-                                           (ngModelChange)="settingsInputChanged(system.id)"/>
+                                           (ngModelChange)="settingsInputChanged(system.id, undefined)"/>
                                 </div>
 
                                 <h4>Aggregation</h4>
@@ -329,7 +352,7 @@
                                     </div>
                                     <input type="text" class="form-control" placeholder=""
                                            [(ngModel)]="settings.eiffelEventRepositories[system.id].preferences.aggregateOn[type]"
-                                           (ngModelChange)="settingsInputChanged(system.id)"/>
+                                           (ngModelChange)="settingsInputChanged(system.id, constants.views.home)"/>
                                 </div>
 
                                 <h4>Details</h4>
@@ -341,7 +364,7 @@
                                     </div>
                                     <input type="number" class="form-control" placeholder="Positive integer"
                                            [(ngModel)]="settings.eiffelEventRepositories[system.id].preferences.eventChainMaxSteps"
-                                           (ngModelChange)="settingsInputChanged(system.id)"/>
+                                           (ngModelChange)="settingsInputChanged(system.id, constants.views.eventChain)"/>
                                 </div>
 
                                 <div class="input-group settings-row">
@@ -350,28 +373,28 @@
                                     </div>
                                     <input type="number" class="form-control" placeholder="Positive integer"
                                            [(ngModel)]="settings.eiffelEventRepositories[system.id].preferences.eventChainMaxConnections"
-                                           (ngModelChange)="settingsInputChanged(system.id)"/>
+                                           (ngModelChange)="settingsInputChanged(system.id, constants.views.eventChain)"/>
                                 </div>
 
                                 <div class="input-group settings-row">
                                     <label class="checkbox-inline">
                                         <input type="checkbox"
                                                [(ngModel)]="settings.eiffelEventRepositories[system.id].preferences.eventChainGoUpStream"
-                                               (ngModelChange)="settingsInputChanged(system.id)"/>
+                                               (ngModelChange)="settingsInputChanged(system.id, constants.views.eventChain)"/>
                                         Follow links <b>up</b> stream</label>
                                 </div>
                                 <div class="input-group settings-row">
                                     <label class="checkbox-inline">
                                         <input type="checkbox"
                                                [(ngModel)]="settings.eiffelEventRepositories[system.id].preferences.eventChainGoDownStream"
-                                               (ngModelChange)="settingsInputChanged(system.id)"/>
+                                               (ngModelChange)="settingsInputChanged(system.id, constants.views.eventChain)"/>
                                         Follow links <b>down</b> stream</label>
                                 </div>
                                 <div class="input-group settings-row">
                                     <label class="checkbox-inline">
                                         <input type="checkbox"
                                                [(ngModel)]="settings.eiffelEventRepositories[system.id].preferences.eventChainTimeRelativeXAxis"
-                                               (ngModelChange)="settingsInputChanged(system.id)"/>
+                                               (ngModelChange)="settingsInputChanged(system.id, constants.views.eventChain)"/>
                                         Node x-position defined by actual timestamp</label>
                                 </div>
 
@@ -382,7 +405,7 @@
                                     </div>
                                     <input type="number" class="form-control" placeholder="Positive integer"
                                            [(ngModel)]="settings.eiffelEventRepositories[system.id].preferences.streamBaseEvents"
-                                           (ngModelChange)="settingsInputChanged(system.id)"/>
+                                           (ngModelChange)="settingsInputChanged(system.id, undefined)"/>
                                 </div>
                                 <div class="input-group settings-row">
                                     <div class="input-group-prepend">
@@ -390,7 +413,7 @@
                                     </div>
                                     <input type="number" class="form-control" placeholder="Positive integer"
                                            [(ngModel)]="settings.eiffelEventRepositories[system.id].preferences.streamRefreshIntervalMs"
-                                           (ngModelChange)="settingsInputChanged(system.id)"/>
+                                           (ngModelChange)="settingsInputChanged(system.id, undefined)"/>
                                 </div>
                             </div>
                             <div [hidden]="currentSystem !== undefined">
@@ -417,7 +440,7 @@
 </div>
 
 <div id="aggregation-container" [hidden]="currentView !== constants.views.aggregation" class="content-container">
-    <div id="aggregation_graph" class="content-container cy"></div>
+    <div id="aggregation_graph" class="cy"></div>
 
     <div *ngIf="aggregationHoverNode!==undefined && aggregationNodeData !== undefined && aggregationNodeData[aggregationHoverNode] !== undefined"
          class="card border-dark mb-3 cy-tooltip" style="max-width: 18rem;">
@@ -452,20 +475,18 @@
 </div>
 
 <div id="details-container" [hidden]="currentView !== constants.views.details" class="content-container">
-    <div id="details_table">
-        <!--<table id="details_table_table" class="table table-striped table-bordered" cellspacing="0"-->
-        <!--width="100%"></table>-->
+    <div id="details_table"></div>
+</div>
+
+<div id="details_plot_container" [hidden]="currentView !== constants.views.detailsPlot" class="content-container">
+    <div id="details_plot">
+
     </div>
-    <!--<div id="details_plot_container">-->
-    <!--<div id="details_plot">-->
+    <div id="details_plot_legend" class="row justify-content-start legend-container">
 
-    <!--</div>-->
-    <!--<div id="details_plot_legend" class="row justify-content-start legend-container">-->
-
-    <!--</div>-->
-    <!--</div>-->
+    </div>
 </div>
 
 <div id="eventchain-container" [hidden]="currentView !== constants.views.eventChain" class="content-container">
-    <div id="eventchain_graph" class="content-container cy"></div>
+    <div id="eventchain_graph" class="cy"></div>
 </div>

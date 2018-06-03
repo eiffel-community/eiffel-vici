@@ -54,7 +54,6 @@
         "@angular/language-service": "6.0.3",
         "@types/datatables.net": "^1.10.9",
         "@types/jquery": "^3.3.2",
-        "@types/vis": "^4.21.4",
         "typescript": "2.7.2"
     }
 }

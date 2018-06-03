@@ -9,6 +9,7 @@ export const environment = {
         home: 'home',
         aggregation: 'aggregation',
         details: 'details',
+        detailsPlot: 'detailsPlot',
         eventChain: 'eventChain'
     },
     params: {

@@ -144,6 +144,7 @@ public class ApiController {
 
     @RequestMapping(value = "/api/aggregationGraph", produces = "application/json; charset=UTF-8")
     public ReturnData aggregationGraph(@RequestBody Preferences preferences) {
+        Graph graph = new Graph(null);
 
 //        JSONObject jsonObject = new JSONObject(settings);
 //        System.out.println(jsonObject.toString());
@@ -169,6 +170,13 @@ public class ApiController {
                     nodes.put(event.getAggregateOn(), node);
                 }
 
+                long triggered = event.getTimes().get(TRIGGERED);
+                if (triggered < graph.getTime().getStart()) {
+                    graph.getTime().setStart(triggered);
+                } else if (triggered > graph.getTime().getFinish()) {
+                    graph.getTime().setFinish(triggered);
+                }
+
                 setQuantities(node, event);
             }
         }
@@ -192,7 +200,9 @@ public class ApiController {
 
         elements.addAll(edges.values());
 
-        return new ReturnData(elements, eventsObject.getTimeCollected());
+        graph.setElements(elements);
+
+        return new ReturnData(graph, eventsObject.getTimeCollected());
     }
 
     private String getEdgeId(String source, String target, String type) {
