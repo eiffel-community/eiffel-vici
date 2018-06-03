@@ -3,9 +3,11 @@
 Start the server according to the "How to run" section in this read me.
 Enter http://127.0.0.1:8080 ->
 in upper left, "Select a repository" -> select "Local static dummy file".
-If the dummy file was extracted correctly, there will be a graph visualizing the dummy CI system. Right click on node to lock the tooltip. Left click on node to enter the details table showing all the events aggregated into the node. In the details table view, click a "Graph" button to enter the eventchain view, visualizing the eventchain for that specific event. Upper right "History" gives you the option to go back to a specific view. "?" menu button gives some info (WIP). The cog button enters the settings for this specific eiffel event repository (system).
+If the dummy file was extracted correctly, there will be a graph visualizing the dummy CI system. Right click on node to lock the tooltip. Left click on node to enter the details table showing all the events aggregated into the node. In the details table view, click a "Graph" button to enter the eventchain view, visualizing the eventchain for that specific event. Upper right "History" gives you the option to go back to a specific view. "?" menu button gives some info (WIP). The cog button enters the settings for this specific eiffel event repository (system). The timeline in the graph visualizes from what dates the data displayed are from. The plot page is just a visualization of the details table.
 
 The frontend files are found in between root and src/app/vici. The backend files are found at \src\main\java\*.
+
+Since I will continue developing the app during the summer I will push the updates to the Liu Gitlab repository as well until I have gotten a grade in the course. If that is a problem with the deadline, just use my last commit before the course final commit deadline (0769b4e726d9abbc41742d03d10491b39bc15bbf).
 
 ### Project plan submitted at start of the course
 In this project I will continue working on the webapplication Vici https://github.com/eiffel-community/eiffel-vici
