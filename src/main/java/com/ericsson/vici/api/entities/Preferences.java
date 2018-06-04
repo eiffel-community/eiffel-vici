@@ -18,6 +18,7 @@ public class Preferences {
     private long cacheLifeTimeMs = 86400000;
 
     // Aggregation
+    private List<String> aggregationBannedLinks = Arrays.asList("BASE");
     private HashMap<String, String> aggregateOn = new HashMap<String, String>() {
         {
             put(ACTIVITY, "data.name");
@@ -43,14 +44,16 @@ public class Preferences {
     private String detailsTargetId = null;
 
     // Event chain
+
+    private boolean eventChainCulledEvents = false;
+
     private String eventChainTargetId = null;
 
-    private List<String> eventChainBannedLinks = Arrays.asList("PREVIOUS_VERSION");
+    private List<String> eventChainBannedLinks = Arrays.asList("PREVIOUS_VERSION", "BASE");
+    private List<String> eventChainCutAtEvent = Arrays.asList("EiffelEnvironmentDefinedEvent");
 
     private boolean eventChainGoUpStream = true;
     private boolean eventChainGoDownStream = true;
-    private int eventChainMaxSteps = 4;
-    private int eventChainMaxConnections = 16;
     private boolean eventChainTimeRelativeXAxis = false;
 
     // Event chain stream
@@ -124,22 +127,6 @@ public class Preferences {
         this.eventChainGoDownStream = eventChainGoDownStream;
     }
 
-    public int getEventChainMaxSteps() {
-        return eventChainMaxSteps;
-    }
-
-    public void setEventChainMaxSteps(int eventChainMaxSteps) {
-        this.eventChainMaxSteps = eventChainMaxSteps;
-    }
-
-    public int getEventChainMaxConnections() {
-        return eventChainMaxConnections;
-    }
-
-    public void setEventChainMaxConnections(int eventChainMaxConnections) {
-        this.eventChainMaxConnections = eventChainMaxConnections;
-    }
-
     public boolean isEventChainTimeRelativeXAxis() {
         return eventChainTimeRelativeXAxis;
     }
@@ -163,4 +150,30 @@ public class Preferences {
     public void setStreamRefreshIntervalMs(long streamRefreshIntervalMs) {
         this.streamRefreshIntervalMs = streamRefreshIntervalMs;
     }
+
+    public List<String> getEventChainCutAtEvent() {
+        return eventChainCutAtEvent;
+    }
+
+    public void setEventChainCutAtEvent(List<String> eventChainCutAtEvent) {
+        this.eventChainCutAtEvent = eventChainCutAtEvent;
+    }
+
+    public boolean isEventChainCulledEvents() {
+        return eventChainCulledEvents;
+    }
+
+    public void setEventChainCulledEvents(boolean eventChainCulledEvents) {
+        this.eventChainCulledEvents = eventChainCulledEvents;
+    }
+
+    public List<String> getAggregationBannedLinks() {
+        return aggregationBannedLinks;
+    }
+
+    public void setAggregationBannedLinks(List<String> aggregationBannedLinks) {
+        this.aggregationBannedLinks = aggregationBannedLinks;
+    }
+
+
 }

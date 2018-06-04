@@ -359,24 +359,6 @@
 
                                 <h4>Event Chain</h4>
                                 <div class="input-group settings-row">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text">Maximum jumps</span>
-                                    </div>
-                                    <input type="number" class="form-control" placeholder="Positive integer"
-                                           [(ngModel)]="settings.eiffelEventRepositories[system.id].preferences.eventChainMaxSteps"
-                                           (ngModelChange)="settingsInputChanged(system.id, constants.views.eventChain)"/>
-                                </div>
-
-                                <div class="input-group settings-row">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text">Maximum connections/node</span>
-                                    </div>
-                                    <input type="number" class="form-control" placeholder="Positive integer"
-                                           [(ngModel)]="settings.eiffelEventRepositories[system.id].preferences.eventChainMaxConnections"
-                                           (ngModelChange)="settingsInputChanged(system.id, constants.views.eventChain)"/>
-                                </div>
-
-                                <div class="input-group settings-row">
                                     <label class="checkbox-inline">
                                         <input type="checkbox"
                                                [(ngModel)]="settings.eiffelEventRepositories[system.id].preferences.eventChainGoUpStream"
@@ -424,11 +406,10 @@
                 </div>
             </div>
 
-
             <div class="modal-footer">
                 <!--<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>-->
                 <button class="btn btn-warning" type="button" (click)="resetSettingsToServerDefault()">
-                    Reset settings (server default) <span octicon="cloud-download"></span>
+                    Reset settings (server default)
                 </button>
                 <button (click)="uploadCurrentRepositorySettings()"
                         [disabled]="!newSettings.has(currentSystem) || isUploadingRepository"

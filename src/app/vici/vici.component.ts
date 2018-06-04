@@ -76,7 +76,7 @@ export class ViciComponent implements OnInit {
     ) {
     }
 
-    debug(msg: string): void {
+    debug(msg: any): void {
         if (!environment.production) {
             console.log(msg);
         }
@@ -87,7 +87,8 @@ export class ViciComponent implements OnInit {
         this.appRef.tick();
     }
 
-    private updateSystemReferences(eiffelEventRepositories: { [id: string]: System }): void {
+    private updateSystemReferences(): void {
+        let eiffelEventRepositories = this.settings.eiffelEventRepositories;
         this.systemReferences = [];
         for (let eiffelEventRepositoriesKey in eiffelEventRepositories) {
             let system = eiffelEventRepositories[eiffelEventRepositoriesKey];
@@ -105,11 +106,42 @@ export class ViciComponent implements OnInit {
     }
 
     uploadCurrentRepositorySettings(): void {
+        this.uploadRepository(this.settings.eiffelEventRepositories[this.currentSystem], undefined);
+    }
+
+    uploadRepository(repository: System, targetUrl: string[]): void {
         this.isUploadingRepository = true;
-        let repository = this.settings.eiffelEventRepositories[this.currentSystem];
+
         this.http.post<any>('/api/newEiffelRepository', repository).subscribe(result => {
             this.newSettings.delete(this.currentSystem);
             this.isUploadingRepository = false;
+
+            if (targetUrl !== undefined) {
+                this.router.navigate(targetUrl);
+            }
+        });
+    }
+
+    resetSettingsToServerDefault(): void {
+        this.http.get<any>('/api/resetSettingsDefault').subscribe(result => {
+            this.router.navigate(['']);
+            window.location.reload();
+        });
+    }
+
+    newSystem(): void {
+        this.http.get<System>('/api/getDefaultEiffelEventRepository').subscribe(result => {
+            result.name = this.newSystemInput.name;
+            result.preferences.url = this.newSystemInput.url;
+
+            this.settings.eiffelEventRepositories[result.id] = result;
+            this.updateSystemReferences();
+            this.clearCache(result.id, environment.views.home);
+
+            this.uploadRepository(result, ['', result.id, environment.views.home, environment.params.undefined]);
+
+            this.newSystemInput.name = '';
+            this.newSystemInput.url = '';
         });
     }
 
@@ -158,18 +190,6 @@ export class ViciComponent implements OnInit {
         }
     }
 
-    resetSettingsToServerDefault(): void {
-        this.http.get<any>('/api/resetSettingsDefault').subscribe(result => {
-            this.router.navigate(['']);
-            window.location.reload();
-        });
-    }
-
-    // WIP/TODO
-    newSystem(): void {
-        this.newSystemInput.name = '';
-        this.newSystemInput.url = '';
-    }
 
     private makeHistory(systemId: string, view: string, target: string, msg: string): void {
         for (let step = 0; step < this.history.length; step++) {
@@ -527,7 +547,6 @@ export class ViciComponent implements OnInit {
                         this.activateLoader();
                         repository.preferences.eventChainTargetId = requestedTarget;
                         this.http.post<any>('/api/eventChainGraph', repository.preferences).subscribe(result => {
-                            // console.log(result);
                             this.eventChainCy = this.renderCytoscape('eventchain_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data.elements, repository.preferences, requestedTarget);
                             this.cache.eventChain.systemId = requestedSystem;
                             this.cache.eventChain.target = requestedTarget;
@@ -889,7 +908,7 @@ export class ViciComponent implements OnInit {
         this.cache.eventChain = {systemId: undefined, target: undefined};
 
         $('#settingsModal').on('hide.bs.modal', () => {
-            this.updateSystemReferences(this.settings.eiffelEventRepositories);
+            this.updateSystemReferences();
 
             let target = undefined;
             if (this.currentView === environment.views.aggregation) {
@@ -900,6 +919,11 @@ export class ViciComponent implements OnInit {
                 target = this.currentEventChainTarget;
             }
             this.changeView(this.currentSystem, this.currentView, target);
+        });
+
+        $('#newSystemModal').on('show.bs.modal', () => {
+            this.newSystemInput.name = '';
+            this.newSystemInput.url = '';
         });
 
         let canvas = document.createElement('canvas');
@@ -923,7 +947,7 @@ export class ViciComponent implements OnInit {
 
         this.http.get<Settings>('/api/getSettings').subscribe(result => {
             this.settings = result;
-            this.updateSystemReferences(this.settings.eiffelEventRepositories);
+            this.updateSystemReferences();
             this.route.params.subscribe((params: Params) => {
                 let requestedSystem = params[environment.params.system];
                 if (requestedSystem === environment.params.undefined) {

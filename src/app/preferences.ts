@@ -3,13 +3,13 @@ export class Preferences {
     type: string;
     cacheLifeTimeMs: number;
     aggregateOn: object;
+    aggregationBannedLinks: Array<string>;
     detailsTargetId: string;
     eventChainTargetId: string;
     eventChainBannedLinks: Array<string>;
+    eventChainCutAtEvent: Array<string>;
     eventChainGoUpStream: boolean;
     eventChainGoDownStream: boolean;
-    eventChainMaxSteps: number;
-    eventChainMaxConnections: number;
     eventChainTimeRelativeXAxis: boolean;
     streamBaseEvents: number;
     streamRefreshIntervalMs: number;

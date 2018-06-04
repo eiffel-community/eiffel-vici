@@ -185,12 +185,14 @@ public class ApiController {
         for (Event event : events.values()) {
             if (!event.getType().equals(REDIRECT)) {
                 for (Link link : event.getLinks()) {
-                    String target = events.get(getTarget(link.getTarget(), events)).getAggregateOn();
-                    String edgeId = getEdgeId(event.getAggregateOn(), target, link.getType());
-                    if (edges.containsKey(edgeId)) {
-                        edges.get(edgeId).getData().increaseQuantity();
-                    } else {
-                        edges.put(edgeId, new Edge(new DataEdge(edgeId, event.getAggregateOn(), target, edgeId, link.getType())));
+                    if (!preferences.getAggregationBannedLinks().contains(link.getType())) {
+                        String target = events.get(getTarget(link.getTarget(), events)).getAggregateOn();
+                        String edgeId = getEdgeId(event.getAggregateOn(), target, link.getType());
+                        if (edges.containsKey(edgeId)) {
+                            edges.get(edgeId).getData().increaseQuantity();
+                        } else {
+                            edges.put(edgeId, new Edge(new DataEdge(edgeId, event.getAggregateOn(), target, edgeId, link.getType())));
+                        }
                     }
                 }
             }
@@ -452,9 +454,12 @@ public class ApiController {
         Graph graph = new Graph(mainEvent);
 
         HashMap<String, Event> incEvents = new HashMap<>();
+        HashSet<String> aggregateOns = new HashSet<>();
+        ArrayList<Event> queue = new ArrayList<>();
 
         for (Event baseEvent : baseEvents) {
-            step(preferences, baseEvent, incEvents, events, preferences.getEventChainMaxSteps());
+//            step(preferences, baseEvent, incEvents, events, preferences.getEventChainMaxSteps(), aggregateOns);
+            bfs(preferences, baseEvent, events, incEvents);
         }
 
         HashMap<String, Node> nodes = new HashMap<>();
@@ -464,6 +469,7 @@ public class ApiController {
         if (preferences.isEventChainTimeRelativeXAxis()) {
             nodesList = new ArrayList<>();
         }
+
 
         // Nodes
         for (Event event : incEvents.values()) {
@@ -499,11 +505,10 @@ public class ApiController {
 
         // Edges
         for (Event event : incEvents.values()) {
-
-            if (!event.getType().equals(REDIRECT) && event.getLinks().size() + event.getChildren().size() <= preferences.getEventChainMaxConnections()) {
+            if (!event.getType().equals(REDIRECT)) {
                 for (Link link : event.getLinks()) {
                     String target = getTarget(link.getTarget(), events);
-                    if (!incEvents.containsKey(target)) {
+                    if (!incEvents.containsKey(target) && preferences.isEventChainCulledEvents()) {
 
                         String type = TYPE_UNKNOWN;
                         Event targetEvent = events.get(target);
@@ -531,7 +536,7 @@ public class ApiController {
                 }
                 for (ChildLink child : event.getChildren()) {
                     String childId = child.getChild();
-                    if (!incEvents.containsKey(childId)) {
+                    if (!incEvents.containsKey(childId) && preferences.isEventChainCulledEvents()) {
 
                         String type = TYPE_UNKNOWN;
                         Event targetEvent = events.get(childId);
@@ -591,39 +596,51 @@ public class ApiController {
         return graph;
     }
 
-    private void step(Preferences preferences, Event event, HashMap<String, Event> incEvents, HashMap<String, Event> events, int steps) {
+    private HashMap<String, Event> bfs(Preferences preferences, Event event, HashMap<String, Event> events, HashMap<String, Event> incEvents) {
+        LinkedList<Event> queue = new LinkedList<>();
+        HashSet<String> aggregatedOns = new HashSet<>();
+
+        queue.add(event);
+        while (queue.size() > 0) {
+            bfsHelp(preferences, incEvents, queue.poll(), events, queue, aggregatedOns);
+        }
+
+        return incEvents;
+    }
+
+    private void bfsHelp(Preferences preferences, HashMap<String, Event> incEvents, Event event, HashMap<String, Event> events, LinkedList<Event> queue, HashSet<String> aggregatedOns) {
+        if (incEvents.containsKey(event.getId()) || aggregatedOns.contains(event.getAggregateOn())) {
+            return;
+        }
 
         incEvents.put(event.getId(), event);
-        if (event.getChildren().size() + event.getLinks().size() > preferences.getEventChainMaxConnections()) {
-            return;
-        }
-        if (steps <= 0) {
-            return;
-        }
+        aggregatedOns.add(event.getAggregateOn());
+
+        ArrayList<Event> tmpEvents = new ArrayList<>();
         if (preferences.isEventChainGoDownStream()) {
-            ArrayList<Link> links = event.getLinks();
-            if (links != null) {
-                for (Link link : links) {
-                    if (!preferences.getEventChainBannedLinks().contains(link.getType())) {
-                        Event tmpEvent = events.get(getTarget(link.getTarget(), events));
-                        int newSteps = steps - 1;
-                        step(preferences, tmpEvent, incEvents, events, newSteps);
+            for (Link link : event.getLinks()) {
+                if (!preferences.getEventChainBannedLinks().contains(link.getType()) && !preferences.getEventChainCutAtEvent().contains(event.getType())) {
+                    Event tmpEvent = events.get(getTarget(link.getTarget(), events));
+                    if (!incEvents.containsKey(tmpEvent.getId())) {
+                        tmpEvents.add(tmpEvent);
+                    }
+                }
+            }
+        }
+        if (preferences.isEventChainGoUpStream()) {
+            for (ChildLink child : event.getChildren()) {
+                if (!preferences.getEventChainBannedLinks().contains(child.getType()) && !preferences.getEventChainCutAtEvent().contains(event.getType())) {
+                    Event tmpEvent = events.get(getTarget(child.getChild(), events));
+                    if (!incEvents.containsKey(tmpEvent.getId())) {
+                        tmpEvents.add(tmpEvent);
                     }
                 }
             }
         }
 
-        if (preferences.isEventChainGoUpStream()) {
-            ArrayList<ChildLink> children = event.getChildren();
-            if (children != null) {
-                for (ChildLink child : children) {
-                    if (!preferences.getEventChainBannedLinks().contains(child.getType())) {
-                        Event tmpEvent = events.get(child.getChild());
-                        int newSteps = steps - 1;
-                        step(preferences, tmpEvent, incEvents, events, newSteps);
-                    }
-                }
-            }
+        for (Event tmpEvent : tmpEvents) {
+//            aggregatedOns.add(tmpEvent.getAggregateOn());
+            queue.add(tmpEvent);
         }
     }
 
