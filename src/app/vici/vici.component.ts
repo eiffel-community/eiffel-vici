@@ -270,7 +270,8 @@ export class ViciComponent implements OnInit {
         return timeline;
     }
 
-    private addRatesToElements(elements: any[]): any {
+    private generateNodeData(elements: any[]): any {
+        this.aggregationNodeData = {};
         for (let nodeData in elements) {
             let tmp = elements[nodeData].data;
             if (tmp.quantities !== undefined && Object.keys(tmp.quantities).length !== 0 && tmp.quantities.constructor === Object) {
@@ -300,6 +301,7 @@ export class ViciComponent implements OnInit {
 
                 tmp['rates'] = rates;
             }
+            this.aggregationNodeData[tmp.id] = tmp;
         }
 
         return elements;
@@ -317,7 +319,7 @@ export class ViciComponent implements OnInit {
                         this.aggregationTimeline.destroy();
                     }
                     this.http.post<any>('/api/aggregationGraph', repository.preferences).subscribe(result => {
-                        result.data.elements = this.addRatesToElements(result.data.elements);
+                        result.data.elements = this.generateNodeData(result.data.elements);
                         this.aggregationCy = this.renderCytoscape('aggregation_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data.elements, repository.preferences, undefined);
 
                         this.aggregationCy.on('tap', 'node', (evt) => {
@@ -572,7 +574,7 @@ export class ViciComponent implements OnInit {
                         this.activateLoader();
                         repository.preferences.eventChainTargetId = requestedTarget;
                         this.http.post<any>('/api/eventChainGraph', repository.preferences).subscribe(result => {
-                            result.data.elements = this.addRatesToElements(result.data.elements);
+                            result.data.elements = this.generateNodeData(result.data.elements);
                             this.eventChainCy = this.renderCytoscape('eventchain_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data.elements, repository.preferences, requestedTarget);
                             this.cache.eventChain.systemId = requestedSystem;
                             this.cache.eventChain.target = requestedTarget;
