@@ -1,63 +1,3 @@
-# TDDD27 Advanced Web Programming
-### Final commit, how to use (for examination)
-Start the server according to the "How to run" section in this read me.
-Enter http://127.0.0.1:8080 ->
-in upper left, "Select a repository" -> select "Local static dummy file".
-If the dummy file was extracted correctly, there will be a graph visualizing the dummy CI system. Right click on node to lock the tooltip. Left click on node to enter the details table showing all the events aggregated into the node. In the details table view, click a "Graph" button to enter the eventchain view, visualizing the eventchain for that specific event. Upper right "History" gives you the option to go back to a specific view. "?" menu button gives some info (WIP). The cog button enters the settings for this specific eiffel event repository (system). The timeline in the graph visualizes from what dates the data displayed are from. The plot page is just a visualization of the details table.
-
-The frontend files are found in between root and src/app/vici. The backend files are found at \src\main\java\*.
-
-Since I will continue developing the app during the summer I will push the updates to the Liu Gitlab repository as well until I have gotten a grade in the course. If that is a problem with the deadline, just use my last commit before the course final commit deadline (0769b4e726d9abbc41742d03d10491b39bc15bbf).
-
-### Project plan submitted at start of the course
-In this project I will continue working on the webapplication Vici https://github.com/eiffel-community/eiffel-vici
-Members is only me Jonathan Wahlund, jonwa732. My Ericsson github acoount name is ewahjon.
-Before examination the code at https://github.com/eiffel-community/eiffel-vici will be cloned to https://gitlab.ida.liu.se/jonwa732/TDDD27_2018_Vici
-
-Things that I will do to pass this course is:
-- Totally remake the client side using Angular as framework.
-- Anything else that the examinatiors may want me to add after reading this (2018-04-01).
-- Continuing developing Vici adding features desired by customers and Ericsson, some defined in the Issues.
-
-Right now the project is build with Java Spring Boot as server and my own javascript code in the frontend. The client communicates with the server through Spring restuful API. The server communicates to external databases/eiffel-event-repositories though those specified API.
-
-Usually I work on my own fork https://github.com/ewahjon/eiffel-vici and then combine some commits into a big merge into https://github.com/eiffel-community/eiffel-vici
-
-### How to run (might need admin rights in some cases)
-
-For dummy data unzip src/assets/reference-data-set.zip to src/assets/reference-data-set.json
-
-Make sure you have a java 1.8 jdk, JAVA_HOME set and added to path:
-
-http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html
-
-(windows) Add JAVA_HOME to system variables and %JAVA_HOME%\bin to path.
-
-Make sure you have maven version 3+ installed:
-
-https://maven.apache.org/
-
-(windows) Download and extract .zip file -> Add bin folder to path
-
-~~~~
-mvn spring-boot:run
-~~~~
-
-App should now be running at http://127.0.0.1:8080
-
-### Tip: How to develop
-
-~~~~
-mvn clean install
-~~~~
-
-ng build --watch
-
-start the spring boot server
-
-Official readme
-------
-
 <!---
    Copyright 2017-2018 Ericsson AB.
    For a full list of individual contributors, please see the commit history.
@@ -95,10 +35,10 @@ Visit [Eiffel Community](https://eiffel-community.github.io) to get started and 
 # How to Run
 During the development stage, please consider refreshing the app-webpage with clear cashe if something gets stuck and report the issue.
 
-For the local dummy event repository to work, you have to extract src\main\resources\static\reference-data-set.zip into src\main\resources\static\reference-data-set.json.
+For the local dummy event repository to work, you have to extract src/assets/reference-data-set.zip into src/assets/reference-data-set.json.
 This is not required if you intend to use the dummy eiffel-event-repository.
 
-To test your own set of eiffel-events, simply create a .json file that contains a list of eiffel-events and place it in the src\main\resources\static\ directory. When the app is running, go to settings > Manage systems > add a new system with the url localFile[MY_FILE] where you replace MY_FILE with the actual file name (without .json). Example: src\main\resources\static\reference-data-set.json with url localFile[reference-data-set]
+To test your own set of eiffel-events, simply create a .json file that contains a list of eiffel-events and place it in the src/assets/ directory. When the app is running, add a new system with the url localFile[MY_FILE] where you replace MY_FILE with the actual file name (without .json). Example: src\main\resources\static\reference-data-set.json with url localFile[reference-data-set]
 
 To run the app you need Java 8 and Maven installed.
 
@@ -106,12 +46,6 @@ Navigate to the repository root and execute one of the the following commands in
 
 ~~~~
 mvn spring-boot:run
-~~~~
-
-or
-
-~~~~
-(mvn clean package) -and (java -jar target\vici-eiffel-0.0.1-SNAPSHOT.jar)
 ~~~~
 
 The Vici app will now run at http://127.0.0.1:8080
