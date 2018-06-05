@@ -369,35 +369,6 @@ export class ViciComponent implements OnInit {
                         this.cache.aggregation.target = requestedTarget;
                         this.isLoading = false;
                     });
-
-                    // _.defer(function () {
-                    //     $.ajax({
-                    //         type: "POST",
-                    //         contentType: 'application/json; charset=utf-8',
-                    //         dataType: 'json',
-                    //         url: '/api/aggregationGraph',
-                    //         data: JSON.stringify(preferences),
-                    //         success: function (data) {
-                    //             let graphData = data.data;
-                    //             renderCytoscape(contentGlobal.cyAggregation, graphData, preferences, undefined);
-                    //             storeCache(stage, preferences.url);
-                    //             /** @namespace data.timeCollected */
-                    //             updateEventsCollectedTime('Events collected', data.timeCollected);
-                    //         },
-                    //         error: function (jqXHR, textStatus, errorThrown) {
-                    //             showModal('<p>Wops! I could not fetch data from the given url :( check that the event repository server is running and the correct url is given in the settings.</p><div class="alert alert-danger" role="alert">' + jqXHR.responseText + '</div>');
-                    //             resetSelections();
-                    //             disableMenuLevel(0);
-                    //             renderCytoscape(contentGlobal.cyAggregation, undefined, preferences, undefined);
-                    //             storeCache(stage, preferences.url);
-                    //             updateEventsCollectedTime("Failed to fetch events", Date.now());
-                    //         },
-                    //         complete: function (jqXHR, textStatus) {
-                    //             fetchCompleted();
-                    //         }
-                    //     });
-                    // });
-
                 }
             }
         } else if (requestedView === this.constants.views.details) {
@@ -926,7 +897,8 @@ export class ViciComponent implements OnInit {
                 destroy: true,
                 data: plotData.data,
                 columns: preDefColumns.concat(plotData.columns),
-                scrollY: '80vh',
+                scrollY: 'calc(100vh - 13rem)',
+                // scrollY: '100%',
                 scrollCollapse: true,
                 lengthMenu: [[20, 200, -1], [20, 200, "All"]],
                 order: [4, 'asc'],
