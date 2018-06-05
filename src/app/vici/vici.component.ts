@@ -27,12 +27,37 @@ panzoom(cytoscape);
     ]
 })
 export class ViciComponent implements OnInit {
+    public static VICI_CONSTANTS = {
+        views: {
+            home: 'home',
+            aggregation: 'aggregation',
+            details: 'details',
+            detailsPlot: 'detailsPlot',
+            eventChain: 'eventChain'
+        },
+        params: {
+            system: 'eiffel-repository-id',
+            view: 'view',
+            target: 'target',
+            undefined: 'undefined'
+        },
+        colors: {
+            pass: '#2ecc71',
+            fail: '#e74c3c',
+            undefined: '#95a5a6',
+        },
+        messages: {
+            selectSystem: 'Select a repository',
+        },
+        historyMaxUnits: 6,
+    };
+    constants = ViciComponent.VICI_CONSTANTS;
+
     settings: Settings;
 
     systemReferences: SystemReference[];
     statusImages: string[][];
 
-    constants = environment;
     newSettings: Set<string> = new Set<string>();
 
     currentSystem: string;
@@ -98,7 +123,7 @@ export class ViciComponent implements OnInit {
             this.systemReferences.push(tmp);
         }
         if (this.currentSystem === undefined) {
-            this.currentSystemName = environment.messages.selectSystem;
+            this.currentSystemName = this.constants.messages.selectSystem;
         } else {
             this.currentSystemName = this.settings.eiffelEventRepositories[this.currentSystem].name;
         }
@@ -136,9 +161,9 @@ export class ViciComponent implements OnInit {
 
             this.settings.eiffelEventRepositories[result.id] = result;
             this.updateSystemReferences();
-            this.clearCache(result.id, environment.views.home);
+            this.clearCache(result.id, this.constants.views.home);
 
-            this.uploadRepository(result, ['', result.id, environment.views.home, environment.params.undefined]);
+            this.uploadRepository(result, ['', result.id, this.constants.views.home, this.constants.params.undefined]);
 
             this.newSystemInput.name = '';
             this.newSystemInput.url = '';
@@ -153,25 +178,25 @@ export class ViciComponent implements OnInit {
     private clearCache(systemId: string, view: string): void {
         this.newSettings.add(systemId);
         switch (view) {
-            case environment.views.aggregation:
+            case this.constants.views.aggregation:
                 if (systemId === this.cache.aggregation.systemId) {
                     this.cache.aggregation.systemId = undefined;
                     this.cache.aggregation.target = undefined;
                 }
                 break;
-            case environment.views.details:
+            case this.constants.views.details:
                 if (systemId === this.cache.details.systemId) {
                     this.cache.details.systemId = undefined;
                     this.cache.details.target = undefined;
                 }
                 break;
-            case environment.views.eventChain:
+            case this.constants.views.eventChain:
                 if (systemId === this.cache.eventChain.systemId) {
                     this.cache.eventChain.systemId = undefined;
                     this.cache.eventChain.target = undefined;
                 }
                 break;
-            case environment.views.home:
+            case this.constants.views.home:
                 if (systemId === this.cache.aggregation.systemId) {
                     this.cache.aggregation.systemId = undefined;
                     this.cache.aggregation.target = undefined;
@@ -200,7 +225,7 @@ export class ViciComponent implements OnInit {
             }
         }
         this.history.unshift(new HistoryUnit(systemId, view, target, msg));
-        if (this.history.length > environment.historyMaxUnits) {
+        if (this.history.length > this.constants.historyMaxUnits) {
             this.history.pop();
         }
     }
@@ -246,7 +271,7 @@ export class ViciComponent implements OnInit {
     }
 
     private changeView(requestedSystem: string, requestedView: string, requestedTarget: string): void {
-        if (requestedView === environment.views.aggregation) {
+        if (requestedView === this.constants.views.aggregation) {
             if (requestedSystem !== undefined) {
                 let repository = this.settings.eiffelEventRepositories[requestedSystem];
                 this.makeHistory(requestedSystem, requestedView, requestedTarget, 'Aggregation for ' + repository.name)
@@ -261,8 +286,6 @@ export class ViciComponent implements OnInit {
                         this.aggregationTimeline.destroy();
                     }
                     this.http.post<any>('/api/aggregationGraph', repository.preferences).subscribe(result => {
-                        this.aggregationCy = this.renderCytoscape('aggregation_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data.elements, repository.preferences, undefined);
-                        // console.log(result);
                         this.aggregationNodeData = {};
                         for (let nodeData in result.data.elements) {
                             let tmp = result.data.elements[nodeData].data;
@@ -277,6 +300,8 @@ export class ViciComponent implements OnInit {
                                     rates.success = Math.round((100 * tmp.quantities.SUCCESS) / tmp.quantity);
                                 } else if (tmp.quantities.SUCCESSFUL !== undefined) {
                                     rates.success = Math.round((100 * tmp.quantities.SUCCESSFUL) / tmp.quantity);
+                                } else if (tmp.quantities.PASSED !== undefined) {
+                                    rates.success = Math.round((100 * tmp.quantities.PASSED) / tmp.quantity);
                                 }
 
                                 if (tmp.quantities.UNSUCCESSFUL !== undefined) {
@@ -293,7 +318,8 @@ export class ViciComponent implements OnInit {
                             }
                             this.aggregationNodeData[tmp.id] = tmp;
                         }
-                        // console.log(this.aggregationNodeData);
+                        this.debug(result);
+                        this.aggregationCy = this.renderCytoscape('aggregation_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data.elements, repository.preferences, undefined);
 
                         this.aggregationCy.on('tap', 'node', (evt) => {
                             this.setAggregationTarget(evt.target.id());
@@ -315,13 +341,13 @@ export class ViciComponent implements OnInit {
 
                         this.aggregationCy.on('tap', (evt) => {
                             if (evt.target === this.aggregationCy) {
-                                this.router.navigate(['', this.currentSystem, this.currentView, environment.params.undefined]);
+                                this.router.navigate(['', this.currentSystem, this.currentView, this.constants.params.undefined]);
                             }
                         });
 
                         this.aggregationCy.on('cxttap', (evt) => {
                             if (evt.target === this.aggregationCy) {
-                                this.router.navigate(['', this.currentSystem, this.currentView, environment.params.undefined]);
+                                this.router.navigate(['', this.currentSystem, this.currentView, this.constants.params.undefined]);
                             }
                         });
 
@@ -366,7 +392,7 @@ export class ViciComponent implements OnInit {
 
                 }
             }
-        } else if (requestedView === environment.views.details) {
+        } else if (requestedView === this.constants.views.details) {
             if (requestedSystem !== undefined) {
                 if (requestedTarget !== undefined) {
                     let repository = this.settings.eiffelEventRepositories[requestedSystem];
@@ -392,7 +418,7 @@ export class ViciComponent implements OnInit {
                     }
                 }
             }
-        } else if (requestedView === environment.views.detailsPlot) {
+        } else if (requestedView === this.constants.views.detailsPlot) {
             if (requestedSystem !== undefined) {
                 if (requestedTarget !== undefined) {
                     let repository = this.settings.eiffelEventRepositories[requestedSystem];
@@ -538,7 +564,7 @@ export class ViciComponent implements OnInit {
                 }
             }
         }
-        else if (requestedView === environment.views.eventChain) {
+        else if (requestedView === this.constants.views.eventChain) {
             if (requestedSystem !== undefined) {
                 if (requestedTarget !== undefined) {
                     let repository = this.settings.eiffelEventRepositories[requestedSystem];
@@ -573,10 +599,14 @@ export class ViciComponent implements OnInit {
             {
                 selector: 'node',
                 style: {
-                    'background-color': environment.colors.undefined,
-                    'border-color': '#000',
-                    'border-width': '1px',
-                    'border-style': 'solid',
+                    'background-color': this.constants.colors.undefined,
+                    // 'border-color': '#000',
+                    // 'border-width': '1px',
+                    // 'border-style': 'solid',
+                    // 'ghost': 'yes',
+                    // 'ghost-offset-x': 1,
+                    // 'ghost-offset-y': 1,
+                    // 'ghost-opacity': 0.5,
                     'label': 'data(label)',
                     'font-size': "16"
                 }
@@ -600,10 +630,17 @@ export class ViciComponent implements OnInit {
                 selector: 'node[type ^= "Activity"]',
                 style: {
                     'shape': 'polygon',
-                    'shape-polygon-points': '-0.95 -0.77 -0.9 -0.82 -0.85 -0.87 -0.8 -0.91 -0.74 -0.94 -0.68 -0.97 -0.62 -0.98 -0.56 -1 -0.5 -1 -0.44 -1 -0.38 -0.98 -0.32 -0.97 -0.26 -0.94 -0.2 -0.91 -0.15 -0.87 -0.1 -0.82 -0.05 -0.77 0.05 -0.67 0.1 -0.62 0.15 -0.57 0.2 -0.53 0.26 -0.5 0.32 -0.47 0.38 -0.46 0.44 -0.44 0.5 -0.44 0.56 -0.44 0.62 -0.46 0.68 -0.47 0.74 -0.5 0.8 -0.53 0.85 -0.57 0.9 -0.62 0.95 -0.67 0.95 0.77 0.9 0.82 0.85 0.87 0.8 0.91 0.74 0.94 0.68 0.97 0.62 0.98 0.56 1 0.5 1 0.44 1 0.38 0.98 0.32 0.97 0.26 0.94 0.2 0.91 0.15 0.87 0.1 0.82 0.05 0.77 -0.05 0.67 -0.1 0.62 -0.15 0.57 -0.2 0.53 -0.26 0.5 -0.32 0.47 -0.38 0.46 -0.44 0.44 -0.5 0.44 -0.56 0.44 -0.62 0.46 -0.68 0.47 -0.74 0.5 -0.8 0.53 -0.85 0.57 -0.9 0.62 -0.95 0.67',
+                    'shape-polygon-points': '-0.95 -0.77 -0.9 -0.82 -0.85 -0.87 -0.8 -0.91 -0.74 -0.94 -0.68 -0.97 -0.62' +
+                    ' -0.98 -0.56 -1 -0.5 -1 -0.44 -1 -0.38 -0.98 -0.32 -0.97 -0.26 -0.94 -0.2 -0.91 -0.15 -0.87 -0.1' +
+                    ' -0.82 -0.05 -0.77 0.05 -0.67 0.1 -0.62 0.15 -0.57 0.2 -0.53 0.26 -0.5 0.32 -0.47 0.38 -0.46 0.44' +
+                    ' -0.44 0.5 -0.44 0.56 -0.44 0.62 -0.46 0.68 -0.47 0.74 -0.5 0.8 -0.53 0.85 -0.57 0.9 -0.62 0.95' +
+                    ' -0.67 0.95 0.77 0.9 0.82 0.85 0.87 0.8 0.91 0.74 0.94 0.68 0.97 0.62 0.98 0.56 1 0.5 1 0.44 1' +
+                    ' 0.38 0.98 0.32 0.97 0.26 0.94 0.2 0.91 0.15 0.87 0.1 0.82 0.05 0.77 -0.05 0.67 -0.1 0.62 -0.15' +
+                    ' 0.57 -0.2 0.53 -0.26 0.5 -0.32 0.47 -0.38 0.46 -0.44 0.44 -0.5 0.44 -0.56 0.44 -0.62 0.46 -0.68' +
+                    ' 0.47 -0.74 0.5 -0.8 0.53 -0.85 0.57 -0.9 0.62 -0.95 0.67',
                     'height': 60,
                     'width': 100,
-                    'background-color': environment.colors.undefined,
+                    'background-color': this.constants.colors.undefined,
                     'background-position-x': '0px',
                     'background-image': function (ele) {
                         if (ele.data().quantities.SUCCESSFUL === undefined) {
@@ -634,6 +671,9 @@ export class ViciComponent implements OnInit {
                     'shape-polygon-points': '1 -0.4 0 -0.8 -1 -0.4 0 0 1 -0.4 1 0.6 0 1 0 0 0 1 -1 0.6 -1 -0.4 0 0 1 -0.4',
                     'height': 60,
                     'width': 50,
+                    'border-color': '#000',
+                    'border-width': '1px',
+                    'border-style': 'solid',
                 }
             },
             {
@@ -661,6 +701,9 @@ export class ViciComponent implements OnInit {
                     'shape-polygon-points': '1 0 1 0.6 0.5 0.8 0 0.6 -0.5 0.8 -1 0.6 -1 0 -0.5 -0.2 -0.5 -0.8 0 -1 0.5 -0.8 0.5 -0.2 1 0  0.5 0.2 0.5 0.8 0.5 0.2 0 0 0 0.6 0 0 -0.5 0.2 -0.5 0.8 -0.5 0.2 -1 0 -0.5 -0.2 0 0 0.5 -0.2 0 0 0 -0.6 -0.5 -0.8 0 -0.6 0.5 -0.8 0.5 -0.2 1 0',
                     'height': 70,
                     'width': 70,
+                    'border-color': '#000',
+                    'border-width': '1px',
+                    'border-style': 'solid',
                 }
             },
             {
@@ -678,7 +721,7 @@ export class ViciComponent implements OnInit {
                         }
                         return (value * 100 / ele.data().quantity).toString() + '%';
                     },
-                    'pie-1-background-color': environment.colors.pass,
+                    'pie-1-background-color': this.constants.colors.pass,
                     'pie-2-background-size': function (ele) {
                         /** @namespace ele.data().quantities.FAILURE */
                         let value = (ele.data().quantities.FAILURE);
@@ -687,7 +730,7 @@ export class ViciComponent implements OnInit {
                         }
                         return (value * 100 / ele.data().quantity).toString() + '%';
                     },
-                    'pie-2-background-color': environment.colors.fail,
+                    'pie-2-background-color': this.constants.colors.fail,
                     'pie-3-background-size': function (ele) {
                         /** @namespace ele.data().quantities.INCONCLUSIVE */
                         let value = (ele.data().quantities.INCONCLUSIVE);
@@ -696,20 +739,21 @@ export class ViciComponent implements OnInit {
                         }
                         return (value * 100 / ele.data().quantity).toString() + '%';
                     },
-                    'pie-3-background-color': environment.colors.undefined
+                    'pie-3-background-color': this.constants.colors.undefined
                 }
             },
             {
                 selector: 'node[type ^= "EiffelEnvironmentDefinedEvent"]',
                 style: {
-                    'shape': 'polygon',
-                    'shape-polygon-points': '1 0 0.97 -0.26 0.87 -0.5 0.71 -0.71 0.5 -0.87 0.26 -0.97 ' +
-                    '0 -1 -0.26 -0.97 -0.5 -0.87 -0.71 -0.71 -0.87 -0.5 -0.6 -0.6 0 -0.7 0.6 -0.6 0.87 -0.5 0.6 -0.6 0 -0.7 -0.6 -0.6 -0.87 -0.5 -0.97 -0.26 ' +
-                    '-1 0 1 0 -1 0 -0.97 0.26 -0.87 0.5 -0.6 0.6 0 0.7 0.6 0.6 0.87 0.5 0.6 0.6 0 0.7 -0.6 0.6 -0.87 0.5 -0.71 0.71 -0.5 0.87 -0.6 0.6 -0.7 0 -0.6 -0.6 -0.5 -0.87 -0.6 -0.6 -0.7 0 -0.6 0.6 -0.5 0.87 -0.26 0.97 ' +
-                    '0 1 0 -1 0 1 0.26 0.97 0.5 0.87 0.6 0.6 0.7 0 0.6 -0.6 0.5 -0.87 0.6 -0.6 0.7 0 0.6 0.6 0.5 0.87 0.71 0.71 0.87 0.5 0.97 0.26 1 0',
+                    // 'shape': 'polygon',
+                    // 'shape-polygon-points': '1 0 0.97 -0.26 0.87 -0.5 0.71 -0.71 0.5 -0.87 0.26 -0.97 ' +
+                    // '0 -1 -0.26 -0.97 -0.5 -0.87 -0.71 -0.71 -0.87 -0.5 -0.6 -0.6 0 -0.7 0.6 -0.6 0.87 -0.5 0.6 -0.6 0 -0.7 -0.6 -0.6 -0.87 -0.5 -0.97 -0.26 ' +
+                    // '-1 0 1 0 -1 0 -0.97 0.26 -0.87 0.5 -0.6 0.6 0 0.7 0.6 0.6 0.87 0.5 0.6 0.6 0 0.7 -0.6 0.6 -0.87 0.5 -0.71 0.71 -0.5 0.87 -0.6 0.6 -0.7 0 -0.6 -0.6 -0.5 -0.87 -0.6 -0.6 -0.7 0 -0.6 0.6 -0.5 0.87 -0.26 0.97 ' +
+                    // '0 1 0 -1 0 1 0.26 0.97 0.5 0.87 0.6 0.6 0.7 0 0.6 -0.6 0.5 -0.87 0.6 -0.6 0.7 0 0.6 0.6 0.5 0.87 0.71 0.71 0.87 0.5 0.97 0.26 1 0',
+                    'shape': 'ellipse',
                     'height': 50,
                     'width': 50,
-                    'border-width': '2px',
+                    'border-width': '1px',
                 }
             },
             {
@@ -719,6 +763,9 @@ export class ViciComponent implements OnInit {
                     'shape-polygon-points': '-0.33 -0.8 -0.35 -0.81 -0.37 -0.83 -0.39 -0.85 -0.4 -0.87 -0.4 -0.9 -0.4 -0.93 -0.39 -0.95 -0.37 -0.97 -0.35 -0.99 -0.33 -1 -0.3 -1 -0.27 -1 -0.25 -0.99 -0.23 -0.97 -0.21 -0.95 -0.2 -0.93 -0.2 -0.9 -0.2 -0.9 -0.2 -0.87 -0.21 -0.85 -0.23 -0.83 -0.25 -0.81 -0.27 -0.8 -0.27 -0.64 0.25 -0.09 0.27 -0.1 0.3 -0.1 0.33 -0.1 0.35 -0.09 0.37 -0.07 0.39 -0.05 0.4 -0.03 0.4 0 0.4 0 0.4 0.03 0.39 0.05 0.37 0.07 0.35 0.09 0.33 0.1 0.3 0.1 0.27 0.1 0.25 0.09 0.23 0.07 0.21 0.05 0.2 0.03 0.2 0 -0.27 -0.5 -0.27 0.5 -0.12 0.5 -0.3 0.7 -0.48 0.5 -0.33 0.5',
                     'height': 70,
                     'width': 70,
+                    'border-color': '#000',
+                    'border-width': '1px',
+                    'border-style': 'solid',
                 }
             },
             {
@@ -728,47 +775,38 @@ export class ViciComponent implements OnInit {
                     'shape-polygon-points': '-0.33 -0.8 -0.35 -0.81 -0.37 -0.83 -0.39 -0.85 -0.4 -0.87 -0.4 -0.9 -0.4 -0.93 -0.39 -0.95 -0.37 -0.97 -0.35 -0.99 -0.33 -1 -0.3 -1 -0.27 -1 -0.25 -0.99 -0.23 -0.97 -0.21 -0.95 -0.2 -0.93 -0.2 -0.9 -0.2 -0.9 -0.2 -0.87 -0.21 -0.85 -0.23 -0.83 -0.25 -0.81 -0.27 -0.8 -0.27 -0.64 0.25 -0.09 0.27 -0.1 0.3 -0.1 0.33 -0.1 0.35 -0.09 0.37 -0.07 0.39 -0.05 0.4 -0.03 0.4 0 0.4 0 0.4 0.03 0.39 0.05 0.37 0.07 0.35 0.09 0.33 0.1 0.3 0.1 0.27 0.1 0.25 0.09 0.25 0.09 -0.27 0.38 -0.27 0.28 0.2 0 -0.27 -0.5 -0.27 0.5 -0.12 0.5 -0.3 0.7 -0.48 0.5 -0.33 0.5',
                     'height': 70,
                     'width': 70,
+                    'border-color': '#000',
+                    'border-width': '1px',
+                    'border-style': 'solid',
                 }
             },
             {
                 selector: 'node[type ^= "TestCase"]',
                 style: {
-                    'background-color': environment.colors.undefined,
-                    'shape': 'rectangle',
+                    'background-color': this.constants.colors.undefined,
+                    'shape': 'roundrectangle',
                     'height': 50,
-                    'width': 100,
+                    'width': 80,
                     'background-image': function (ele) {
-                        if (ele.data().quantities.SUCCESSFUL === undefined) {
-                            ele.data().quantities.SUCCESSFUL = 0;
-                        }
-                        if (ele.data().quantities.UNSUCCESSFUL === undefined) {
-                            ele.data().quantities.UNSUCCESSFUL = 0;
-                        }
-                        return statusImages[Math.floor((ele.data().quantities.SUCCESSFUL / ele.data().quantity) * 100)][Math.floor((ele.data().quantities.UNSUCCESSFUL / ele.data().quantity) * 100)]
+                        return statusImages[ele.data().rates.success][ele.data().rates.fail]
                     },
                     'background-height': '100%',
                     'background-width': '100%',
-                    'background-position-x': '0px'
+                    'background-position-x': '0px',
                 }
             },
             {
                 selector: 'node[type ^= "TestSuite"]',
                 style: {
-                    'shape': 'rectangle',
-                    'border-style': 'double', // solid, dotted, dashed, or double.
-                    'border-width': '6px', // The size of the node’s border.
-                    'height': 50,
+                    'shape': 'roundrectangle',
+                    // 'border-style': 'double', // solid, dotted, dashed, or double.
+                    // 'border-width': '6px', // The size of the node’s border.
+                    'height': 80,
                     'width': 100,
-                    'background-color': environment.colors.undefined,
+                    'background-color': this.constants.colors.undefined,
                     'background-position-x': '0px',
                     'background-image': function (ele) {
-                        if (ele.data().quantities.SUCCESSFUL === undefined) {
-                            ele.data().quantities.SUCCESSFUL = 0;
-                        }
-                        if (ele.data().quantities.FAILED === undefined) {
-                            ele.data().quantities.FAILED = 0;
-                        }
-                        return statusImages[Math.floor((ele.data().quantities.SUCCESSFUL / ele.data().quantity) * 100)][Math.floor((ele.data().quantities.FAILED / ele.data().quantity) * 100)]
+                        return statusImages[ele.data().rates.success][ele.data().rates.fail]
                     },
                     'background-height': '100%',
                     'background-width': '100%',
@@ -777,7 +815,7 @@ export class ViciComponent implements OnInit {
             {
                 selector: 'node[type $= "(Culled)"]',
                 style: {
-                    'background-color': environment.colors.undefined,
+                    'background-color': this.constants.colors.undefined,
                 }
             },
         ];
@@ -911,11 +949,11 @@ export class ViciComponent implements OnInit {
             this.updateSystemReferences();
 
             let target = undefined;
-            if (this.currentView === environment.views.aggregation) {
+            if (this.currentView === this.constants.views.aggregation) {
                 target = this.currentAggregationTarget;
-            } else if (this.currentView === environment.views.details) {
+            } else if (this.currentView === this.constants.views.details) {
                 target = this.currentDetailsTarget;
-            } else if (this.currentView === environment.views.eventChain) {
+            } else if (this.currentView === this.constants.views.eventChain) {
                 target = this.currentEventChainTarget;
             }
             this.changeView(this.currentSystem, this.currentView, target);
@@ -927,7 +965,7 @@ export class ViciComponent implements OnInit {
         });
 
         let canvas = document.createElement('canvas');
-        canvas.width = 100;
+        canvas.width = 1000;
         canvas.height = 1;
         let ctx = canvas.getContext('2d');
         this.statusImages = [];
@@ -935,12 +973,12 @@ export class ViciComponent implements OnInit {
             this.statusImages[pass] = [];
             for (let fail = 0; fail + pass <= 100; fail++) {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = environment.colors.pass;
-                ctx.fillRect(0, 0, pass, 1);
-                ctx.fillStyle = environment.colors.fail;
-                ctx.fillRect(pass, 0, fail, 1);
-                ctx.fillStyle = environment.colors.undefined;
-                ctx.fillRect(pass + fail, 0, (100 - (pass + fail)), 1);
+                ctx.fillStyle = this.constants.colors.pass;
+                ctx.fillRect(0, 0, 10 * pass, 1);
+                ctx.fillStyle = this.constants.colors.fail;
+                ctx.fillRect(10 * pass, 0, 10 * fail, 1);
+                ctx.fillStyle = this.constants.colors.undefined;
+                ctx.fillRect(10 * (pass + fail), 0, 10 * (100 - (pass + fail)), 1);
                 this.statusImages[pass][fail] = canvas.toDataURL('image/jpeg', 1.0);
             }
         }
@@ -949,18 +987,18 @@ export class ViciComponent implements OnInit {
             this.settings = result;
             this.updateSystemReferences();
             this.route.params.subscribe((params: Params) => {
-                let requestedSystem = params[environment.params.system];
-                if (requestedSystem === environment.params.undefined) {
+                let requestedSystem = params[this.constants.params.system];
+                if (requestedSystem === this.constants.params.undefined) {
                     requestedSystem = undefined;
                 }
 
-                let requestedView = params[environment.params.view];
-                if (requestedView === environment.params.undefined) {
+                let requestedView = params[this.constants.params.view];
+                if (requestedView === this.constants.params.undefined) {
                     requestedView = undefined;
                 }
 
-                let requestedTarget = params[environment.params.target];
-                if (requestedTarget === environment.params.undefined) {
+                let requestedTarget = params[this.constants.params.target];
+                if (requestedTarget === this.constants.params.undefined) {
                     requestedTarget = undefined;
                 }
 
@@ -968,16 +1006,16 @@ export class ViciComponent implements OnInit {
 
                 this.currentSystem = requestedSystem;
                 if (this.currentSystem === undefined) {
-                    this.currentSystemName = environment.messages.selectSystem;
+                    this.currentSystemName = this.constants.messages.selectSystem;
                 } else {
                     this.currentSystemName = this.settings.eiffelEventRepositories[this.currentSystem].name;
                 }
                 this.currentView = requestedView;
-                if (requestedView === environment.views.details || requestedView === environment.views.detailsPlot) {
+                if (requestedView === this.constants.views.details || requestedView === this.constants.views.detailsPlot) {
                     this.currentDetailsTarget = requestedTarget;
-                } else if (requestedView === environment.views.eventChain) {
+                } else if (requestedView === this.constants.views.eventChain) {
                     this.currentEventChainTarget = requestedTarget;
-                } else if (requestedView === environment.views.aggregation) {
+                } else if (requestedView === this.constants.views.aggregation) {
                     this.setAggregationTarget(requestedTarget);
                 }
             });

@@ -420,7 +420,8 @@
     </div>
 </div>
 
-<div id="aggregation-container" [hidden]="currentView !== constants.views.aggregation" class="content-container">
+<div id="aggregation-container" [hidden]="currentView !== constants.views.aggregation"
+     class="content-container">
     <div id="aggregation_graph" class="cy"></div>
 
     <div *ngIf="aggregationHoverNode!==undefined && aggregationNodeData !== undefined && aggregationNodeData[aggregationHoverNode] !== undefined"
@@ -459,7 +460,8 @@
     <div id="details_table"></div>
 </div>
 
-<div id="details_plot_container" [hidden]="currentView !== constants.views.detailsPlot" class="content-container">
+<div id="details_plot_container" [hidden]="currentView !== constants.views.detailsPlot"
+     class="content-container">
     <div id="details_plot">
 
     </div>
@@ -468,6 +470,7 @@
     </div>
 </div>
 
-<div id="eventchain-container" [hidden]="currentView !== constants.views.eventChain" class="content-container">
+<div id="eventchain-container" [hidden]="currentView !== constants.views.eventChain"
+     class="content-container">
     <div id="eventchain_graph" class="cy"></div>
 </div>

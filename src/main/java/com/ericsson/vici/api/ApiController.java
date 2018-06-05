@@ -57,23 +57,26 @@ public class ApiController {
     private static final String TYPE_UNKNOWN = "unknown";
 
     private void setQuantities(Node node, Event event) {
+        Outcome outcome = null;
         switch (node.getData().getType()) {
             case TEST_CASE:
-            case ACTIVITY:
             case TEST_SUITE:
 
-                Outcome outcome = null;
+                if (event.getEiffelEvents().containsKey(FINISHED)) {
+                    outcome = event.getEiffelEvents().get(FINISHED).getData().getOutcome();
+                }
+                if (outcome != null && outcome.getVerdict() != null) {
+                    node.getData().increaseQuantity(outcome.getVerdict());
+                } else {
+                    node.getData().increaseQuantity("INCONCLUSIVE");
+                }
+                break;
+            case ACTIVITY:
                 if (event.getEiffelEvents().containsKey(FINISHED)) {
                     outcome = event.getEiffelEvents().get(FINISHED).getData().getOutcome();
                 }
                 if (outcome != null && outcome.getConclusion() != null) {
                     node.getData().increaseQuantity(outcome.getConclusion());
-                } else if (outcome != null && outcome.getVerdict() != null) {
-                    if (outcome.getVerdict().equals("PASSED")) {
-                        node.getData().increaseQuantity("SUCCESSFUL");
-                    } else {
-                        node.getData().increaseQuantity(outcome.getVerdict());
-                    }
                 } else {
                     node.getData().increaseQuantity("INCONCLUSIVE");
                 }
