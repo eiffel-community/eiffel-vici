@@ -11,7 +11,6 @@ import {MomentModule} from "angular2-moment";
 import {NgbModule} from '@ng-bootstrap/ng-bootstrap';
 import {AngularFontAwesomeModule} from "angular-font-awesome";
 import {DataTablesModule} from "angular-datatables";
-import {TimeAgoPipe} from 'time-ago-pipe';
 
 const appRoutes: Routes = [
     {
@@ -32,7 +31,6 @@ const appRoutes: Routes = [
         AppComponent,
         OcticonsDirective,
         ViciComponent,
-        TimeAgoPipe
     ],
     imports: [
         BrowserModule,

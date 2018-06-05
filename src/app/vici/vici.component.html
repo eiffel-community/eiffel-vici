@@ -1,3 +1,4 @@
+<script src="../../../../../jquery-timeago/jquery.timeago.js"></script>
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <!--<a class="navbar-brand" [routerLink]="['']" routerLinkActive="active">Vici</a>-->
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
@@ -57,7 +58,7 @@
         <ul class="navbar-nav w-100 justify-content-end">
 
             <li class="nav-item dropdown ">
-                <div class="btn-group">
+                <div class="btn-group" id="historyDropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="navbarHistory" role="button" data-toggle="dropdown"
                        aria-haspopup="true" aria-expanded="false"
                        [ngClass]="{'disabled': history.length <= 0}">
@@ -67,7 +68,7 @@
                         <a *ngFor="let unit of history"
                            class="dropdown-item"
                            [routerLink]="['', unit.systemId, unit.view, unit.target]">
-                            {{ unit.msg }} - {{unit.date | timeAgo}}
+                            {{ unit.msg }} - {{unit.dateString}}
                         </a>
                         <!--<div class="dropdown-divider"></div>-->
                         <!--<a class="dropdown-item" href="#">Something else here</a>-->

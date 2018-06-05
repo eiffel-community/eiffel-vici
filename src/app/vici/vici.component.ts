@@ -1,4 +1,5 @@
 import {ApplicationRef, Component, ComponentFactoryResolver, Injector, OnInit, Renderer2} from '@angular/core';
+import {ToolsService} from "../tools.service";
 import {environment} from "../../environments/environment";
 import {Settings} from "../settings";
 import {ActivatedRoute, Params, Router} from "@angular/router";
@@ -14,6 +15,7 @@ import {CustomCache} from "../custom-cache";
 import {HistoryUnit} from "../history-unit";
 import * as vis from 'vis';
 import {Graph2dOptions} from 'vis';
+import {timer} from 'rxjs/observable/timer';
 
 // Register cy plugins.
 cytoscape.use(dagre);
@@ -53,6 +55,18 @@ export class ViciComponent implements OnInit {
     };
     constants = ViciComponent.VICI_CONSTANTS;
 
+    constructor(
+        private http: HttpClient,
+        private router: Router,
+        private route: ActivatedRoute,
+        private componentFactoryResolver: ComponentFactoryResolver,
+        private appRef: ApplicationRef,
+        private injector: Injector,
+        private renderer: Renderer2,
+        private tools: ToolsService,
+    ) {
+    }
+
     settings: Settings;
 
     systemReferences: SystemReference[];
@@ -90,17 +104,7 @@ export class ViciComponent implements OnInit {
     aggregationLockTooltip: boolean = false;
 
 
-    constructor(
-        private http: HttpClient,
-        private router: Router,
-        private route: ActivatedRoute,
-        private componentFactoryResolver: ComponentFactoryResolver,
-        private appRef: ApplicationRef,
-        private injector: Injector,
-        private renderer: Renderer2,
-    ) {
-    }
-
+    // Alternative to console.log, will not print in production build.
     debug(msg: any): void {
         if (!environment.production) {
             console.log(msg);
@@ -127,7 +131,6 @@ export class ViciComponent implements OnInit {
         } else {
             this.currentSystemName = this.settings.eiffelEventRepositories[this.currentSystem].name;
         }
-
     }
 
     uploadCurrentRepositorySettings(): void {
@@ -230,6 +233,12 @@ export class ViciComponent implements OnInit {
         }
     }
 
+    updateHistoryDates(): void {
+        this.history.forEach((unit) => {
+            unit.dateString = this.tools.timeago(unit.date);
+        });
+    }
+
     private setAggregationTarget(target: string): void {
         if (target === undefined) {
             this.aggregationHoverNode = undefined;
@@ -270,8 +279,7 @@ export class ViciComponent implements OnInit {
         return timeline;
     }
 
-    private generateNodeData(elements: any[]): any {
-        this.aggregationNodeData = {};
+    private getImprovedNodeData(elements: any[]): any {
         for (let nodeData in elements) {
             let tmp = elements[nodeData].data;
             if (tmp.quantities !== undefined && Object.keys(tmp.quantities).length !== 0 && tmp.quantities.constructor === Object) {
@@ -301,9 +309,8 @@ export class ViciComponent implements OnInit {
 
                 tmp['rates'] = rates;
             }
-            this.aggregationNodeData[tmp.id] = tmp;
+            elements[tmp.id] = tmp;
         }
-
         return elements;
     }
 
@@ -319,7 +326,7 @@ export class ViciComponent implements OnInit {
                         this.aggregationTimeline.destroy();
                     }
                     this.http.post<any>('/api/aggregationGraph', repository.preferences).subscribe(result => {
-                        result.data.elements = this.generateNodeData(result.data.elements);
+                        this.aggregationNodeData = result.data.elements = this.getImprovedNodeData(result.data.elements);
                         this.aggregationCy = this.renderCytoscape('aggregation_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data.elements, repository.preferences, undefined);
 
                         this.aggregationCy.on('tap', 'node', (evt) => {
@@ -574,7 +581,7 @@ export class ViciComponent implements OnInit {
                         this.activateLoader();
                         repository.preferences.eventChainTargetId = requestedTarget;
                         this.http.post<any>('/api/eventChainGraph', repository.preferences).subscribe(result => {
-                            result.data.elements = this.generateNodeData(result.data.elements);
+                            result.data.elements = this.getImprovedNodeData(result.data.elements);
                             this.eventChainCy = this.renderCytoscape('eventchain_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data.elements, repository.preferences, requestedTarget);
                             this.cache.eventChain.systemId = requestedSystem;
                             this.cache.eventChain.target = requestedTarget;
@@ -941,12 +948,15 @@ export class ViciComponent implements OnInit {
 
     ngOnInit() {
         this.debug('ngOnInit Vici component');
+
+        // Init some variable values
         this.cache = new CustomCache();
         this.cache.aggregation = {systemId: undefined, target: undefined};
         this.cache.details = {systemId: undefined, target: undefined};
         this.cache.detailsPlot = {systemId: undefined, target: undefined};
         this.cache.eventChain = {systemId: undefined, target: undefined};
 
+        // Some jQuery / Bootstrap event handling
         $('#settingsModal').on('hide.bs.modal', () => {
             this.updateSystemReferences();
 
@@ -966,6 +976,11 @@ export class ViciComponent implements OnInit {
             this.newSystemInput.url = '';
         });
 
+        $('#historyDropdown').on('show.bs.dropdown', () => {
+            this.updateHistoryDates();
+        });
+
+        // Generating status images for the aggregation graph nodes.
         let canvas = document.createElement('canvas');
         canvas.width = 1000;
         canvas.height = 1;
@@ -985,6 +1000,12 @@ export class ViciComponent implements OnInit {
             }
         }
 
+        // Scheduled tasks
+        timer(0, 45000).subscribe(() => {
+            this.updateHistoryDates();
+        });
+
+        // Fetching and handling settings from the server.
         this.http.get<Settings>('/api/getSettings').subscribe(result => {
             this.settings = result;
             this.updateSystemReferences();
