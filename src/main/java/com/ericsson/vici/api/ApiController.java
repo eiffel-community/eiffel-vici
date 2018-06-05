@@ -91,6 +91,34 @@ public class ApiController {
         }
     }
 
+    private void setRates(Node node) {
+        if (node.getData().getType().equals(TEST_CASE)
+                || node.getData().getType().equals(TEST_SUITE)
+                || node.getData().getType().equals(ACTIVITY)
+                || node.getData().getType().equals("EiffelConfidenceLevelModifiedEvent")) {
+            Rates rates = new Rates();
+            if (node.getData().getQuantities().containsKey("SUCCESS")) {
+                rates.setSuccess(Math.round((100.0f * node.getData().getQuantities().get("SUCCESS")) / node.getData().getQuantity()));
+            } else if (node.getData().getQuantities().containsKey("SUCCESSFUL")) {
+                rates.setSuccess(Math.round((100.0f * node.getData().getQuantities().get("SUCCESSFUL")) / node.getData().getQuantity()));
+            } else if (node.getData().getQuantities().containsKey("PASSED")) {
+                rates.setSuccess(Math.round((100.0f * node.getData().getQuantities().get("PASSED")) / node.getData().getQuantity()));
+            }
+
+            if (node.getData().getQuantities().containsKey("UNSUCCESSFUL")) {
+                rates.setFail(Math.round((100.0f * node.getData().getQuantities().get("UNSUCCESSFUL")) / node.getData().getQuantity()));
+            } else if (node.getData().getQuantities().containsKey("FAILURE")) {
+                rates.setFail(Math.round((100.0f * node.getData().getQuantities().get("FAILURE")) / node.getData().getQuantity()));
+            } else if (node.getData().getQuantities().containsKey("FAILED")) {
+                rates.setFail(Math.round((100.0f * node.getData().getQuantities().get("FAILED")) / node.getData().getQuantity()));
+            }
+
+            rates.setUnknown(100 - rates.getSuccess() - rates.getFail());
+
+            node.getData().setRates(rates);
+        }
+    }
+
     private long getSortTime(Event event) {
         if (event.getType().equals(REDIRECT)) {
             return 0;
@@ -199,6 +227,10 @@ public class ApiController {
                     }
                 }
             }
+        }
+
+        for (Node node : nodes.values()) {
+            setRates(node);
         }
 
         elements.addAll(nodes.values());
@@ -591,6 +623,10 @@ public class ApiController {
                 node.getPosition().setY(y);
                 lastPositions.put(y, node.getPosition().getX());
             }
+        }
+
+        for (Node node : nodes.values()) {
+            setRates(node);
         }
 
         graph.getElements().addAll(nodes.values());

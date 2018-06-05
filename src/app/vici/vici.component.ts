@@ -279,40 +279,6 @@ export class ViciComponent implements OnInit {
         return timeline;
     }
 
-    private getImprovedNodeData(elements: any[]): any {
-        for (let nodeData in elements) {
-            let tmp = elements[nodeData].data;
-            if (tmp.quantities !== undefined && Object.keys(tmp.quantities).length !== 0 && tmp.quantities.constructor === Object) {
-                let rates = {
-                    success: 0,
-                    fail: 0,
-                    unknown: 0,
-                };
-
-                if (tmp.quantities.SUCCESS !== undefined) {
-                    rates.success = Math.round((100 * tmp.quantities.SUCCESS) / tmp.quantity);
-                } else if (tmp.quantities.SUCCESSFUL !== undefined) {
-                    rates.success = Math.round((100 * tmp.quantities.SUCCESSFUL) / tmp.quantity);
-                } else if (tmp.quantities.PASSED !== undefined) {
-                    rates.success = Math.round((100 * tmp.quantities.PASSED) / tmp.quantity);
-                }
-
-                if (tmp.quantities.UNSUCCESSFUL !== undefined) {
-                    rates.fail = Math.round((100 * tmp.quantities.UNSUCCESSFUL) / tmp.quantity);
-                } else if (tmp.quantities.FAILURE !== undefined) {
-                    rates.fail = Math.round((100 * tmp.quantities.FAILURE) / tmp.quantity);
-                } else if (tmp.quantities.FAILED !== undefined) {
-                    rates.fail = Math.round((100 * tmp.quantities.FAILED) / tmp.quantity);
-                }
-
-                rates.unknown = 100 - rates.success - rates.fail;
-
-                tmp['rates'] = rates;
-            }
-            elements[tmp.id] = tmp;
-        }
-        return elements;
-    }
 
     private changeView(requestedSystem: string, requestedView: string, requestedTarget: string): void {
         if (requestedView === this.constants.views.aggregation) {
@@ -326,7 +292,14 @@ export class ViciComponent implements OnInit {
                         this.aggregationTimeline.destroy();
                     }
                     this.http.post<any>('/api/aggregationGraph', repository.preferences).subscribe(result => {
-                        this.aggregationNodeData = result.data.elements = this.getImprovedNodeData(result.data.elements);
+                        this.aggregationNodeData = {};
+                        for (let nodeData in result.data.elements) {
+                            let tmp = result.data.elements[nodeData].data;
+
+                            this.aggregationNodeData[tmp.id] = tmp;
+                        }
+
+                        // this.debug(this.aggregationNodeData);
                         this.aggregationCy = this.renderCytoscape('aggregation_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data.elements, repository.preferences, undefined);
 
                         this.aggregationCy.on('tap', 'node', (evt) => {
@@ -552,7 +525,7 @@ export class ViciComponent implements OnInit {
                         this.activateLoader();
                         repository.preferences.eventChainTargetId = requestedTarget;
                         this.http.post<any>('/api/eventChainGraph', repository.preferences).subscribe(result => {
-                            result.data.elements = this.getImprovedNodeData(result.data.elements);
+                            // this.debug(result);
                             this.eventChainCy = this.renderCytoscape('eventchain_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data.elements, repository.preferences, requestedTarget);
                             this.cache.eventChain.systemId = requestedSystem;
                             this.cache.eventChain.target = requestedTarget;
@@ -898,7 +871,6 @@ export class ViciComponent implements OnInit {
                 data: plotData.data,
                 columns: preDefColumns.concat(plotData.columns),
                 scrollY: 'calc(100vh - 13rem)',
-                // scrollY: '100%',
                 scrollCollapse: true,
                 lengthMenu: [[20, 200, -1], [20, 200, "All"]],
                 order: [4, 'asc'],
