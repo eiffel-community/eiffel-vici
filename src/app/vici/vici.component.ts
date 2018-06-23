@@ -295,11 +295,21 @@ export class ViciComponent implements OnInit {
                         this.aggregationNodeData = {};
                         for (let nodeData in result.data.elements) {
                             let tmp = result.data.elements[nodeData].data;
+                            if (tmp.quantities !== undefined) {
+                                let tmpTable = [];
+                                for (let property in tmp.quantities) {
+                                    tmpTable.push({
+                                        'key': property,
+                                        'value': tmp.quantities[property],
+                                    })
+                                }
+                                tmp['table'] = tmpTable;
+                            }
 
                             this.aggregationNodeData[tmp.id] = tmp;
                         }
 
-                        // this.debug(this.aggregationNodeData);
+                        this.debug(this.aggregationNodeData);
                         this.aggregationCy = this.renderCytoscape('aggregation_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data.elements, repository.preferences, undefined);
 
                         this.aggregationCy.on('tap', 'node', (evt) => {
@@ -698,7 +708,7 @@ export class ViciComponent implements OnInit {
             {
                 selector: 'node[type ^= "EiffelEnvironmentDefinedEvent"]',
                 style: {
-                    'shape': 'ellipse',
+                    'shape': 'rhomboid',
                     'height': 50,
                     'width': 50,
                     'border-width': '1px',
@@ -707,23 +717,29 @@ export class ViciComponent implements OnInit {
             {
                 selector: 'node[type ^= "EiffelSourceChangeCreatedEvent"]',
                 style: {
-                    'shape': 'concavehexagon',
+                    'shape': 'octagon',
                     'height': 70,
                     'width': 70,
-                    'border-color': '#000',
-                    'border-width': '1px',
-                    'border-style': 'solid',
+                    'background-color': '#fff',
+                    // Credit: Git Logo by Jason Long is licensed under the Creative Commons Attribution 3.0 Unported License. https://git-scm.com/downloads/logos
+                    'background-image': '/assets/images/Git-Icon-Black.png',
+                    'background-height': '100%',
+                    'background-width': '100%',
+                    'background-position-x': '0px',
                 }
             },
             {
                 selector: 'node[type ^= "EiffelSourceChangeSubmittedEvent"]',
                 style: {
-                    'shape': 'hexagon',
+                    'shape': 'octagon',
                     'height': 70,
                     'width': 70,
-                    'border-color': '#000',
-                    'border-width': '1px',
-                    'border-style': 'solid',
+                    'background-color': '#fff',
+                    // Credit: Git Logo by Jason Long is licensed under the Creative Commons Attribution 3.0 Unported License. https://git-scm.com/downloads/logos
+                    'background-image': '/assets/images/Git-Icon-Black.png',
+                    'background-height': '100%',
+                    'background-width': '100%',
+                    'background-position-x': '0px',
                 }
             },
             {

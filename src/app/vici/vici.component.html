@@ -439,6 +439,13 @@
             <p class="card-text">Containing {{aggregationNodeData[aggregationHoverNode].quantity}}
                 {{aggregationNodeData[aggregationHoverNode].info.Type}} events.</p>
 
+            <table *ngIf="aggregationNodeData[aggregationHoverNode].table !== undefined" class="table table-sm">
+                <tr *ngFor="let tableObject of aggregationNodeData[aggregationHoverNode].table">
+                    <td>{{tableObject.key}}</td>
+                    <td>{{tableObject.value}}</td>
+                </tr>
+            </table>
+
             <div *ngIf="aggregationNodeData[aggregationHoverNode].rates !== undefined"
                  class="progress">
                 <!--<div class="progress-bar bg-success" role="progressbar" style="width: 15%"></div>-->
@@ -451,7 +458,7 @@
         </div>
     </div>
 
-    <div class="timeline-graph-outer" s>
+    <div class="timeline-graph-outer">
         <div class="timeline-graph-inner" id="aggregationTimeline">
         </div>
     </div>
