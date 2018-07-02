@@ -19,21 +19,28 @@ package com.ericsson.vici.entities.Table;
 public class Column {
     private String title;
     private String data;
-    private String defaultContent;
-    private boolean visible;
+    private String defaultContent = "";
+    private boolean visible = true;
+    // 0 = no render
+    // 1 = render time
+    private int renderType = 0;
 
     public Column(String title, String data) {
         this.title = title;
         this.data = data;
-        defaultContent = "";
-        this.visible = true;
     }
 
     public Column(String title, String data, boolean visible) {
         this.title = title;
         this.data = data;
-        defaultContent = "";
         this.visible = visible;
+    }
+
+    public Column(String title, String data, boolean visible, int renderType) {
+        this.title = title;
+        this.data = data;
+        this.visible = visible;
+        this.renderType = 1;
     }
 
     public String getTitle() {
@@ -66,5 +73,13 @@ public class Column {
 
     public void setVisible(boolean visible) {
         this.visible = visible;
+    }
+
+    public int getRenderType() {
+        return renderType;
+    }
+
+    public void setRenderType(int renderType) {
+        this.renderType = renderType;
     }
 }

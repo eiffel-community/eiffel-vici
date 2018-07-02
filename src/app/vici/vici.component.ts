@@ -558,6 +558,9 @@ export class ViciComponent implements OnInit {
                     this.makeHistory(requestedSystem, requestedView, requestedTarget, 'Event chain for ' + repository.name + ' ' + requestedTarget);
                     if (requestedSystem !== this.cache.eventChain.systemId || requestedTarget !== this.cache.eventChain.target) {
                         this.activateLoader();
+                        if (this.eventChainTimeline !== undefined) {
+                            this.eventChainTimeline.destroy();
+                        }
                         repository.preferences.eventChainTargetId = requestedTarget;
                         this.http.post<any>('/api/eventChainGraph', repository.preferences).subscribe(result => {
                             this.debug(result);
@@ -616,7 +619,7 @@ export class ViciComponent implements OnInit {
                             });
 
                             // Timeline
-                            this.aggregationTimeline = this.renderTimeline('eventChainTimeline', result.data.time);
+                            this.eventChainTimeline = this.renderTimeline('eventChainTimeline', result.data.time);
 
 
                             this.cache.eventChain.systemId = requestedSystem;
@@ -639,7 +642,8 @@ export class ViciComponent implements OnInit {
     }
 
     private formatTime(long: number): any {
-        return moment(long).format('YYYY-MM-DD, HH:mm:ss:SSS');
+        // return moment(long).format('YYYY-MM-DD, HH:mm:ss:SSS');
+        return moment(long).format('YYYY-MM-DD, HH:mm:ss');
     }
 
 
@@ -952,8 +956,6 @@ export class ViciComponent implements OnInit {
 
         let plotData = data.data;
 
-        this.debug(plotData);
-
         if (plotData.data.length !== 0) {
             let preDefColumns = [
                 {
@@ -964,10 +966,20 @@ export class ViciComponent implements OnInit {
                 }
             ];
 
+            let columns: any = preDefColumns.concat(plotData.columns);
+            columns.forEach((column) => {
+                if (column.renderType === 1) {
+
+                    column.render = (data, type, row, meta) => {
+                        return this.formatTime(Number(data));
+                    }
+                }
+            });
+
             let tmp = container.DataTable({
                 destroy: true,
                 data: plotData.data,
-                columns: preDefColumns.concat(plotData.columns),
+                columns: columns,
                 scrollY: 'calc(100vh - 13rem)',
                 scrollCollapse: true,
                 lengthMenu: [[20, 200, -1], [20, 200, "All"]],
