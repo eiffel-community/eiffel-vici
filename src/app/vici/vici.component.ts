@@ -85,12 +85,15 @@ export class ViciComponent implements OnInit {
 
     aggregationNodeData: any;
     aggregationHoverNode: string;
-
     aggregationCy: any;
     aggregationTimeline: any;
 
-    eventChainCy: any;
     detailsDatatable: any;
+
+    eventChainNodeData: any;
+    eventChainHoverNode: any;
+    eventChainCy: any;
+    eventChainTimeline: any;
 
     history: Array<HistoryUnit> = [];
     newSystemInput = {
@@ -102,6 +105,7 @@ export class ViciComponent implements OnInit {
     isUploadingRepository: boolean = false;
     isLoading: boolean = false;
     aggregationLockTooltip: boolean = false;
+    eventChainLockTooltip: boolean = false;
 
 
     // Alternative to console.log, will not print in production build.
@@ -248,6 +252,8 @@ export class ViciComponent implements OnInit {
             this.aggregationHoverNode = target;
             this.aggregationLockTooltip = true;
             this.currentAggregationTarget = target;
+
+            // this.aggregationCy.elements('node[id = ' + target + ']').select();
         }
     }
 
@@ -292,6 +298,8 @@ export class ViciComponent implements OnInit {
                         this.aggregationTimeline.destroy();
                     }
                     this.http.post<any>('/api/aggregationGraph', repository.preferences).subscribe(result => {
+                        this.debug(result);
+
                         this.aggregationNodeData = {};
                         for (let nodeData in result.data.elements) {
                             let tmp = result.data.elements[nodeData].data;
@@ -303,13 +311,16 @@ export class ViciComponent implements OnInit {
                                         'value': tmp.quantities[property],
                                     })
                                 }
-                                tmp['table'] = tmpTable;
+                                if (Object.keys(tmpTable).length !== 0) {
+                                    tmp['table'] = tmpTable;
+                                }
                             }
 
                             this.aggregationNodeData[tmp.id] = tmp;
                         }
 
-                        this.debug(this.aggregationNodeData);
+                        // this.debug(this.aggregationNodeData);
+
                         this.aggregationCy = this.renderCytoscape('aggregation_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data.elements, repository.preferences, undefined);
 
                         this.aggregationCy.on('tap', 'node', (evt) => {
@@ -535,8 +546,39 @@ export class ViciComponent implements OnInit {
                         this.activateLoader();
                         repository.preferences.eventChainTargetId = requestedTarget;
                         this.http.post<any>('/api/eventChainGraph', repository.preferences).subscribe(result => {
-                            // this.debug(result);
+                            this.eventChainNodeData = {};
+                            for (let nodeData in result.data.elements) {
+                                let tmp = result.data.elements[nodeData].data;
+                                this.eventChainNodeData[tmp.id] = tmp;
+
+                                // for(let property in tmp.times){
+                                //     tmp.times.property = tmp.times.property = moment()
+                                // }
+
+                                if (tmp.quantities !== undefined) {
+                                    for (let property in tmp.quantities) {
+                                        if (tmp.quantities[property] > 0) {
+                                            tmp.result = property;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            this.debug(this.eventChainNodeData);
                             this.eventChainCy = this.renderCytoscape('eventchain_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data.elements, repository.preferences, requestedTarget);
+
+                            this.eventChainCy.on('mouseover', 'node', (evt) => {
+                                if (!this.eventChainLockTooltip) {
+                                    this.eventChainHoverNode = evt.target.id();
+                                }
+                            });
+
+                            this.eventChainCy.on('mouseout ', 'node', () => {
+                                if (!this.eventChainLockTooltip) {
+                                    this.eventChainHoverNode = undefined;
+                                }
+                            });
+
                             this.cache.eventChain.systemId = requestedSystem;
                             this.cache.eventChain.target = requestedTarget;
 
@@ -865,12 +907,14 @@ export class ViciComponent implements OnInit {
 
         let plotData = data.data;
 
+        this.debug(plotData);
+
         if (plotData.data.length !== 0) {
             let preDefColumns = [
                 {
                     title: 'Chain',
                     render: function (data: any, type: any, full: any) {
-                        return '<button view-event-id="' + full.id + '" class="btn btn-default btn-xs row-button">Graph</button>';
+                        return '<button view-event-id="' + full.id + '" class="btn btn-default btn-sm">Graph</button>';
                     }
                 }
             ];
@@ -954,7 +998,7 @@ export class ViciComponent implements OnInit {
         }
 
         // Scheduled tasks
-        timer(0, 45000).subscribe(() => {
+        timer(0, 15000).subscribe(() => {
             this.updateHistoryDates();
         });
 

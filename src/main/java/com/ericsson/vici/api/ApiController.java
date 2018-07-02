@@ -314,7 +314,7 @@ public class ApiController {
                     columns.add(new Column("Event", key));
                     break;
                 case "id":
-                    columns.add(new Column("Eiffel ID", key));
+                    columns.add(new Column("Eiffel ID", key, false));
                     break;
                 case "type":
                     columns.add(new Column("Type", key));

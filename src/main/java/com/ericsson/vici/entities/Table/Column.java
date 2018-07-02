@@ -20,11 +20,20 @@ public class Column {
     private String title;
     private String data;
     private String defaultContent;
+    private boolean visible;
 
     public Column(String title, String data) {
         this.title = title;
         this.data = data;
         defaultContent = "";
+        this.visible = true;
+    }
+
+    public Column(String title, String data, boolean visible) {
+        this.title = title;
+        this.data = data;
+        defaultContent = "";
+        this.visible = visible;
     }
 
     public String getTitle() {
@@ -49,5 +58,13 @@ public class Column {
 
     public void setDefaultContent(String defaultContent) {
         this.defaultContent = defaultContent;
+    }
+
+    public boolean isVisible() {
+        return visible;
+    }
+
+    public void setVisible(boolean visible) {
+        this.visible = visible;
     }
 }
