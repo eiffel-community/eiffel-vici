@@ -487,10 +487,10 @@
     <div *ngIf="eventChainHoverNode!==undefined && eventChainNodeData !== undefined && eventChainNodeData[eventChainHoverNode] !== undefined"
          class="card border-dark mb-3 cy-tooltip" style="max-width: 18rem;">
         <div class="card-header">{{eventChainNodeData[eventChainHoverNode].label}}
-            <!--<button *ngIf="eventChainLockTooltip" type="button" class="close" aria-label="Close"-->
-            <!--(click)="router.navigate(['', currentSystem, currentView, constants.params.undefined])">-->
-            <!--<span aria-hidden="true">&times;</span>-->
-            <!--</button>-->
+            <button *ngIf="eventChainLockTooltip" type="button" class="close" aria-label="Close"
+                    (click)="setEventChainHoverTarget(undefined)">
+                <span aria-hidden="true">&times;</span>
+            </button>
         </div>
         <div class="card-body text-dark">
 

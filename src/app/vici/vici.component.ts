@@ -257,6 +257,20 @@ export class ViciComponent implements OnInit {
         }
     }
 
+    private setChainTarget(target: string): void {
+        if (target === undefined) {
+            this.eventChainHoverNode = undefined;
+            this.eventChainLockTooltip = false;
+            this.currentEventChainTarget = undefined;
+        } else {
+            this.eventChainHoverNode = target;
+            this.eventChainLockTooltip = true;
+            this.currentEventChainTarget = target;
+
+            // this.aggregationCy.elements('node[id = ' + target + ']').select();
+        }
+    }
+
     private renderTimeline(containerId: string, data: any): any {
         let container = document.getElementById(containerId);
 
@@ -579,6 +593,26 @@ export class ViciComponent implements OnInit {
                                 }
                             });
 
+                            this.eventChainCy.on('tap', 'node', (evt) => {
+                                this.router.navigate(['', this.currentSystem, this.constants.views.eventChain, evt.target.id()]);
+                            });
+
+                            this.eventChainCy.on('tap', (evt) => {
+                                if (evt.target === this.eventChainCy) {
+                                    this.setEventChainHoverTarget(undefined);
+                                }
+                            });
+
+                            this.eventChainCy.on('cxttap', (evt) => {
+                                if (evt.target === this.eventChainCy) {
+                                    this.setEventChainHoverTarget(undefined);
+                                }
+                            });
+
+                            this.eventChainCy.on('cxttap ', 'node', (evt) => {
+                                this.setEventChainHoverTarget(evt.target.id());
+                            });
+
                             this.cache.eventChain.systemId = requestedSystem;
                             this.cache.eventChain.target = requestedTarget;
 
@@ -591,6 +625,11 @@ export class ViciComponent implements OnInit {
             }
         }
 
+    }
+
+    setEventChainHoverTarget(target: string): void {
+        this.eventChainLockTooltip = target !== undefined;
+        this.eventChainHoverNode = target;
     }
 
     private formatTime(long: number): any {
