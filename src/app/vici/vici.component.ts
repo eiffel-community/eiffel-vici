@@ -271,7 +271,7 @@ export class ViciComponent implements OnInit {
         }
     }
 
-    private renderTimeline(containerId: string, data: any): any {
+    private renderTimeline(containerId: string, time: any): any {
         let container = document.getElementById(containerId);
 
         // Create a DataSet (allows two way data-binding)
@@ -280,8 +280,8 @@ export class ViciComponent implements OnInit {
             {
                 id: 1,
                 // content: 'Events',
-                start: data.data.time.start,
-                end: data.data.time.finish,
+                start: time.start,
+                end: time.finish,
                 // type: 'range'
             }
         ]);
@@ -371,7 +371,7 @@ export class ViciComponent implements OnInit {
                             this.router.navigate(['', this.currentSystem, this.currentView, evt.target.id()]);
                         });
                         // Timeline
-                        this.aggregationTimeline = this.renderTimeline('aggregationTimeline', result);
+                        this.aggregationTimeline = this.renderTimeline('aggregationTimeline', result.data.time);
 
                         this.cache.aggregation.systemId = requestedSystem;
                         this.cache.aggregation.target = requestedTarget;
@@ -560,6 +560,8 @@ export class ViciComponent implements OnInit {
                         this.activateLoader();
                         repository.preferences.eventChainTargetId = requestedTarget;
                         this.http.post<any>('/api/eventChainGraph', repository.preferences).subscribe(result => {
+                            this.debug(result);
+
                             this.eventChainNodeData = {};
                             for (let nodeData in result.data.elements) {
                                 let tmp = result.data.elements[nodeData].data;
@@ -612,6 +614,10 @@ export class ViciComponent implements OnInit {
                             this.eventChainCy.on('cxttap ', 'node', (evt) => {
                                 this.setEventChainHoverTarget(evt.target.id());
                             });
+
+                            // Timeline
+                            this.aggregationTimeline = this.renderTimeline('eventChainTimeline', result.data.time);
+
 
                             this.cache.eventChain.systemId = requestedSystem;
                             this.cache.eventChain.target = requestedTarget;
