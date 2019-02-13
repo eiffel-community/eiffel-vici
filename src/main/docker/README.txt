@@ -12,3 +12,8 @@ mvn package -DskipTests
 2. Build Eiffel-ViCi Docker image:
 cd (git root dir)/
 docker build -t eiffel-vici:0.0.1 --build-arg URL=./target/eiffel-vici-0.0.1.war -f src/main/docker/Dockerfile .
+
+
+Run Eiffel-ViCi in Docker:
+docker run -p 8080:8080 --expose 8080 eiffel-vici:0.0.1
+
