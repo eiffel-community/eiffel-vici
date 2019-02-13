@@ -14,6 +14,6 @@ cd (git root dir)/
 docker build -t eiffel-vici:0.0.1 --build-arg URL=./target/eiffel-vici-0.0.1.war -f src/main/docker/Dockerfile .
 
 
-Run Eiffel-ViCi in Docker:
-docker run -p 8080:8080 --expose 8080 eiffel-vici:0.0.1
+# Run Eiffel-ViCi in Docker:
+docker run -p 8080:8080 --expose 8080 -e server.port=8080 -e logging.level.root=DEBUG -e logging.level.org.springframework.web=INFO eiffel-vici:0.0.1
 
