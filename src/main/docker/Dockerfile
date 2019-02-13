@@ -1,7 +1,14 @@
-FROM frolvlad/alpine-oraclejdk8:slim
-VOLUME /tmp
-ADD maven/vici-eiffel-0.0.1-SNAPSHOT.jar app.jar
-RUN sh -c 'touch /app.jar'
-ENV JAVA_OPTS=""
-EXPOSE 8080
-ENTRYPOINT [ "sh", "-c", "java $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -jar /app.jar" ]
+FROM tomcat:8.0-jre8
+MAINTAINER Eiffel-Community
+
+ARG URL
+RUN echo Building Eiffel-Image image based on artifact url: ${URL}
+
+# Create image with existing war file. User need to execute 'mvn package -DskipTest' before 'docker build'
+RUN ["rm", "-fr", "/usr/local/tomcat/webapps/ROOT"]
+ADD ./src/main/docker/health-check.sh  /eiffel/health-check.sh
+ADD ./src/main/docker/start-service.sh /eiffel/start-service.sh
+ADD ${URL} /usr/local/tomcat/webapps/ROOT.war
+
+
+CMD ["/eiffel/start-service.sh"]
