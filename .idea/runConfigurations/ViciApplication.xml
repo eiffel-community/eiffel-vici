@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="ViciApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <module name="vici-eiffel" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="com.ericsson.vici.ViciApplication" />
+    <option name="ALTERNATIVE_JRE_PATH" />
+    <method />
+  </configuration>
+</component>

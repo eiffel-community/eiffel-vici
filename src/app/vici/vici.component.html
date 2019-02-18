@@ -1,0 +1,530 @@
+<script src="../../../../../jquery-timeago/jquery.timeago.js"></script>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <!--<a class="navbar-brand" [routerLink]="['']" routerLinkActive="active">Vici</a>-->
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="navbar-collapse collapse w-100" id="navbarSupportedContent">
+        <ul class="navbar-nav w-100">
+
+            <li class="nav-item">
+                <div ngbDropdown class="d-inline-block">
+                    <button class="btn btn-outline-primary" id="dropdownBasic1" ngbDropdownToggle>
+                        {{currentSystemName}}
+                    </button>
+                    <div ngbDropdownMenu aria-labelledby="dropdownBasic1">
+                        <a *ngFor="let system of systemReferences" class="dropdown-item"
+                           [routerLink]="['', system.id, constants.views.aggregation, constants.params.undefined]">
+                            {{ system.name }}
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" data-toggle="modal" data-target="#newSystemModal">New event repository
+                            <span octicon="plus"></span></a>
+                    </div>
+                </div>
+            </li>
+
+        </ul>
+        <ul class="navbar-nav w-100 justify-content-center">
+
+            <li class="nav-item">
+                <a [ngClass]="{'disabled': currentSystem === undefined, 'active': currentView === constants.views.aggregation}"
+                   [routerLink]="['', currentSystem, constants.views.aggregation, currentAggregationTarget]"
+                   class="nav-link"
+                >Aggregation</a>
+            </li>
+
+            <li class="nav-item">
+                <a [ngClass]="{'disabled': currentSystem === undefined || currentDetailsTarget === undefined, 'active': currentView === constants.views.details}"
+                   [routerLink]="['', currentSystem, constants.views.details, currentDetailsTarget]"
+                   class="nav-link">Details</a>
+            </li>
+
+            <li class="nav-item">
+                <a [ngClass]="{'disabled': currentSystem === undefined || currentDetailsTarget === undefined, 'active': currentView === constants.views.detailsPlot}"
+                   [routerLink]="['', currentSystem, constants.views.detailsPlot, currentDetailsTarget]"
+                   class="nav-link">Plot</a>
+            </li>
+
+            <li class="nav-item">
+                <a [ngClass]="{'disabled': currentSystem === undefined || currentEventChainTarget === undefined, 'active': currentView === constants.views.eventChain}"
+                   [routerLink]="['', currentSystem, constants.views.eventChain, currentEventChainTarget]"
+                   class="nav-link">Event
+                    chain</a>
+            </li>
+        </ul>
+        <ul class="navbar-nav w-100 justify-content-end">
+
+            <li class="nav-item dropdown ">
+                <div class="btn-group" id="historyDropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarHistory" role="button" data-toggle="dropdown"
+                       aria-haspopup="true" aria-expanded="false"
+                       [ngClass]="{'disabled': history.length <= 0}">
+                        History
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarHistory">
+                        <a *ngFor="let unit of history"
+                           class="dropdown-item"
+                           [routerLink]="['', unit.systemId, unit.view, unit.target]">
+                            {{ unit.msg }} - {{unit.dateString}}
+                        </a>
+                        <!--<div class="dropdown-divider"></div>-->
+                        <!--<a class="dropdown-item" href="#">Something else here</a>-->
+                    </div>
+                </div>
+            </li>
+
+            <li class="nav-item ">
+                <a class="nav-link" data-toggle="modal" data-target="#infoModal"><span octicon="question"></span></a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-toggle="modal" data-target="#settingsModal"><span
+                        octicon="gear"></span></a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div [hidden]="!isLoading" id="loader_overlay" class="overlay">
+    <div id="loader" class="loader"></div>
+</div>
+
+<!-- New System Modal -->
+<div class="modal fade" id="newSystemModal" tabindex="-1" role="dialog" aria-labelledby="newSystemModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newSystemModalLabel">Settings</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+
+                <div class="container settings-container">
+                    <div class="row">
+                        <div class="col-12">
+                            When changing a setting, all caches relative to that settings will be invalidated
+                            automatically.
+
+                            <div class="input-group settings-row">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">Name</span>
+                                </div>
+                                <input type="text" class="form-control" placeholder="My eiffel event repository"
+                                       [(ngModel)]="newSystemInput.name"/>
+                            </div>
+
+                            <div class="input-group settings-row">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">URL</span>
+                                </div>
+
+                                <input type="text" class="form-control" placeholder="URL"
+                                       [(ngModel)]="newSystemInput.url"/>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="modal-footer">
+                <button class="btn btn-success" type="button" (click)="newSystem()" data-dismiss="modal">Save
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Info Modal -->
+<div class="modal fade" id="infoModal" tabindex="-1" role="dialog" aria-labelledby="newSystemModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="infoLabel">Information</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+
+                <div class="container settings-container">
+                    <div class="row">
+                        <div class="col-12">
+                            The information here may not be up to date with the current Vici version.
+
+                            <h3>Overview of the application</h3>
+                            This application is used to visualize the data flow of a continuous integration
+                            system to
+                            enable analyzing it's performance and potential bottlenecks.
+                            It uses data from the <a href="https://github.com/Ericsson/eiffel"
+                                                     target="_blank">Eiffel</a>
+                            framework which
+                            offers a platform agnostic messaging protocol to trace the data flow.
+                            What follows is a brief explanation of the application. For technical details see
+                            the bottom of this
+                            modal.
+                            <h3>Aggregation view</h3>
+                            The first canvas consist of the aggregation view. The graph rendered is an
+                            aggregation of all event
+                            chains contained within the time spans specified in the time line below it. The
+                            events depicted were
+                            triggered
+                            by each other according to the vertices in the graph, where the time "flows" from
+                            left to right.
+                            For a list of all nodes and their meaning, see the section "Different types of
+                            nodes" below.
+                            To change the data set, simply drag and drop the "start" and "end" time points
+                            inside the time line.
+                            To navigate the graph use "drag n' drop" together with scrolling. There are also
+                            some tools for
+                            navigating
+                            in the top left, along with a button to reset the view. The nodes can also be moved
+                            around and clicked
+                            to display a popup with additional information, and the "show all events"-button
+                            inside the popup will
+                            load all events represented by the node into the details view.
+                            <h3>Details view</h3>
+                            The details view tabulates the events aggregated in a node selected in the
+                            aggregation view.
+                            It can be re-ordered by clicking a column header, filtered using the search field to
+                            the top right and
+                            be displayed on a time line by clicking the switch, also in the upper right. By
+                            clicking the "Event
+                            chain"-
+                            button the event chain that the event took part in will be loaded into the event
+                            chain view.
+                            <h3>Event chain view</h3>
+                            The event chain view renders a graph depicting a series of events based on
+                            one that was selected in the details view. The selected node is outlined in yellow.
+                            The events were triggered by each other as indicated by outgoing vertices. Vertices
+                            that are dotted
+                            symbolizes a reference to a node that does not partake in the event chain, but that
+                            is of some other
+                            importance. I.e. the previous version of an artifact. This view is very similar to
+                            the aggregation view,
+                            and it should be read if more information is required.
+                            <h3>Different types of nodes</h3>
+                            <div class="node-row">
+                                <div class="node-col">
+                                    <img src="/assets/images/tc.png"/> <br/>
+                                    <h4>Test case</h4>
+                                </div>
+                                <div class="node-col">
+                                    <img src="/assets/images/ts.png"/> <br/>
+                                    <h4>Test suite</h4>
+                                </div>
+                            </div>
+                            <div class="node-row">
+                                <div class="node-col">
+                                    <img src="/assets/images/clm.png"/> <br/>
+                                    <h4>Confidence level modified</h4>
+                                </div>
+                                <div class="node-col">
+                                    <img src="/assets/images/act.png"/> <br/>
+                                    <h4>Activity</h4>
+                                </div>
+                            </div>
+                            <div class="node-row">
+                                <div class="node-col">
+                                    <img src="/assets/images/artc.png"/> <br/>
+                                    <h4>Artifact created</h4>
+                                </div>
+                                <div class="node-col">
+                                    <img src="/assets/images/artp.png"/> <br/>
+                                    <h4>Artifact published</h4>
+                                </div>
+                            </div>
+                            <div class="node-row">
+                                <div class="node-col">
+                                    <img src="/assets/images/artr.png"/> <br/>
+                                    <h4>Artifact reused</h4>
+                                </div>
+                                <div class="node-col">
+                                    <img src="/assets/images/edef.png"/> <br/>
+                                    <h4>Environment defined</h4>
+                                </div>
+                            </div>
+                            <div class="node-row">
+                                <div class="node-col">
+                                    <img src="/assets/images/cdef.png"/> <br/>
+                                    <h4>Composition defined</h4>
+                                </div>
+                                <div class="node-col">
+                                    <img src="/assets/images/capp.png"/> <br/>
+                                    <h4>Configuration applied</h4>
+                                </div>
+                            </div>
+                            <div class="node-row">
+                                <div class="node-col">
+                                    <img src="/assets/images/scc.png"/> <br/>
+                                    <h4>Source change created</h4>
+                                </div>
+                                <div class="node-col">
+                                    <img src="/assets/images/scs.png"/> <br/>
+                                    <h4>Source change submitted</h4>
+                                </div>
+                            </div>
+                            <div class="node-row">
+                                <div class="node-col">
+                                    <img src="/assets/images/anp.png"/> <br/>
+                                    <h4>Announcement published</h4>
+                                </div>
+                            </div>
+                            <h3>Technical</h3>
+                            This section contains technical information about the application.
+                            <h4>Source</h4>
+                            <a target="_blank" href="https://github.com/Ericsson/eiffel-vici">Git repository</a>
+                            <h4>Vici development contact</h4>
+                            <p>jonathan.wahlund@ericsson.com<br>
+                                jonathan@jonathanwahlund.se</p>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal fade" id="settingsModal" tabindex="-1" role="dialog" aria-labelledby="settingsModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog  modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="settingsModalLabel">Settings</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+
+                <div class="container settings-container">
+                    <div class="row">
+                        <div class="col-12">
+                            When changing a setting, all caches relative to that settings will be invalidated
+                            automatically.
+
+                            <!--<div *ngFor="let system of systemReferences" id="eiffelEventPreferences[{{system.id}}]">-->
+                            <div *ngFor="let system of systemReferences" [hidden]="system.id !== currentSystem">
+                                <h3>{{system.name}}</h3>
+                                <h4>General</h4>
+                                <div class="input-group settings-row">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Name</span>
+                                    </div>
+                                    <input type="text" class="form-control" placeholder="Name"
+                                           [(ngModel)]="settings.eiffelEventRepositories[system.id].name"
+                                           (ngModelChange)="settingsInputChanged(system.id, constants.views.home)"/>
+                                </div>
+                                <div class="input-group settings-row">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">URL</span>
+                                    </div>
+                                    <input type="text" class="form-control" placeholder="URL"
+                                           [(ngModel)]="settings.eiffelEventRepositories[system.id].preferences.url"
+                                           (ngModelChange)="settingsInputChanged(system.id, constants.views.home)"/>
+                                </div>
+
+                                <div class="input-group settings-row">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Time to keep caches (ms)</span>
+                                    </div>
+                                    <input type="number" class="form-control" placeholder="Positive integer"
+                                           [(ngModel)]="settings.eiffelEventRepositories[system.id].preferences.cacheLifeTimeMs"
+                                           (ngModelChange)="settingsInputChanged(system.id, undefined)"/>
+                                </div>
+
+                                <h4>Aggregation</h4>
+                                <div *ngFor="let type of settings.types"
+                                     class="input-group settings-row">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">{{type}}</span>
+                                    </div>
+                                    <input type="text" class="form-control" placeholder=""
+                                           [(ngModel)]="settings.eiffelEventRepositories[system.id].preferences.aggregateOn[type]"
+                                           (ngModelChange)="settingsInputChanged(system.id, constants.views.home)"/>
+                                </div>
+
+                                <h4>Details</h4>
+
+                                <h4>Event Chain</h4>
+                                <div class="input-group settings-row">
+                                    <label class="checkbox-inline">
+                                        <input type="checkbox"
+                                               [(ngModel)]="settings.eiffelEventRepositories[system.id].preferences.eventChainGoUpStream"
+                                               (ngModelChange)="settingsInputChanged(system.id, constants.views.eventChain)"/>
+                                        Follow links <b>up</b> stream</label>
+                                </div>
+                                <div class="input-group settings-row">
+                                    <label class="checkbox-inline">
+                                        <input type="checkbox"
+                                               [(ngModel)]="settings.eiffelEventRepositories[system.id].preferences.eventChainGoDownStream"
+                                               (ngModelChange)="settingsInputChanged(system.id, constants.views.eventChain)"/>
+                                        Follow links <b>down</b> stream</label>
+                                </div>
+                                <div class="input-group settings-row">
+                                    <label class="checkbox-inline">
+                                        <input type="checkbox"
+                                               [(ngModel)]="settings.eiffelEventRepositories[system.id].preferences.eventChainTimeRelativeXAxis"
+                                               (ngModelChange)="settingsInputChanged(system.id, constants.views.eventChain)"/>
+                                        Node x-position defined by actual timestamp</label>
+                                </div>
+
+                                <h5>Live</h5>
+                                <div class="input-group settings-row">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Number of base events (latest)</span>
+                                    </div>
+                                    <input type="number" class="form-control" placeholder="Positive integer"
+                                           [(ngModel)]="settings.eiffelEventRepositories[system.id].preferences.streamBaseEvents"
+                                           (ngModelChange)="settingsInputChanged(system.id, undefined)"/>
+                                </div>
+                                <div class="input-group settings-row">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Time between updates (ms)</span>
+                                    </div>
+                                    <input type="number" class="form-control" placeholder="Positive integer"
+                                           [(ngModel)]="settings.eiffelEventRepositories[system.id].preferences.streamRefreshIntervalMs"
+                                           (ngModelChange)="settingsInputChanged(system.id, undefined)"/>
+                                </div>
+                            </div>
+                            <div [hidden]="currentSystem !== undefined">
+                                Select a repository for more repository specific settings.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <!--<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>-->
+                <button class="btn btn-warning" type="button" (click)="resetSettingsToServerDefault()">
+                    Reset settings (server default)
+                </button>
+                <button (click)="uploadCurrentRepositorySettings()"
+                        [disabled]="!newSettings.has(currentSystem) || isUploadingRepository"
+                        type="button" class="btn btn-primary">Save changes <span octicon="cloud-upload"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="aggregation-container" [hidden]="currentView !== constants.views.aggregation"
+     class="content-container">
+    <div id="aggregation_graph" class="cy"></div>
+
+    <div *ngIf="aggregationHoverNode!==undefined && aggregationNodeData !== undefined && aggregationNodeData[aggregationHoverNode] !== undefined"
+         class="card border-dark mb-3 cy-tooltip" style="max-width: 18rem;">
+        <div class="card-header">{{aggregationHoverNode}}
+            <button *ngIf="aggregationLockTooltip" type="button" class="close" aria-label="Close"
+                    (click)="router.navigate(['', currentSystem, currentView, constants.params.undefined])">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="card-body text-dark">
+
+            <!--<h5 class="card-title">Dark card title</h5>-->
+            <p class="card-text">Containing {{aggregationNodeData[aggregationHoverNode].quantity}}
+                {{aggregationNodeData[aggregationHoverNode].info.Type}} events.</p>
+
+            <table *ngIf="aggregationNodeData[aggregationHoverNode].table !== undefined"
+                   class="table table-sm">
+                <tbody>
+                <tr *ngFor="let tableObject of aggregationNodeData[aggregationHoverNode].table">
+                    <td>{{tableObject.key}}</td>
+                    <td>{{tableObject.value}}</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <div *ngIf="aggregationNodeData[aggregationHoverNode].rates !== undefined"
+                 class="progress">
+                <!--<div class="progress-bar bg-success" role="progressbar" style="width: 15%"></div>-->
+                <div class="progress-bar bg-success" role="progressbar"
+                     [style.width]="aggregationNodeData[aggregationHoverNode].rates.success+'%'"></div>
+                <!--<div class="progress-bar bg-danger" role="progressbar" style="width: 30%"></div>-->
+                <div class="progress-bar bg-danger" role="progressbar"
+                     [style.width]="aggregationNodeData[aggregationHoverNode].rates.fail+'%'"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="timeline-graph-outer">
+        <div class="timeline-graph-inner" id="aggregationTimeline">
+        </div>
+    </div>
+</div>
+
+<div id="details-container" [hidden]="currentView !== constants.views.details" class="content-container">
+    <div id="details_table"></div>
+</div>
+
+<div id="details_plot_container" [hidden]="currentView !== constants.views.detailsPlot"
+     class="content-container">
+    <div id="details_plot">
+
+    </div>
+    <div id="details_plot_legend" class="row justify-content-start legend-container">
+
+    </div>
+</div>
+
+<div id="eventchain-container" [hidden]="currentView !== constants.views.eventChain"
+     class="content-container">
+    <div id="eventchain_graph" class="cy"></div>
+
+    <div *ngIf="eventChainHoverNode!==undefined && eventChainNodeData !== undefined && eventChainNodeData[eventChainHoverNode] !== undefined"
+         class="card border-dark mb-3 cy-tooltip" style="max-width: 18rem;">
+        <div class="card-header">{{eventChainNodeData[eventChainHoverNode].label}}
+            <button *ngIf="eventChainLockTooltip" type="button" class="close" aria-label="Close"
+                    (click)="setEventChainHoverTarget(undefined)">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="card-body text-dark">
+
+            <!--<h5 class="card-title">Dark card title</h5>-->
+            <!--<p class="card-text">Containing {{eventChainNodeData[eventChainHoverNode].quantity}}-->
+            <!--{{eventChainNodeData[eventChainHoverNode].info.Type}} events.</p>-->
+            <p>{{eventChainNodeData[eventChainHoverNode].type}}<span
+                    *ngIf="eventChainNodeData[eventChainHoverNode].result !== undefined">: {{eventChainNodeData[eventChainHoverNode].result}}</span>
+            </p>
+            <table class="table table-sm">
+                <tbody>
+                <tr *ngIf="eventChainNodeData[eventChainHoverNode].times.Triggered !== undefined">
+                    <td>Triggered</td>
+                    <td>{{formatTime(eventChainNodeData[eventChainHoverNode].times.Triggered)}}</td>
+                </tr>
+                <tr *ngIf="eventChainNodeData[eventChainHoverNode].times.Started !== undefined">
+                    <td>Started</td>
+                    <td>{{formatTime(eventChainNodeData[eventChainHoverNode].times.Started)}}</td>
+                </tr>
+                <tr *ngIf="eventChainNodeData[eventChainHoverNode].times.Finished !== undefined">
+                    <td>Finished</td>
+                    <td>{{formatTime(eventChainNodeData[eventChainHoverNode].times.Finished)}}</td>
+                </tr>
+                <tr *ngIf="eventChainNodeData[eventChainHoverNode].times.Execution !== undefined">
+                    <td>Execution</td>
+                    <td>{{eventChainNodeData[eventChainHoverNode].times.Execution}} ms</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="timeline-graph-outer">
+        <div class="timeline-graph-inner" id="eventChainTimeline">
+        </div>
+    </div>
+</div>

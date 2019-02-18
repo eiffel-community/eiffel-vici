@@ -35,10 +35,10 @@ Visit [Eiffel Community](https://eiffel-community.github.io) to get started and 
 # How to Run
 During the development stage, please consider refreshing the app-webpage with clear cashe if something gets stuck and report the issue.
 
-For the local dummy event repository to work, you have to extract src\main\resources\static\reference-data-set.zip into src\main\resources\static\reference-data-set.json.
+For the local dummy event repository to work, you have to extract src/assets/reference-data-set.zip into src/assets/reference-data-set.json.
 This is not required if you intend to use the dummy eiffel-event-repository.
 
-To test your own set of eiffel-events, simply create a .json file that contains a list of eiffel-events and place it in the src\main\resources\static\ directory. When the app is running, go to settings > Manage systems > add a new system with the url localFile[MY_FILE] where you replace MY_FILE with the actual file name (without .json). Example: src\main\resources\static\reference-data-set.json with url localFile[reference-data-set]
+To test your own set of eiffel-events, simply create a .json file that contains a list of eiffel-events and place it in the src/assets/ directory. When the app is running, add a new system with the url localFile[MY_FILE] where you replace MY_FILE with the actual file name (without .json). Example: src\main\resources\static\reference-data-set.json with url localFile[reference-data-set]
 
 To run the app you need Java 8 and Maven installed.
 
@@ -46,12 +46,6 @@ Navigate to the repository root and execute one of the the following commands in
 
 ~~~~
 mvn spring-boot:run
-~~~~
-
-or
-
-~~~~
-(mvn clean package) -and (java -jar target\vici-eiffel-0.0.1-SNAPSHOT.jar)
 ~~~~
 
 The Vici app will now run at http://127.0.0.1:8080

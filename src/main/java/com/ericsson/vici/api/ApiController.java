@@ -57,23 +57,26 @@ public class ApiController {
     private static final String TYPE_UNKNOWN = "unknown";
 
     private void setQuantities(Node node, Event event) {
+        Outcome outcome = null;
         switch (node.getData().getType()) {
             case TEST_CASE:
-            case ACTIVITY:
             case TEST_SUITE:
 
-                Outcome outcome = null;
+                if (event.getEiffelEvents().containsKey(FINISHED)) {
+                    outcome = event.getEiffelEvents().get(FINISHED).getData().getOutcome();
+                }
+                if (outcome != null && outcome.getVerdict() != null) {
+                    node.getData().increaseQuantity(outcome.getVerdict());
+                } else {
+                    node.getData().increaseQuantity("INCONCLUSIVE");
+                }
+                break;
+            case ACTIVITY:
                 if (event.getEiffelEvents().containsKey(FINISHED)) {
                     outcome = event.getEiffelEvents().get(FINISHED).getData().getOutcome();
                 }
                 if (outcome != null && outcome.getConclusion() != null) {
                     node.getData().increaseQuantity(outcome.getConclusion());
-                } else if (outcome != null && outcome.getVerdict() != null) {
-                    if (outcome.getVerdict().equals("PASSED")) {
-                        node.getData().increaseQuantity("SUCCESSFUL");
-                    } else {
-                        node.getData().increaseQuantity(outcome.getVerdict());
-                    }
                 } else {
                     node.getData().increaseQuantity("INCONCLUSIVE");
                 }
@@ -85,6 +88,34 @@ public class ApiController {
             default:
                 node.getData().increaseQuantity();
                 break;
+        }
+    }
+
+    private void setRates(Node node) {
+        if (node.getData().getType().equals(TEST_CASE)
+                || node.getData().getType().equals(TEST_SUITE)
+                || node.getData().getType().equals(ACTIVITY)
+                || node.getData().getType().equals("EiffelConfidenceLevelModifiedEvent")) {
+            Rates rates = new Rates();
+            if (node.getData().getQuantities().containsKey("SUCCESS")) {
+                rates.setSuccess(Math.round((100.0f * node.getData().getQuantities().get("SUCCESS")) / node.getData().getQuantity()));
+            } else if (node.getData().getQuantities().containsKey("SUCCESSFUL")) {
+                rates.setSuccess(Math.round((100.0f * node.getData().getQuantities().get("SUCCESSFUL")) / node.getData().getQuantity()));
+            } else if (node.getData().getQuantities().containsKey("PASSED")) {
+                rates.setSuccess(Math.round((100.0f * node.getData().getQuantities().get("PASSED")) / node.getData().getQuantity()));
+            }
+
+            if (node.getData().getQuantities().containsKey("UNSUCCESSFUL")) {
+                rates.setFail(Math.round((100.0f * node.getData().getQuantities().get("UNSUCCESSFUL")) / node.getData().getQuantity()));
+            } else if (node.getData().getQuantities().containsKey("FAILURE")) {
+                rates.setFail(Math.round((100.0f * node.getData().getQuantities().get("FAILURE")) / node.getData().getQuantity()));
+            } else if (node.getData().getQuantities().containsKey("FAILED")) {
+                rates.setFail(Math.round((100.0f * node.getData().getQuantities().get("FAILED")) / node.getData().getQuantity()));
+            }
+
+            rates.setUnknown(100 - rates.getSuccess() - rates.getFail());
+
+            node.getData().setRates(rates);
         }
     }
 
@@ -144,6 +175,7 @@ public class ApiController {
 
     @RequestMapping(value = "/api/aggregationGraph", produces = "application/json; charset=UTF-8")
     public ReturnData aggregationGraph(@RequestBody Preferences preferences) {
+        Graph graph = new Graph(null);
 
 //        JSONObject jsonObject = new JSONObject(settings);
 //        System.out.println(jsonObject.toString());
@@ -169,6 +201,13 @@ public class ApiController {
                     nodes.put(event.getAggregateOn(), node);
                 }
 
+                long triggered = event.getTimes().get(TRIGGERED);
+                if (triggered < graph.getTime().getStart()) {
+                    graph.getTime().setStart(triggered);
+                } else if (triggered > graph.getTime().getFinish()) {
+                    graph.getTime().setFinish(triggered);
+                }
+
                 setQuantities(node, event);
             }
         }
@@ -177,22 +216,30 @@ public class ApiController {
         for (Event event : events.values()) {
             if (!event.getType().equals(REDIRECT)) {
                 for (Link link : event.getLinks()) {
-                    String target = events.get(getTarget(link.getTarget(), events)).getAggregateOn();
-                    String edgeId = getEdgeId(event.getAggregateOn(), target, link.getType());
-                    if (edges.containsKey(edgeId)) {
-                        edges.get(edgeId).getData().increaseQuantity();
-                    } else {
-                        edges.put(edgeId, new Edge(new DataEdge(edgeId, event.getAggregateOn(), target, edgeId, link.getType())));
+                    if (!preferences.getAggregationBannedLinks().contains(link.getType())) {
+                        String target = events.get(getTarget(link.getTarget(), events)).getAggregateOn();
+                        String edgeId = getEdgeId(event.getAggregateOn(), target, link.getType());
+                        if (edges.containsKey(edgeId)) {
+                            edges.get(edgeId).getData().increaseQuantity();
+                        } else {
+                            edges.put(edgeId, new Edge(new DataEdge(edgeId, event.getAggregateOn(), target, edgeId, link.getType())));
+                        }
                     }
                 }
             }
+        }
+
+        for (Node node : nodes.values()) {
+            setRates(node);
         }
 
         elements.addAll(nodes.values());
 
         elements.addAll(edges.values());
 
-        return new ReturnData(elements, eventsObject.getTimeCollected());
+        graph.setElements(elements);
+
+        return new ReturnData(graph, eventsObject.getTimeCollected());
     }
 
     private String getEdgeId(String source, String target, String type) {
@@ -267,22 +314,22 @@ public class ApiController {
                     columns.add(new Column("Event", key));
                     break;
                 case "id":
-                    columns.add(new Column("Eiffel ID", key));
+                    columns.add(new Column("Eiffel ID", key, false));
                     break;
                 case "type":
                     columns.add(new Column("Type", key));
                     break;
                 case "time-" + TRIGGERED:
-                    columns.add(new Column("Time triggered", key));
+                    columns.add(new Column("Time triggered", key, true, 1));
                     break;
                 case "time-" + CANCELED:
-                    columns.add(new Column("Time canceled", key));
+                    columns.add(new Column("Time canceled", key, true, 1));
                     break;
                 case "time-" + STARTED:
-                    columns.add(new Column("Time started", key));
+                    columns.add(new Column("Time started", key, true, 1));
                     break;
                 case "time-" + FINISHED:
-                    columns.add(new Column("Time finished", key));
+                    columns.add(new Column("Time finished", key, true, 1));
                     break;
                 case "time-" + EXECUTION:
                     columns.add(new Column("Execution (ms)", key));
@@ -438,13 +485,16 @@ public class ApiController {
         return new ReturnData(new Plot(items, timeFirst - 1000, timeLast + 1000, valueMin, valueMax), eventsObject.getTimeCollected());
     }
 
-    private Graph getChainGraph(Preferences preferences, ArrayList<Event> baseEvents, HashMap<String, Event> events) {
-        Graph graph = new Graph();
+    private Graph getChainGraph(Preferences preferences, ArrayList<Event> baseEvents, HashMap<String, Event> events, Event mainEvent) {
+        Graph graph = new Graph(mainEvent);
 
         HashMap<String, Event> incEvents = new HashMap<>();
+        HashSet<String> aggregateOns = new HashSet<>();
+        ArrayList<Event> queue = new ArrayList<>();
 
         for (Event baseEvent : baseEvents) {
-            step(preferences, baseEvent, incEvents, events, preferences.getEventChainMaxSteps());
+//            step(preferences, baseEvent, incEvents, events, preferences.getEventChainMaxSteps(), aggregateOns);
+            bfs(preferences, baseEvent, events, incEvents);
         }
 
         HashMap<String, Node> nodes = new HashMap<>();
@@ -454,6 +504,7 @@ public class ApiController {
         if (preferences.isEventChainTimeRelativeXAxis()) {
             nodesList = new ArrayList<>();
         }
+
 
         // Nodes
         for (Event event : incEvents.values()) {
@@ -489,11 +540,10 @@ public class ApiController {
 
         // Edges
         for (Event event : incEvents.values()) {
-
-            if (!event.getType().equals(REDIRECT) && event.getLinks().size() + event.getChildren().size() <= preferences.getEventChainMaxConnections()) {
+            if (!event.getType().equals(REDIRECT)) {
                 for (Link link : event.getLinks()) {
                     String target = getTarget(link.getTarget(), events);
-                    if (!incEvents.containsKey(target)) {
+                    if (!incEvents.containsKey(target) && preferences.isEventChainCulledEvents()) {
 
                         String type = TYPE_UNKNOWN;
                         Event targetEvent = events.get(target);
@@ -521,7 +571,7 @@ public class ApiController {
                 }
                 for (ChildLink child : event.getChildren()) {
                     String childId = child.getChild();
-                    if (!incEvents.containsKey(childId)) {
+                    if (!incEvents.containsKey(childId) && preferences.isEventChainCulledEvents()) {
 
                         String type = TYPE_UNKNOWN;
                         Event targetEvent = events.get(childId);
@@ -575,45 +625,61 @@ public class ApiController {
             }
         }
 
+        for (Node node : nodes.values()) {
+            setRates(node);
+        }
+
         graph.getElements().addAll(nodes.values());
         graph.getElements().addAll(edges.values());
 
         return graph;
     }
 
-    private void step(Preferences preferences, Event event, HashMap<String, Event> incEvents, HashMap<String, Event> events, int steps) {
+    private HashMap<String, Event> bfs(Preferences preferences, Event event, HashMap<String, Event> events, HashMap<String, Event> incEvents) {
+        LinkedList<Event> queue = new LinkedList<>();
+        HashSet<String> aggregatedOns = new HashSet<>();
+
+        queue.add(event);
+        while (queue.size() > 0) {
+            bfsHelp(preferences, incEvents, queue.poll(), events, queue, aggregatedOns);
+        }
+
+        return incEvents;
+    }
+
+    private void bfsHelp(Preferences preferences, HashMap<String, Event> incEvents, Event event, HashMap<String, Event> events, LinkedList<Event> queue, HashSet<String> aggregatedOns) {
+        if (incEvents.containsKey(event.getId()) || aggregatedOns.contains(event.getAggregateOn())) {
+            return;
+        }
 
         incEvents.put(event.getId(), event);
-        if (event.getChildren().size() + event.getLinks().size() > preferences.getEventChainMaxConnections()) {
-            return;
-        }
-        if (steps <= 0) {
-            return;
-        }
+        aggregatedOns.add(event.getAggregateOn());
+
+        ArrayList<Event> tmpEvents = new ArrayList<>();
         if (preferences.isEventChainGoDownStream()) {
-            ArrayList<Link> links = event.getLinks();
-            if (links != null) {
-                for (Link link : links) {
-                    if (!preferences.getEventChainBannedLinks().contains(link.getType())) {
-                        Event tmpEvent = events.get(getTarget(link.getTarget(), events));
-                        int newSteps = steps - 1;
-                        step(preferences, tmpEvent, incEvents, events, newSteps);
+            for (Link link : event.getLinks()) {
+                if (!preferences.getEventChainBannedLinks().contains(link.getType()) && !preferences.getEventChainCutAtEvent().contains(event.getType())) {
+                    Event tmpEvent = events.get(getTarget(link.getTarget(), events));
+                    if (!incEvents.containsKey(tmpEvent.getId())) {
+                        tmpEvents.add(tmpEvent);
+                    }
+                }
+            }
+        }
+        if (preferences.isEventChainGoUpStream()) {
+            for (ChildLink child : event.getChildren()) {
+                if (!preferences.getEventChainBannedLinks().contains(child.getType()) && !preferences.getEventChainCutAtEvent().contains(event.getType())) {
+                    Event tmpEvent = events.get(getTarget(child.getChild(), events));
+                    if (!incEvents.containsKey(tmpEvent.getId())) {
+                        tmpEvents.add(tmpEvent);
                     }
                 }
             }
         }
 
-        if (preferences.isEventChainGoUpStream()) {
-            ArrayList<ChildLink> children = event.getChildren();
-            if (children != null) {
-                for (ChildLink child : children) {
-                    if (!preferences.getEventChainBannedLinks().contains(child.getType())) {
-                        Event tmpEvent = events.get(child.getChild());
-                        int newSteps = steps - 1;
-                        step(preferences, tmpEvent, incEvents, events, newSteps);
-                    }
-                }
-            }
+        for (Event tmpEvent : tmpEvents) {
+//            aggregatedOns.add(tmpEvent.getAggregateOn());
+            queue.add(tmpEvent);
         }
     }
 
@@ -631,7 +697,7 @@ public class ApiController {
     @RequestMapping(value = "/api/eventChainGraph", produces = "application/json; charset=UTF-8")
     public ReturnData eventChainGraph(@RequestBody Preferences preferences) {
         if (preferences.getEventChainTargetId().equals("")) {
-            return new ReturnData(new Graph());
+            return new ReturnData(new Graph(null));
         }
 
         Fetcher fetcher = new Fetcher();
@@ -639,42 +705,42 @@ public class ApiController {
         HashMap<String, Event> events = eventsObject.getEvents();
 
         if (!events.containsKey(preferences.getEventChainTargetId())) {
-            return new ReturnData(new Graph(), eventsObject.getTimeCollected());
+            return new ReturnData(new Graph(null), eventsObject.getTimeCollected());
         }
 
         Event mainEvent = events.get(preferences.getEventChainTargetId());
         ArrayList<Event> baseEvents = new ArrayList<>();
         baseEvents.add(mainEvent);
 
-        return new ReturnData(getChainGraph(preferences, baseEvents, events), eventsObject.getTimeCollected());
+        return new ReturnData(getChainGraph(preferences, baseEvents, events, mainEvent), eventsObject.getTimeCollected());
     }
 
-    @RequestMapping(value = "/api/liveEventChainGraph", produces = "application/json; charset=UTF-8")
-    public ReturnData liveEventChainGraph(@RequestBody Preferences preferences) {
-
-        Fetcher fetcher = new Fetcher();
-        // TODO: fetch only base events based on time added
-        Events eventsObject = fetcher.getEvents(preferences);
-        HashMap<String, Event> events = eventsObject.getEvents();
-
-        Collection<Event> eventsCollection = events.values();
-        ArrayList<Event> eventsList = new ArrayList<>(eventsCollection);
-
-        eventsList.sort(Comparator.comparingLong(this::getSortTime));
-
-        ArrayList<Event> baseEvents = new ArrayList<>();
-
-        int i = eventsList.size() - 1;
-        int count = 0;
-        while (count < preferences.getStreamBaseEvents() && i >= 0) {
-            Event tmpEvent = eventsList.get(i);
-            if (!tmpEvent.getType().equals(REDIRECT)) {
-                baseEvents.add(tmpEvent);
-                count++;
-            }
-            i--;
-        }
-
-        return new ReturnData(getChainGraph(preferences, baseEvents, events), eventsObject.getTimeCollected());
-    }
+//    @RequestMapping(value = "/api/liveEventChainGraph", produces = "application/json; charset=UTF-8")
+//    public ReturnData liveEventChainGraph(@RequestBody Preferences preferences) {
+//
+//        Fetcher fetcher = new Fetcher();
+//        // TODO: fetch only base events based on time added
+//        Events eventsObject = fetcher.getEvents(preferences);
+//        HashMap<String, Event> events = eventsObject.getEvents();
+//
+//        Collection<Event> eventsCollection = events.values();
+//        ArrayList<Event> eventsList = new ArrayList<>(eventsCollection);
+//
+//        eventsList.sort(Comparator.comparingLong(this::getSortTime));
+//
+//        ArrayList<Event> baseEvents = new ArrayList<>();
+//
+//        int i = eventsList.size() - 1;
+//        int count = 0;
+//        while (count < preferences.getStreamBaseEvents() && i >= 0) {
+//            Event tmpEvent = eventsList.get(i);
+//            if (!tmpEvent.getType().equals(REDIRECT)) {
+//                baseEvents.add(tmpEvent);
+//                count++;
+//            }
+//            i--;
+//        }
+//
+//        return new ReturnData(getChainGraph(preferences, baseEvents, events), eventsObject.getTimeCollected());
+//    }
 }
