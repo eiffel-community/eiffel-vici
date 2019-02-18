@@ -134,8 +134,7 @@
 
 
             <div class="modal-footer">
-                <button class="btn btn-success" type="button" (click)="newSystem()" data-dismiss="modal"><span
-                        octicon="plus"></span>
+                <button class="btn btn-success" type="button" (click)="newSystem()" data-dismiss="modal">Save
                 </button>
             </div>
         </div>
@@ -439,6 +438,16 @@
             <p class="card-text">Containing {{aggregationNodeData[aggregationHoverNode].quantity}}
                 {{aggregationNodeData[aggregationHoverNode].info.Type}} events.</p>
 
+            <table *ngIf="aggregationNodeData[aggregationHoverNode].table !== undefined"
+                   class="table table-sm">
+                <tbody>
+                <tr *ngFor="let tableObject of aggregationNodeData[aggregationHoverNode].table">
+                    <td>{{tableObject.key}}</td>
+                    <td>{{tableObject.value}}</td>
+                </tr>
+                </tbody>
+            </table>
+
             <div *ngIf="aggregationNodeData[aggregationHoverNode].rates !== undefined"
                  class="progress">
                 <!--<div class="progress-bar bg-success" role="progressbar" style="width: 15%"></div>-->
@@ -451,7 +460,7 @@
         </div>
     </div>
 
-    <div class="timeline-graph-outer" s>
+    <div class="timeline-graph-outer">
         <div class="timeline-graph-inner" id="aggregationTimeline">
         </div>
     </div>
@@ -474,4 +483,48 @@
 <div id="eventchain-container" [hidden]="currentView !== constants.views.eventChain"
      class="content-container">
     <div id="eventchain_graph" class="cy"></div>
+
+    <div *ngIf="eventChainHoverNode!==undefined && eventChainNodeData !== undefined && eventChainNodeData[eventChainHoverNode] !== undefined"
+         class="card border-dark mb-3 cy-tooltip" style="max-width: 18rem;">
+        <div class="card-header">{{eventChainNodeData[eventChainHoverNode].label}}
+            <button *ngIf="eventChainLockTooltip" type="button" class="close" aria-label="Close"
+                    (click)="setEventChainHoverTarget(undefined)">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="card-body text-dark">
+
+            <!--<h5 class="card-title">Dark card title</h5>-->
+            <!--<p class="card-text">Containing {{eventChainNodeData[eventChainHoverNode].quantity}}-->
+            <!--{{eventChainNodeData[eventChainHoverNode].info.Type}} events.</p>-->
+            <p>{{eventChainNodeData[eventChainHoverNode].type}}<span
+                    *ngIf="eventChainNodeData[eventChainHoverNode].result !== undefined">: {{eventChainNodeData[eventChainHoverNode].result}}</span>
+            </p>
+            <table class="table table-sm">
+                <tbody>
+                <tr *ngIf="eventChainNodeData[eventChainHoverNode].times.Triggered !== undefined">
+                    <td>Triggered</td>
+                    <td>{{formatTime(eventChainNodeData[eventChainHoverNode].times.Triggered)}}</td>
+                </tr>
+                <tr *ngIf="eventChainNodeData[eventChainHoverNode].times.Started !== undefined">
+                    <td>Started</td>
+                    <td>{{formatTime(eventChainNodeData[eventChainHoverNode].times.Started)}}</td>
+                </tr>
+                <tr *ngIf="eventChainNodeData[eventChainHoverNode].times.Finished !== undefined">
+                    <td>Finished</td>
+                    <td>{{formatTime(eventChainNodeData[eventChainHoverNode].times.Finished)}}</td>
+                </tr>
+                <tr *ngIf="eventChainNodeData[eventChainHoverNode].times.Execution !== undefined">
+                    <td>Execution</td>
+                    <td>{{eventChainNodeData[eventChainHoverNode].times.Execution}} ms</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="timeline-graph-outer">
+        <div class="timeline-graph-inner" id="eventChainTimeline">
+        </div>
+    </div>
 </div>

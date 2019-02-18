@@ -85,12 +85,15 @@ export class ViciComponent implements OnInit {
 
     aggregationNodeData: any;
     aggregationHoverNode: string;
-
     aggregationCy: any;
     aggregationTimeline: any;
 
-    eventChainCy: any;
     detailsDatatable: any;
+
+    eventChainNodeData: any;
+    eventChainHoverNode: any;
+    eventChainCy: any;
+    eventChainTimeline: any;
 
     history: Array<HistoryUnit> = [];
     newSystemInput = {
@@ -102,6 +105,7 @@ export class ViciComponent implements OnInit {
     isUploadingRepository: boolean = false;
     isLoading: boolean = false;
     aggregationLockTooltip: boolean = false;
+    eventChainLockTooltip: boolean = false;
 
 
     // Alternative to console.log, will not print in production build.
@@ -248,10 +252,26 @@ export class ViciComponent implements OnInit {
             this.aggregationHoverNode = target;
             this.aggregationLockTooltip = true;
             this.currentAggregationTarget = target;
+
+            // this.aggregationCy.elements('node[id = ' + target + ']').select();
         }
     }
 
-    private renderTimeline(containerId: string, data: any): any {
+    private setChainTarget(target: string): void {
+        if (target === undefined) {
+            this.eventChainHoverNode = undefined;
+            this.eventChainLockTooltip = false;
+            this.currentEventChainTarget = undefined;
+        } else {
+            this.eventChainHoverNode = target;
+            this.eventChainLockTooltip = true;
+            this.currentEventChainTarget = target;
+
+            // this.aggregationCy.elements('node[id = ' + target + ']').select();
+        }
+    }
+
+    private renderTimeline(containerId: string, time: any): any {
         let container = document.getElementById(containerId);
 
         // Create a DataSet (allows two way data-binding)
@@ -260,8 +280,8 @@ export class ViciComponent implements OnInit {
             {
                 id: 1,
                 // content: 'Events',
-                start: data.data.time.start,
-                end: data.data.time.finish,
+                start: time.start,
+                end: time.finish,
                 // type: 'range'
             }
         ]);
@@ -292,14 +312,29 @@ export class ViciComponent implements OnInit {
                         this.aggregationTimeline.destroy();
                     }
                     this.http.post<any>('/api/aggregationGraph', repository.preferences).subscribe(result => {
+                        this.debug(result);
+
                         this.aggregationNodeData = {};
                         for (let nodeData in result.data.elements) {
                             let tmp = result.data.elements[nodeData].data;
+                            if (tmp.quantities !== undefined) {
+                                let tmpTable = [];
+                                for (let property in tmp.quantities) {
+                                    tmpTable.push({
+                                        'key': property,
+                                        'value': tmp.quantities[property],
+                                    })
+                                }
+                                if (Object.keys(tmpTable).length !== 0) {
+                                    tmp['table'] = tmpTable;
+                                }
+                            }
 
                             this.aggregationNodeData[tmp.id] = tmp;
                         }
 
                         // this.debug(this.aggregationNodeData);
+
                         this.aggregationCy = this.renderCytoscape('aggregation_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data.elements, repository.preferences, undefined);
 
                         this.aggregationCy.on('tap', 'node', (evt) => {
@@ -336,7 +371,7 @@ export class ViciComponent implements OnInit {
                             this.router.navigate(['', this.currentSystem, this.currentView, evt.target.id()]);
                         });
                         // Timeline
-                        this.aggregationTimeline = this.renderTimeline('aggregationTimeline', result);
+                        this.aggregationTimeline = this.renderTimeline('aggregationTimeline', result.data.time);
 
                         this.cache.aggregation.systemId = requestedSystem;
                         this.cache.aggregation.target = requestedTarget;
@@ -523,10 +558,70 @@ export class ViciComponent implements OnInit {
                     this.makeHistory(requestedSystem, requestedView, requestedTarget, 'Event chain for ' + repository.name + ' ' + requestedTarget);
                     if (requestedSystem !== this.cache.eventChain.systemId || requestedTarget !== this.cache.eventChain.target) {
                         this.activateLoader();
+                        if (this.eventChainTimeline !== undefined) {
+                            this.eventChainTimeline.destroy();
+                        }
                         repository.preferences.eventChainTargetId = requestedTarget;
                         this.http.post<any>('/api/eventChainGraph', repository.preferences).subscribe(result => {
-                            // this.debug(result);
+                            this.debug(result);
+
+                            this.eventChainNodeData = {};
+                            for (let nodeData in result.data.elements) {
+                                let tmp = result.data.elements[nodeData].data;
+                                this.eventChainNodeData[tmp.id] = tmp;
+
+                                // for(let property in tmp.times){
+                                //     tmp.times.property = tmp.times.property = moment()
+                                // }
+
+                                if (tmp.quantities !== undefined) {
+                                    for (let property in tmp.quantities) {
+                                        if (tmp.quantities[property] > 0) {
+                                            tmp.result = property;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            this.debug(this.eventChainNodeData);
                             this.eventChainCy = this.renderCytoscape('eventchain_graph', this.statusImages, this.router, this.constants, this.currentSystem, result.data.elements, repository.preferences, requestedTarget);
+
+                            this.eventChainCy.on('mouseover', 'node', (evt) => {
+                                if (!this.eventChainLockTooltip) {
+                                    this.eventChainHoverNode = evt.target.id();
+                                }
+                            });
+
+                            this.eventChainCy.on('mouseout ', 'node', () => {
+                                if (!this.eventChainLockTooltip) {
+                                    this.eventChainHoverNode = undefined;
+                                }
+                            });
+
+                            this.eventChainCy.on('tap', 'node', (evt) => {
+                                this.router.navigate(['', this.currentSystem, this.constants.views.eventChain, evt.target.id()]);
+                            });
+
+                            this.eventChainCy.on('tap', (evt) => {
+                                if (evt.target === this.eventChainCy) {
+                                    this.setEventChainHoverTarget(undefined);
+                                }
+                            });
+
+                            this.eventChainCy.on('cxttap', (evt) => {
+                                if (evt.target === this.eventChainCy) {
+                                    this.setEventChainHoverTarget(undefined);
+                                }
+                            });
+
+                            this.eventChainCy.on('cxttap ', 'node', (evt) => {
+                                this.setEventChainHoverTarget(evt.target.id());
+                            });
+
+                            // Timeline
+                            this.eventChainTimeline = this.renderTimeline('eventChainTimeline', result.data.time);
+
+
                             this.cache.eventChain.systemId = requestedSystem;
                             this.cache.eventChain.target = requestedTarget;
 
@@ -541,8 +636,14 @@ export class ViciComponent implements OnInit {
 
     }
 
+    setEventChainHoverTarget(target: string): void {
+        this.eventChainLockTooltip = target !== undefined;
+        this.eventChainHoverNode = target;
+    }
+
     private formatTime(long: number): any {
-        return moment(long).format('YYYY-MM-DD, HH:mm:ss:SSS');
+        // return moment(long).format('YYYY-MM-DD, HH:mm:ss:SSS');
+        return moment(long).format('YYYY-MM-DD, HH:mm:ss');
     }
 
 
@@ -651,7 +752,7 @@ export class ViciComponent implements OnInit {
                 selector: 'node[type ^= "EiffelCompositionDefinedEvent"]',
                 style: {
                     'shape': 'polygon',
-                    'shape-polygon-points': '1 0 1 0.6 0.5 0.8 0 0.6 -0.5 0.8 -1 0.6 -1 0 -0.5 -0.2 -0.5 -0.8 0 -1 0.5 -0.8 0.5 -0.2 1 0  0.5 0.2 0.5 0.8 0.5 0.2 0 0 0 0.6 0 0 -0.5 0.2 -0.5 0.8 -0.5 0.2 -1 0 -0.5 -0.2 0 0 0.5 -0.2 0 0 0 -0.6 -0.5 -0.8 0 -0.6 0.5 -0.8 0.5 -0.2 1 0',
+                    'shape-polygon-points': '0 -1 -0.5 -0.75 0 -0.5 0 0.125 0 -0.5 -0.5 -0.75 -0.5 -0.125 0 0.125 -0.5 -0.125 -1 0.125 -0.5 0.375 0 0.125 -0.5 0.375 -1 0.125 -1 0.75 -0.5 1 -0.5 0.375 -0.5 1 0 0.75 0 0.125 0 0.75 0.5 1 0.5 0.375 0.5 1 1 0.75 1 0.125 0.5 0.375 0 0.125 0.5 0.375 1 0.125 0.5 -0.125 0 0.125 0.5 -0.125 0.5 -0.75 0 -0.5 0.5 -0.75 0 -1',
                     'height': 70,
                     'width': 70,
                     'border-color': '#000',
@@ -698,12 +799,7 @@ export class ViciComponent implements OnInit {
             {
                 selector: 'node[type ^= "EiffelEnvironmentDefinedEvent"]',
                 style: {
-                    // 'shape': 'polygon',
-                    // 'shape-polygon-points': '1 0 0.97 -0.26 0.87 -0.5 0.71 -0.71 0.5 -0.87 0.26 -0.97 ' +
-                    // '0 -1 -0.26 -0.97 -0.5 -0.87 -0.71 -0.71 -0.87 -0.5 -0.6 -0.6 0 -0.7 0.6 -0.6 0.87 -0.5 0.6 -0.6 0 -0.7 -0.6 -0.6 -0.87 -0.5 -0.97 -0.26 ' +
-                    // '-1 0 1 0 -1 0 -0.97 0.26 -0.87 0.5 -0.6 0.6 0 0.7 0.6 0.6 0.87 0.5 0.6 0.6 0 0.7 -0.6 0.6 -0.87 0.5 -0.71 0.71 -0.5 0.87 -0.6 0.6 -0.7 0 -0.6 -0.6 -0.5 -0.87 -0.6 -0.6 -0.7 0 -0.6 0.6 -0.5 0.87 -0.26 0.97 ' +
-                    // '0 1 0 -1 0 1 0.26 0.97 0.5 0.87 0.6 0.6 0.7 0 0.6 -0.6 0.5 -0.87 0.6 -0.6 0.7 0 0.6 0.6 0.5 0.87 0.71 0.71 0.87 0.5 0.97 0.26 1 0',
-                    'shape': 'ellipse',
+                    'shape': 'rhomboid',
                     'height': 50,
                     'width': 50,
                     'border-width': '1px',
@@ -712,25 +808,29 @@ export class ViciComponent implements OnInit {
             {
                 selector: 'node[type ^= "EiffelSourceChangeCreatedEvent"]',
                 style: {
-                    'shape': 'polygon',
-                    'shape-polygon-points': '-0.33 -0.8 -0.35 -0.81 -0.37 -0.83 -0.39 -0.85 -0.4 -0.87 -0.4 -0.9 -0.4 -0.93 -0.39 -0.95 -0.37 -0.97 -0.35 -0.99 -0.33 -1 -0.3 -1 -0.27 -1 -0.25 -0.99 -0.23 -0.97 -0.21 -0.95 -0.2 -0.93 -0.2 -0.9 -0.2 -0.9 -0.2 -0.87 -0.21 -0.85 -0.23 -0.83 -0.25 -0.81 -0.27 -0.8 -0.27 -0.64 0.25 -0.09 0.27 -0.1 0.3 -0.1 0.33 -0.1 0.35 -0.09 0.37 -0.07 0.39 -0.05 0.4 -0.03 0.4 0 0.4 0 0.4 0.03 0.39 0.05 0.37 0.07 0.35 0.09 0.33 0.1 0.3 0.1 0.27 0.1 0.25 0.09 0.23 0.07 0.21 0.05 0.2 0.03 0.2 0 -0.27 -0.5 -0.27 0.5 -0.12 0.5 -0.3 0.7 -0.48 0.5 -0.33 0.5',
+                    'shape': 'octagon',
                     'height': 70,
                     'width': 70,
-                    'border-color': '#000',
-                    'border-width': '1px',
-                    'border-style': 'solid',
+                    'background-color': '#fff',
+                    // Credit: Git Logo by Jason Long is licensed under the Creative Commons Attribution 3.0 Unported License. https://git-scm.com/downloads/logos
+                    'background-image': '/assets/images/Git-Icon-Black.png',
+                    'background-height': '100%',
+                    'background-width': '100%',
+                    'background-position-x': '0px',
                 }
             },
             {
                 selector: 'node[type ^= "EiffelSourceChangeSubmittedEvent"]',
                 style: {
-                    'shape': 'polygon',
-                    'shape-polygon-points': '-0.33 -0.8 -0.35 -0.81 -0.37 -0.83 -0.39 -0.85 -0.4 -0.87 -0.4 -0.9 -0.4 -0.93 -0.39 -0.95 -0.37 -0.97 -0.35 -0.99 -0.33 -1 -0.3 -1 -0.27 -1 -0.25 -0.99 -0.23 -0.97 -0.21 -0.95 -0.2 -0.93 -0.2 -0.9 -0.2 -0.9 -0.2 -0.87 -0.21 -0.85 -0.23 -0.83 -0.25 -0.81 -0.27 -0.8 -0.27 -0.64 0.25 -0.09 0.27 -0.1 0.3 -0.1 0.33 -0.1 0.35 -0.09 0.37 -0.07 0.39 -0.05 0.4 -0.03 0.4 0 0.4 0 0.4 0.03 0.39 0.05 0.37 0.07 0.35 0.09 0.33 0.1 0.3 0.1 0.27 0.1 0.25 0.09 0.25 0.09 -0.27 0.38 -0.27 0.28 0.2 0 -0.27 -0.5 -0.27 0.5 -0.12 0.5 -0.3 0.7 -0.48 0.5 -0.33 0.5',
+                    'shape': 'octagon',
                     'height': 70,
                     'width': 70,
-                    'border-color': '#000',
-                    'border-width': '1px',
-                    'border-style': 'solid',
+                    'background-color': '#fff',
+                    // Credit: Git Logo by Jason Long is licensed under the Creative Commons Attribution 3.0 Unported License. https://git-scm.com/downloads/logos
+                    'background-image': '/assets/images/Git-Icon-Black.png',
+                    'background-height': '100%',
+                    'background-width': '100%',
+                    'background-position-x': '0px',
                 }
             },
             {
@@ -861,15 +961,25 @@ export class ViciComponent implements OnInit {
                 {
                     title: 'Chain',
                     render: function (data: any, type: any, full: any) {
-                        return '<button view-event-id="' + full.id + '" class="btn btn-default btn-xs row-button">Graph</button>';
+                        return '<button view-event-id="' + full.id + '" class="btn btn-info btn-sm">Graph</button>';
                     }
                 }
             ];
 
+            let columns: any = preDefColumns.concat(plotData.columns);
+            columns.forEach((column) => {
+                if (column.renderType === 1) {
+
+                    column.render = (data, type, row, meta) => {
+                        return this.formatTime(Number(data));
+                    }
+                }
+            });
+
             let tmp = container.DataTable({
                 destroy: true,
                 data: plotData.data,
-                columns: preDefColumns.concat(plotData.columns),
+                columns: columns,
                 scrollY: 'calc(100vh - 13rem)',
                 scrollCollapse: true,
                 lengthMenu: [[20, 200, -1], [20, 200, "All"]],
@@ -945,7 +1055,7 @@ export class ViciComponent implements OnInit {
         }
 
         // Scheduled tasks
-        timer(0, 45000).subscribe(() => {
+        timer(0, 15000).subscribe(() => {
             this.updateHistoryDates();
         });
 

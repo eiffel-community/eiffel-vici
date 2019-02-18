@@ -314,22 +314,22 @@ public class ApiController {
                     columns.add(new Column("Event", key));
                     break;
                 case "id":
-                    columns.add(new Column("Eiffel ID", key));
+                    columns.add(new Column("Eiffel ID", key, false));
                     break;
                 case "type":
                     columns.add(new Column("Type", key));
                     break;
                 case "time-" + TRIGGERED:
-                    columns.add(new Column("Time triggered", key));
+                    columns.add(new Column("Time triggered", key, true, 1));
                     break;
                 case "time-" + CANCELED:
-                    columns.add(new Column("Time canceled", key));
+                    columns.add(new Column("Time canceled", key, true, 1));
                     break;
                 case "time-" + STARTED:
-                    columns.add(new Column("Time started", key));
+                    columns.add(new Column("Time started", key, true, 1));
                     break;
                 case "time-" + FINISHED:
-                    columns.add(new Column("Time finished", key));
+                    columns.add(new Column("Time finished", key, true, 1));
                     break;
                 case "time-" + EXECUTION:
                     columns.add(new Column("Execution (ms)", key));
