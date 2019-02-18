@@ -50,12 +50,12 @@
     "zone.js": "^0.8.29"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^0.13.1",
-    "@angular/cli": "7.3.1",
+    "@angular-devkit/build-angular": "^0.13.2",
+    "@angular/cli": "7.3.2",
     "@angular/compiler-cli": "7.2.5",
     "@angular/language-service": "7.2.5",
     "@types/datatables.net": "^1.10.15",
     "@types/jquery": "^3.3.29",
-    "typescript": "3.1.6"
+    "typescript": "3.2.4"
   }
 }

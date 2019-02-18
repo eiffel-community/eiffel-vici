@@ -79,3 +79,10 @@ docker run --rm -p 8080:8080 -t --name vici vici-eiffel
 ~~~~
 
 The Vici app will now run at http://127.0.0.1:8080 (if you are running docker-machine check IP with : docker-machine ip)
+
+## Common problems and fixes
+Files and folders to delete if Vici is not starting or acting as it should after pulling/updating the project folder:
+
+* /node
+* /node_modules
+* /settings.json
