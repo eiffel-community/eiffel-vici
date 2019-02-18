@@ -7,7 +7,7 @@ import {OcticonsDirective} from './octicons.directive';
 import {RouterModule, Routes} from "@angular/router";
 import {ViciComponent} from './vici/vici.component';
 import {FormsModule} from "@angular/forms";
-import {MomentModule} from "angular2-moment";
+import {MomentModule} from "ngx-moment";
 import {NgbModule} from '@ng-bootstrap/ng-bootstrap';
 import {AngularFontAwesomeModule} from "angular-font-awesome";
 import {DataTablesModule} from "angular-datatables";

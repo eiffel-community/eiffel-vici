@@ -961,7 +961,7 @@ export class ViciComponent implements OnInit {
                 {
                     title: 'Chain',
                     render: function (data: any, type: any, full: any) {
-                        return '<button view-event-id="' + full.id + '" class="btn btn-default btn-sm">Graph</button>';
+                        return '<button view-event-id="' + full.id + '" class="btn btn-info btn-sm">Graph</button>';
                     }
                 }
             ];
