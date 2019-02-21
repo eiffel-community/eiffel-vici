@@ -41,7 +41,7 @@ const appRoutes: Routes = [
         HttpClientModule,
         FormsModule,
         MomentModule,
-        NgbModule.forRoot(),
+        NgbModule,
         AngularFontAwesomeModule,
         DataTablesModule
     ],
