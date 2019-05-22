@@ -17,16 +17,26 @@
 package com.ericsson.vici.api.entities;
 
 
-import java.util.Arrays;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.util.HashMap;
-import java.util.List;
 
 import static com.ericsson.vici.Fetcher.*;
 
+@Data
+@NoArgsConstructor
 public class Settings {
-    public static final String propertiesVersion = "2.2 - Added cut at events, changed standard values to fit new algorithm.";
 
-    private static final String[] eventTypesAggregatedOn = {
+    @JsonIgnore
+    private final String latestVersion = "2.3 - Eiffel-ER with Spring property as default.";
+
+    private String version = latestVersion;
+
+    private HashMap<String, EiffelEventRepository> eiffelEventRepositories = new HashMap<>();
+
+    private String[] types = {
             ACTIVITY,
             "EiffelAnnouncementPublishedEvent",
             "EiffelArtifactCreatedEvent",
@@ -44,54 +54,8 @@ public class Settings {
             "EiffelTestExecutionRecipeCollectionCreatedEvent",
             DEFAULT};
 
-    private static final List<EiffelEventRepository> STANDARD_EIFFEL_REPOSITORIES = Arrays.asList(
-            new EiffelEventRepository("Local static dummy file", "localFile[reference-data-set]"),
-            new EiffelEventRepository("EER static dummy file", "http://127.0.0.1:8081/reference-data-set"),
-            new EiffelEventRepository("EER [live] dummy event stream", "http://127.0.0.1:8081/live[reference-data-set]"),
-            new EiffelEventRepository("Docker EER static dummy file", "http://dummy-er:8081/reference-data-set"),
-            new EiffelEventRepository("Docker EER [live] dummy event stream", "http://dummy-er:8081/live[reference-data-set]")
-    );
-
-    private String version;
-    private String[] types = eventTypesAggregatedOn;
-    // EiffelEventRepositories
-    private HashMap<String, EiffelEventRepository> eiffelEventRepositories;
-
-//    );
-
-    public Settings() {
-    }
-
-    public Settings(String version) {
-        this.version = version;
-        this.eiffelEventRepositories = new HashMap<>();
-
-        for (EiffelEventRepository repository : STANDARD_EIFFEL_REPOSITORIES) {
-            eiffelEventRepositories.put(repository.getId(), repository);
-        }
-    }
-
-    public String[] getTypes() {
-        return types;
-    }
-
-    public void setTypes(String[] types) {
-        this.types = types;
-    }
-
-    public String getVersion() {
-        return version;
-    }
-
-    public void setVersion(String version) {
-        this.version = version;
-    }
-
-    public HashMap<String, EiffelEventRepository> getEiffelEventRepositories() {
-        return eiffelEventRepositories;
-    }
-
-    public void setEiffelEventRepositories(HashMap<String, EiffelEventRepository> eiffelEventRepositories) {
-        this.eiffelEventRepositories = eiffelEventRepositories;
+    @JsonIgnore
+    public boolean isUpToDate() {
+        return version == null || version.equals(latestVersion);
     }
 }

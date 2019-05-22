@@ -17,6 +17,7 @@
 package com.ericsson.vici.entities;
 
 import com.ericsson.vici.entities.Eiffel.EiffelEvent;
+import com.ericsson.vici.entities.Eiffel.Link;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 

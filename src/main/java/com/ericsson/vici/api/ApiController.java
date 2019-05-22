@@ -23,10 +23,10 @@ import com.ericsson.vici.api.entities.ReturnData;
 import com.ericsson.vici.api.entities.Settings;
 import com.ericsson.vici.entities.ChildLink;
 import com.ericsson.vici.entities.Cytoscape.*;
+import com.ericsson.vici.entities.Eiffel.Link;
 import com.ericsson.vici.entities.Eiffel.Outcome;
 import com.ericsson.vici.entities.Event;
 import com.ericsson.vici.entities.Events;
-import com.ericsson.vici.entities.Link;
 import com.ericsson.vici.entities.Table.Column;
 import com.ericsson.vici.entities.Table.Source;
 import com.ericsson.vici.entities.Vis.Item;
@@ -41,7 +41,6 @@ import java.util.*;
 
 import static com.ericsson.vici.Fetcher.*;
 import static com.ericsson.vici.ViciApplication.log;
-import static com.ericsson.vici.ViciApplication.settingsHandler;
 import static com.ericsson.vici.entities.Event.*;
 
 @RestController
@@ -55,6 +54,12 @@ public class ApiController {
     private static final String LABEL_CULLED = "Culled [Click to expand]";
     private static final String TYPE_CULLED = "(Culled)";
     private static final String TYPE_UNKNOWN = "unknown";
+
+    private final SettingsHandler settingsHandler;
+
+    public ApiController(SettingsHandler settingsHandler) {
+        this.settingsHandler = settingsHandler;
+    }
 
     private void setQuantities(Node node, Event event) {
         Outcome outcome = null;
@@ -217,12 +222,15 @@ public class ApiController {
             if (!event.getType().equals(REDIRECT)) {
                 for (Link link : event.getLinks()) {
                     if (!preferences.getAggregationBannedLinks().contains(link.getType())) {
-                        String target = events.get(getTarget(link.getTarget(), events)).getAggregateOn();
-                        String edgeId = getEdgeId(event.getAggregateOn(), target, link.getType());
-                        if (edges.containsKey(edgeId)) {
-                            edges.get(edgeId).getData().increaseQuantity();
-                        } else {
-                            edges.put(edgeId, new Edge(new DataEdge(edgeId, event.getAggregateOn(), target, edgeId, link.getType())));
+                        String targetId = getTarget(link.getTarget(), events);
+                        if (events.containsKey(targetId)) { // todo unknown event placeholder or fetch specific event from api
+                            String target = events.get(targetId).getAggregateOn();
+                            String edgeId = getEdgeId(event.getAggregateOn(), target, link.getType());
+                            if (edges.containsKey(edgeId)) {
+                                edges.get(edgeId).getData().increaseQuantity();
+                            } else {
+                                edges.put(edgeId, new Edge(new DataEdge(edgeId, event.getAggregateOn(), target, edgeId, link.getType())));
+                            }
                         }
                     }
                 }
@@ -660,9 +668,10 @@ public class ApiController {
             for (Link link : event.getLinks()) {
                 if (!preferences.getEventChainBannedLinks().contains(link.getType()) && !preferences.getEventChainCutAtEvent().contains(event.getType())) {
                     Event tmpEvent = events.get(getTarget(link.getTarget(), events));
-                    if (!incEvents.containsKey(tmpEvent.getId())) {
+                    if (tmpEvent != null && !incEvents.containsKey(tmpEvent.getId())) {
                         tmpEvents.add(tmpEvent);
                     }
+                    // TODO what if tmpEvent is null?
                 }
             }
         }
@@ -670,9 +679,10 @@ public class ApiController {
             for (ChildLink child : event.getChildren()) {
                 if (!preferences.getEventChainBannedLinks().contains(child.getType()) && !preferences.getEventChainCutAtEvent().contains(event.getType())) {
                     Event tmpEvent = events.get(getTarget(child.getChild(), events));
-                    if (!incEvents.containsKey(tmpEvent.getId())) {
+                    if (tmpEvent != null && !incEvents.containsKey(tmpEvent.getId())) {
                         tmpEvents.add(tmpEvent);
                     }
+                    // TODO what if tmpEvent is null?
                 }
             }
         }

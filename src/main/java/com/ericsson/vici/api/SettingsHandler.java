@@ -22,23 +22,47 @@ import com.ericsson.vici.api.entities.Settings;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import lombok.Data;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
-import static com.ericsson.vici.api.entities.Settings.propertiesVersion;
 
+@Data
+@Component
 public class SettingsHandler {
-    private static final String propertiesFileName = "settings.json";
+    @Value("${eiffel.vici.settings-file-name}")
+    private String propertiesFileName;
 
+    @Value("${eiffel.er.url}")
+    private String eiffelERUrl;
 
-    public SettingsHandler() {
+    @PostConstruct
+    public void init() {
         Settings settings = getSettings();
-        if (settings == null) {
-            resetSettingsDefault();
-        } else if (settings.getVersion() == null || !settings.getVersion().equals(propertiesVersion)) {
+        if (settings == null || !settings.isUpToDate()) {
             resetSettingsDefault();
         }
+    }
+
+    public Settings getDefaultSettings() {
+        Settings settings = new Settings();
+
+        List<EiffelEventRepository> STANDARD_EIFFEL_REPOSITORIES = Arrays.asList(
+                new EiffelEventRepository("Local reference-data-set.json file", "localFile[reference-data-set]"),
+                new EiffelEventRepository("Eiffel-ER", eiffelERUrl)
+        );
+
+        for (EiffelEventRepository repository : STANDARD_EIFFEL_REPOSITORIES) {
+            settings.getEiffelEventRepositories().put(repository.getId(), repository);
+        }
+
+        return settings;
     }
 
     public void deleteEiffelRepository(String id) {
@@ -53,18 +77,8 @@ public class SettingsHandler {
         saveSettings(settings);
     }
 
-    public Settings getDefaultSettings() {
-        return new Settings(propertiesVersion);
-    }
-
     public void saveSettings(Settings settings) {
         ObjectMapper mapper = new ObjectMapper();
-//        try {
-//            mapper.writeValue(new File(propertiesFileName), settings);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-
         ObjectWriter writer = mapper.writer(new DefaultPrettyPrinter());
         try {
             writer.writeValue(new File(propertiesFileName), settings);

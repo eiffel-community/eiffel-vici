@@ -17,7 +17,6 @@
 package com.ericsson.vici.entities.Eiffel;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.ericsson.vici.entities.Link;
 
 import java.util.ArrayList;
 

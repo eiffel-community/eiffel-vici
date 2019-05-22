@@ -18,21 +18,24 @@ package com.ericsson.vici;
 
 
 import com.ericsson.vici.api.entities.Preferences;
-import com.ericsson.vici.api.entities.Query;
-import com.ericsson.vici.entities.*;
+import com.ericsson.vici.entities.ChildLink;
 import com.ericsson.vici.entities.Eiffel.CustomData;
 import com.ericsson.vici.entities.Eiffel.EiffelEvent;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.ericsson.vici.entities.Eiffel.Link;
+import com.ericsson.vici.entities.Event;
+import com.ericsson.vici.entities.EventCache;
+import com.ericsson.vici.entities.Events;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.json.JSONObject;
+import org.apache.http.client.utils.URIBuilder;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -143,60 +146,64 @@ public class Fetcher {
         log.info("Downloading eiffel-events from: " + preferences.getUrl());
 
         RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<EiffelEvent[]> responseEntity;
-        EiffelEvent[] eiffelEvents = null;
+        ResponseEntity<EiffelEREventsResponse> responseEntity;
+        ArrayList<EiffelEvent> eiffelEvents = new ArrayList<>();
 
         Pattern pattern = Pattern.compile("^localFile\\[(.+)]$");
         Matcher matcher = pattern.matcher(preferences.getUrl().trim());
 
         long eventsFetchedAt = System.currentTimeMillis();
 
-        if (matcher.find()) {
-//            System.out.println("Request for local file " + matcher.group(1) + ".json");
-//            responseEntity = restTemplate.getForEntity("http://127.0.0.1:8080/" + matcher.group(1), EiffelEvent[].class);
-
+        if (matcher.find()) { // Local file
             ObjectMapper mapper = new ObjectMapper();
             Resource resource = new ClassPathResource("static/assets/" + matcher.group(1) + ".json");
             InputStream jsonFileStream;
 
             try {
                 jsonFileStream = resource.getInputStream();
-                eiffelEvents = mapper.readValue(jsonFileStream, EiffelEvent[].class);
+                EiffelEvent[] eiffelEventList = mapper.readValue(jsonFileStream, EiffelEvent[].class);
+                Collections.addAll(eiffelEvents, eiffelEventList);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        } else {
-            Query query = new Query(null, null, 0, Integer.MAX_VALUE, false, null, true);
-            ObjectMapper mapper = new ObjectMapper();
-            JSONObject queryJson = null;
-            try {
-                queryJson = new JSONObject(mapper.writeValueAsString(query));
-            } catch (JsonProcessingException e) {
-                e.printStackTrace();
+        } else { // Eiffel ER Rest API version??
+            URIBuilder builder;
+            int totalNumberItems = Integer.MAX_VALUE;
+//            int pageSize = 59923; // seems to be the maximum of events the Eiffel ER can handle at the moment.
+            int pageSize = 2000;
+            int page = 1;
+
+            while (eiffelEvents.size() < totalNumberItems) {
+                log.info(String.valueOf(page));
+
+                builder = new URIBuilder()
+                        .setScheme("http")
+                        .setHost(preferences.getUrl())
+                        .setPath("/events")
+                        .addParameter("pageSize", String.valueOf(pageSize))
+                        .addParameter("pageNo", String.valueOf(page));
+
+                EiffelEREventsResponse response = restTemplate.getForObject(builder.toString(), EiffelEREventsResponse.class);
+
+                if (response != null) {
+                    Collections.addAll(eiffelEvents, response.items);
+                    totalNumberItems = response.totalNumberItems;
+                }
+
+                page++;
+
+                log.info(eiffelEvents.size() + "/" + totalNumberItems);
             }
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-
-            HttpEntity<String> entity = null;
-            if (queryJson != null) {
-                entity = new HttpEntity<>(queryJson.toString(), headers);
-            }
-
-            responseEntity = restTemplate.exchange(preferences.getUrl(), HttpMethod.POST, entity, EiffelEvent[].class);
-            eiffelEvents = responseEntity.getBody();
-
-//            MediaType contentType = responseEntity.getHeaders().getContentType();
-//            HttpStatus statusCode = responseEntity.getStatusCode();
         }
 
-        if (eiffelEvents == null) {
+        if (eiffelEvents.isEmpty()) {
             return null;
         }
 
-        log.info("Downloaded eiffel-events. Importing...");
+        log.info("Downloaded " + eiffelEvents.size() + " eiffel-events. Importing...");
 
-        int total = eiffelEvents.length;
+        int total = eiffelEvents.size();
         int count = 0;
         int lastPrint = count;
 
@@ -336,7 +343,12 @@ public class Fetcher {
             if (!event.getType().equals(REDIRECT)) {
                 for (Link link : event.getLinks()) {
                     String target = getTarget(link.getTarget(), events);
-                    events.get(target).getChildren().add(new ChildLink(event.getId(), link.getType()));
+                    if (target != null) {
+                        events.get(target).getChildren().add(new ChildLink(event.getId(), link.getType()));
+                    } else {
+//                        log.info("Missing: " + link.getTarget());
+                    }
+                    // todo unknown event placeholder or fetch specific event from api
                 }
             }
         }
