@@ -38,7 +38,7 @@
     "datatables.net-dt": "^1.10.19",
     "font-awesome": "^4.7.0",
     "jquery": "^3.3.1",
-    "moment": "^2.24.0",
+    "moment": "^2.29.4",
     "ngx-moment": "^3.3.0",
     "npm": "^6.8.0",
     "octicons": "^8.4.2",
