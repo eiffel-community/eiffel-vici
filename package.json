@@ -40,7 +40,7 @@
     "jquery": "^3.3.1",
     "moment": "^2.24.0",
     "ngx-moment": "^3.3.0",
-    "npm": "^9.8.0",
+    "npm": "^10.3.0",
     "octicons": "^8.4.2",
     "panzoom": "^7.1.2",
     "popper.js": "^1.14.7",
@@ -51,7 +51,7 @@
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^17.0.0",
-    "@angular/cli": "^16.2.9",
+    "@angular/cli": "^17.0.10",
     "@angular/compiler-cli": "^16.2.12",
     "@angular/language-service": "7.2.6",
     "@types/datatables.net": "^1.10.15",
