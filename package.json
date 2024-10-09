@@ -27,7 +27,7 @@
     "ajv-keywords": "^3.4.0",
     "angular-datatables": "^16.0.0",
     "angular-font-awesome": "^3.1.2",
-    "bootstrap": "^4.3.1",
+    "bootstrap": "^5.0.0",
     "core-js": "^2.6.5",
     "cytoscape": "^3.4.2",
     "cytoscape-dagre": "^2.2.2",
